@@ -124,6 +124,9 @@ def spawn_rllm(parent_program, focus_area, mutation_directive, context):
     Spawn a Recursive Child LLM to generate new code variant.
     Can spawn multiple RLLMs for the same parent with different focus areas.
 
+    CONSTRAINT: Total RLLMs spawned per generation cannot exceed max_child_rllms_per_generation.
+    The function will raise an error if limit is exceeded.
+
     Args:
         parent_program: The program to mutate
         focus_area: Specific aspect to improve (e.g., "hole_management", "lookahead", "speed")
@@ -132,6 +135,9 @@ def spawn_rllm(parent_program, focus_area, mutation_directive, context):
 
     Returns:
         Generated code variant
+
+    Raises:
+        ResourceLimitError: If max_child_rllms_per_generation exceeded
     """
     pass
 
@@ -168,8 +174,13 @@ def advance_generation(selected_programs):
     Move to next generation with dynamically selected programs.
     Number of programs is decided by Root LLM, not hardcoded.
 
+    CONSTRAINT: Will raise error if current generation >= max_generations.
+
     Returns:
         New generation number
+
+    Raises:
+        ResourceLimitError: If max_generations exceeded
     """
     pass
 
@@ -245,7 +256,14 @@ Child LLM outputs:
 
 ### Evolution Lifecycle (Root LLM Controlled)
 
-The Root LLM has complete autonomy over the evolution process. There is no hardcoded loop - the Root decides what to do at each step.
+The Root LLM has complete autonomy over the evolution process within resource constraints. There is no hardcoded loop - the Root decides what to do at each step.
+
+**Resource Constraints:**
+- Maximum generations (hard limit)
+- Maximum RLLMs per generation (hard limit)
+- Maximum time (hard limit)
+
+The system will enforce these limits and terminate evolution if exceeded.
 
 **Root LLM Decision Flow:**
 
@@ -617,11 +635,15 @@ tetris_evolve/
 ```yaml
 evolution:
   initial_population_size: 30
-  max_generations: 100  # Safety limit (Root can terminate earlier)
   games_per_evaluation: 100  # Root can modify this dynamically
 
-  # Note: Root LLM has full control over evolution parameters
-  # These are starting values only - Root can modify them at any time
+  # Hard limits (Root CANNOT exceed these)
+  max_generations: 100  # Maximum generations allowed (Root can terminate earlier)
+  max_child_rllms_per_generation: 50  # Maximum RLLMs Root can spawn per generation
+  max_time_minutes: 240  # Maximum runtime (4 hours)
+
+  # Note: Root LLM has control over evolution within the constraints above
+  # Values below are starting guidance - Root can modify them at any time
 
   # Guidance for Root LLM (suggestions, not constraints)
   suggested_selection_range: [5, 15]  # Root can choose outside this range
@@ -631,7 +653,6 @@ evolution:
   termination_guidance:
     min_improvement_rate: 0.01  # Consider stopping if improvement < 1%
     target_score: 15000  # Consider stopping if this score is achieved
-    max_time_minutes: 240  # Safety limit (4 hours)
     convergence_window: 3  # Generations with no improvement before considering termination
 
   mutation_distribution_guidance:  # Suggestions, not requirements
@@ -673,9 +694,15 @@ Evolve the best possible Tetris-playing program. You decide strategy, timing, an
 - Full control over evolution lifecycle (continue or terminate)
 - Dynamic parameter adjustment
 - Selection strategy (how many programs, which ones)
-- RLLM assignment (how many per program, focus areas)
+- RLLM assignment (how many per program, focus areas) - up to {max_child_rllms_per_generation} RLLMs per generation
 - Evaluation depth (how many games to run)
 - Termination criteria (decide when you're satisfied)
+
+**Hard Constraints:**
+- Maximum generations: {max_generations}
+- Maximum RLLMs per generation: {max_child_rllms_per_generation}
+- Maximum time: {max_time_minutes} minutes
+- You will be automatically terminated if you exceed these limits
 
 **Available Functions:**
 - spawn_rllm(parent_program, focus_area, mutation_directive, context) → code
@@ -687,8 +714,9 @@ Evolve the best possible Tetris-playing program. You decide strategy, timing, an
 - modify_parameters(param_updates) → None
 
 **Current State:**
-Generation: {generation}
-Time Elapsed: {time_elapsed}
+Generation: {generation} / {max_generations}
+Time Elapsed: {time_elapsed} / {max_time_minutes} minutes
+RLLMs Available This Generation: {max_child_rllms_per_generation}
 Budget Used: {budget_used}
 
 Current Generation Data:
@@ -715,18 +743,21 @@ Historical Trends:
    - How many programs should advance?
    - Which programs are most promising?
    - Should any get multiple RLLMs? With what focus areas?
+   - How many total RLLMs to spawn? (max: {max_child_rllms_per_generation})
    - Should I modify parameters? (e.g., more games_per_eval?)
 
 3. **Execute your strategy**
-   - Spawn RLLMs with specific directives
+   - Spawn RLLMs with specific directives (respect RLLM limit!)
    - Advance generation
    - The system will evaluate and return control to you
 
 **Important:**
-- You are NOT bound by suggested ranges or guidelines
+- You are NOT bound by suggested ranges or guidelines (except hard constraints)
 - Trust your analysis over heuristics
-- Terminate when satisfied, not after N generations
+- Terminate when satisfied, not after max_generations
 - Be bold in strategy changes if data suggests it
+- Respect resource limits: max generations, max RLLMs per generation, max time
+- Plan your RLLM budget carefully each generation
 
 Think step-by-step and make your decision.
 ```
@@ -792,11 +823,15 @@ Return your generated code and a brief explanation of changes related to your fo
 - **Resource Limits**: Cap memory and CPU usage
 - **Validation**: Parse and check code before execution
 
-### Cost Control
+### Resource Control
+- **Hard Limits**:
+  - Max generations (e.g., 100)
+  - Max RLLMs per generation (e.g., 50)
+  - Max time (e.g., 4 hours)
 - **Token Budgets**: Limit per generation and total
 - **Model Selection**: Use cheaper models for Child LLMs when possible
 - **Caching**: Reuse evaluations for identical code
-- **Early Stopping**: Halt evolution if no improvement after N generations
+- **Root Termination**: Root can terminate earlier, but cannot exceed limits
 
 ### Quality Assurance
 - **Baseline Comparison**: Maintain hand-written baseline players
