@@ -629,6 +629,307 @@ tetris_evolve/
 - gymnasium: RL environment interface (used by PufferLib)
 ```
 
+## Data Persistence & Logging
+
+### Directory Structure
+
+Each evolution run creates a timestamped directory containing all data about that run:
+
+```
+tetris_evolve/
+├── runs/
+│   ├── run_2025-01-23_14-30-00/              # Timestamped run directory
+│   │   ├── config.yaml                        # Config used for this run
+│   │   ├── evolution_log.jsonl                # Line-delimited JSON log of all events
+│   │   ├── root_llm_log.jsonl                 # All Root LLM decisions and reasoning
+│   │   ├── summary.json                       # Final summary statistics
+│   │   │
+│   │   ├── generations/
+│   │   │   ├── gen_000/
+│   │   │   │   ├── generation_summary.json    # Generation-level stats
+│   │   │   │   ├── programs/
+│   │   │   │   │   ├── prog_00001/
+│   │   │   │   │   │   ├── metadata.json      # Program metadata
+│   │   │   │   │   │   ├── code.py            # The program code
+│   │   │   │   │   │   ├── metrics.json       # Evaluation metrics
+│   │   │   │   │   │   ├── parent_info.json   # Parent IDs and mutation info
+│   │   │   │   │   │   └── evaluation_logs/   # Individual game logs
+│   │   │   │   │   │       ├── game_0.json
+│   │   │   │   │   │       ├── game_1.json
+│   │   │   │   │   │       └── ...
+│   │   │   │   │   ├── prog_00002/
+│   │   │   │   │   │   └── ...
+│   │   │   │   │   └── ...
+│   │   │   │   └── rllm_logs/                 # Child RLLM generation logs
+│   │   │   │       ├── rllm_00001.json
+│   │   │   │       ├── rllm_00002.json
+│   │   │   │       └── ...
+│   │   │   ├── gen_001/
+│   │   │   │   └── ...
+│   │   │   └── ...
+│   │   │
+│   │   ├── checkpoints/
+│   │   │   ├── checkpoint_gen_000.json
+│   │   │   ├── checkpoint_gen_005.json
+│   │   │   └── ...
+│   │   │
+│   │   └── visualizations/                    # Generated plots and visualizations
+│   │       ├── performance_over_time.png
+│   │       ├── diversity_analysis.png
+│   │       └── ...
+│   │
+│   ├── run_2025-01-23_16-45-00/
+│   │   └── ...
+│   └── ...
+```
+
+### Data Schemas
+
+#### 1. Program Metadata (`metadata.json`)
+```json
+{
+  "program_id": "prog_00042",
+  "generation": 5,
+  "created_at": "2025-01-23T14:35:22.123Z",
+  "parent_ids": ["prog_00023", "prog_00024"],
+  "mutation_type": "exploitation",
+  "focus_area": "hole_management",
+  "rllm_id": "rllm_00123",
+  "root_reasoning": "Best program from gen 4, focus on reducing holes"
+}
+```
+
+#### 2. Program Metrics (`metrics.json`)
+```json
+{
+  "program_id": "prog_00042",
+  "evaluation": {
+    "num_games": 100,
+    "completed_at": "2025-01-23T14:40:15.456Z",
+    "avg_score": 12345.67,
+    "std_score": 1234.56,
+    "avg_lines_cleared": 234.5,
+    "std_lines_cleared": 45.2,
+    "avg_survival_time": 5678.9,
+    "std_survival_time": 789.1,
+    "max_score": 18900,
+    "min_score": 3400,
+    "success_rate": 0.92,
+    "code_errors": 0,
+    "game_results": [
+      {"game_id": 0, "score": 12500, "lines": 240, "moves": 5800},
+      {"game_id": 1, "score": 11900, "lines": 225, "moves": 5200},
+      "... (all games)"
+    ]
+  }
+}
+```
+
+#### 3. Parent Info (`parent_info.json`)
+```json
+{
+  "program_id": "prog_00042",
+  "parents": [
+    {
+      "parent_id": "prog_00023",
+      "parent_generation": 4,
+      "parent_score": 11234.5
+    }
+  ],
+  "mutation_info": {
+    "focus_area": "hole_management",
+    "mutation_directive": {
+      "strategy": "targeted_improvement",
+      "guidance": "Reduce hole creation by improving placement scoring",
+      "constraints": ["maintain_performance"]
+    },
+    "rllm_explanation": "Modified the evaluate_position() function to heavily penalize holes...",
+    "expected_improvements": [
+      "Fewer holes in final board state",
+      "Better long-term stability"
+    ]
+  }
+}
+```
+
+#### 4. Generation Summary (`generation_summary.json`)
+```json
+{
+  "generation": 5,
+  "started_at": "2025-01-23T14:35:00.000Z",
+  "completed_at": "2025-01-23T14:55:30.000Z",
+  "duration_seconds": 1230,
+  "num_programs": 42,
+  "num_rllms_spawned": 35,
+  "statistics": {
+    "avg_score": 10234.5,
+    "std_score": 2345.6,
+    "max_score": 15678.9,
+    "min_score": 3456.7,
+    "top_5_programs": ["prog_00042", "prog_00043", "prog_00044", "prog_00045", "prog_00046"],
+    "improvement_from_prev_gen": 0.15,
+    "diversity_score": 0.68
+  },
+  "root_llm_decision": {
+    "selected_for_next_gen": ["prog_00042", "prog_00043", "..."],
+    "num_selected": 8,
+    "rllm_assignments": [
+      {
+        "parent_id": "prog_00042",
+        "focus_areas": ["lookahead_depth", "hole_management", "speed"]
+      },
+      "..."
+    ],
+    "reasoning": "Top programs show strong hole management. Focus on increasing lookahead...",
+    "continue_evolution": true,
+    "parameter_modifications": {}
+  }
+}
+```
+
+#### 5. RLLM Log (`rllm_00001.json`)
+```json
+{
+  "rllm_id": "rllm_00123",
+  "generation": 5,
+  "created_at": "2025-01-23T14:35:25.000Z",
+  "completed_at": "2025-01-23T14:36:10.000Z",
+  "duration_seconds": 45,
+  "parent_program_id": "prog_00023",
+  "focus_area": "hole_management",
+  "mutation_directive": {
+    "strategy": "targeted_improvement",
+    "guidance": "Reduce hole creation...",
+    "constraints": ["maintain_performance"]
+  },
+  "llm_model": "gpt-4",
+  "tokens_used": {
+    "prompt": 3500,
+    "completion": 1200,
+    "total": 4700
+  },
+  "generated_program_id": "prog_00042",
+  "explanation": "Modified evaluate_position() to heavily penalize holes..."
+}
+```
+
+#### 6. Root LLM Log Entry (`root_llm_log.jsonl`)
+Line-delimited JSON, one entry per Root decision:
+```json
+{"timestamp": "2025-01-23T14:35:00.000Z", "generation": 5, "event": "analysis_start", "data": {...}}
+{"timestamp": "2025-01-23T14:35:15.000Z", "generation": 5, "event": "performance_analysis", "data": {"top_score": 12345, "avg_score": 10234, "improvement_rate": 0.15}}
+{"timestamp": "2025-01-23T14:35:18.000Z", "generation": 5, "event": "decision", "decision_type": "continue", "reasoning": "Strong improvement trend continues..."}
+{"timestamp": "2025-01-23T14:35:20.000Z", "generation": 5, "event": "selection", "num_selected": 8, "selected_ids": ["prog_00042", ...]}
+{"timestamp": "2025-01-23T14:35:22.000Z", "generation": 5, "event": "rllm_spawn", "rllm_id": "rllm_00123", "parent_id": "prog_00042", "focus_area": "hole_management"}
+```
+
+#### 7. Evolution Log (`evolution_log.jsonl`)
+High-level events for the entire run:
+```json
+{"timestamp": "2025-01-23T14:30:00.000Z", "event": "run_start", "config": {...}}
+{"timestamp": "2025-01-23T14:30:05.000Z", "event": "generation_start", "generation": 0}
+{"timestamp": "2025-01-23T14:32:30.000Z", "event": "generation_complete", "generation": 0, "duration": 145, "num_programs": 30}
+{"timestamp": "2025-01-23T14:32:31.000Z", "event": "root_decision", "generation": 0, "continue": true, "selected": 10}
+{"timestamp": "2025-01-23T14:55:30.000Z", "event": "generation_complete", "generation": 5, "duration": 1230}
+{"timestamp": "2025-01-23T15:00:00.000Z", "event": "run_complete", "reason": "convergence", "total_generations": 6, "best_score": 15678.9}
+```
+
+### Database Integration
+
+While the filesystem stores detailed logs and code, SQLite database provides fast querying:
+
+```sql
+CREATE TABLE programs (
+    program_id TEXT PRIMARY KEY,
+    generation INTEGER,
+    code TEXT,
+    avg_score REAL,
+    avg_lines_cleared REAL,
+    avg_survival_time REAL,
+    parent_ids TEXT,  -- JSON array
+    mutation_type TEXT,
+    focus_area TEXT,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE generations (
+    generation INTEGER PRIMARY KEY,
+    num_programs INTEGER,
+    avg_score REAL,
+    max_score REAL,
+    improvement_rate REAL,
+    diversity_score REAL,
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP
+);
+
+CREATE TABLE rllm_spawns (
+    rllm_id TEXT PRIMARY KEY,
+    generation INTEGER,
+    parent_program_id TEXT,
+    focus_area TEXT,
+    generated_program_id TEXT,
+    tokens_used INTEGER,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE root_decisions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    generation INTEGER,
+    decision_type TEXT,  -- 'continue', 'terminate', 'parameter_change'
+    reasoning TEXT,
+    num_selected INTEGER,
+    timestamp TIMESTAMP
+);
+```
+
+### Logging API
+
+```python
+class EvolutionLogger:
+    """Handles all logging for evolution run"""
+
+    def __init__(self, run_dir: Path):
+        self.run_dir = run_dir
+        self.evolution_log = run_dir / "evolution_log.jsonl"
+        self.root_llm_log = run_dir / "root_llm_log.jsonl"
+
+    def log_event(self, event_type: str, data: dict):
+        """Log high-level evolution event"""
+        pass
+
+    def log_root_decision(self, generation: int, decision: dict):
+        """Log Root LLM decision"""
+        pass
+
+    def save_program(self, program: Program, generation: int):
+        """Save program with all metadata and metrics"""
+        pass
+
+    def save_generation_summary(self, generation: int, summary: dict):
+        """Save generation summary"""
+        pass
+
+    def log_rllm_spawn(self, rllm_info: dict):
+        """Log RLLM spawning"""
+        pass
+
+    def create_checkpoint(self, generation: int, state: dict):
+        """Create checkpoint for resuming"""
+        pass
+```
+
+### Benefits of This Structure
+
+1. **Reproducibility**: Every run is fully logged with config and all decisions
+2. **Analysis**: Easy to analyze trends, compare programs, visualize progress
+3. **Debugging**: Detailed logs for every component
+4. **Resume**: Checkpoints allow resuming interrupted runs
+5. **Visualization**: All data available for creating plots and dashboards
+6. **Audit Trail**: Complete history of Root LLM decisions and reasoning
+7. **Program Inspection**: Easy to examine any program from any generation
+8. **Performance Analysis**: Detailed metrics for every program and generation
+
 ## Configuration
 
 ### System Parameters
