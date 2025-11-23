@@ -1,0 +1,59 @@
+# Atari Pong Evolution Configuration (Example)
+
+# Environment Configuration
+environment:
+  type: "atari"  # Environment type (must match an EnvironmentConfig implementation)
+  env_id: "ALE/Pong-v5"  # PufferLib/Gymnasium environment ID
+
+  # Environment-specific kwargs
+  env_kwargs:
+    render_mode: null
+    max_episode_steps: 10000
+    frameskip: 4
+
+  # Evaluation settings
+  evaluation:
+    num_episodes: 20  # More episodes for Atari due to variance
+    num_workers: 8    # More workers for faster evaluation
+    timeout_seconds: 120
+
+# Evolution Configuration
+evolution:
+  # Resource Limits (HARD LIMITS)
+  max_generations: 200
+  max_child_rllms_per_generation: 15
+  max_time_minutes: 2880  # 48 hours
+
+  # Initial population
+  initial_population_size: 8
+
+  # Convergence criteria
+  convergence:
+    min_generations: 20
+    score_improvement_threshold: 0.05
+    stagnation_generations: 10
+
+# LLM Configuration
+llm:
+  # Root LLM (Depth=0)
+  root:
+    model: "claude-sonnet-4"
+    temperature: 0.7
+    max_tokens: 4096
+
+  # Child RLLMs (Depth=1)
+  child:
+    model: "claude-sonnet-4"
+    temperature: 0.8
+    max_tokens: 8192
+
+# Logging Configuration
+logging:
+  runs_dir: "runs"
+  log_level: "INFO"
+  save_checkpoint_every_n_generations: 10
+  enable_visualizations: true
+  save_episode_videos: true  # Save videos for Atari
+
+# Seed for reproducibility
+seed: 42

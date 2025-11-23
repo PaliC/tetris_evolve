@@ -1,0 +1,2 @@
+[console_scripts]
+tetris-evolve = tetris_evolve.cli:main

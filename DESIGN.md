@@ -110,9 +110,15 @@ The Root LLM acts as an evolutionary strategist, selecting promising candidates 
 }
 ```
 
-#### 2. Root LLM Environment (REPL-based)
+#### 2. Shared REPL Environment
 
-The Root LLM operates in a Python REPL environment with access to:
+**Key Design**: Root LLM and all Child RLLMs share the same Python REPL environment. This means:
+- Variables defined by Root are accessible to Children
+- Children can see and use functions defined in the REPL
+- Shared context (program database, metrics) is available to all
+- This enables efficient communication and context sharing
+
+The Root LLM operates in this shared REPL with access to:
 
 ```python
 # Available in Root LLM context
@@ -122,25 +128,44 @@ current_gen_programs = [...] # Programs from current generation only
 metrics_summary = {...} # Statistical analysis of current generation
 
 # Functions available to Root LLM
-def spawn_rllm(parent_program, focus_area, mutation_directive, context):
+def spawn_rllm(prompt: str):
     """
-    Spawn a Recursive Child LLM to generate new code variant.
-    Can spawn multiple RLLMs for the same parent with different focus areas.
+    Spawn a Recursive Child LLM with a custom prompt.
+    The Root LLM has complete control over the prompt content.
+
+    The Child RLLM will execute in the SAME REPL environment as Root,
+    so they share access to variables, functions, and context.
 
     CONSTRAINT: Total RLLMs spawned per generation cannot exceed max_child_rllms_per_generation.
     The function will raise an error if limit is exceeded.
 
     Args:
-        parent_program: The program to mutate
-        focus_area: Specific aspect to improve (e.g., "hole_management", "lookahead", "speed")
-        mutation_directive: Detailed guidance on how to improve
-        context: Additional context about generation and top performers
+        prompt: Complete prompt for the Child RLLM. Root decides all content:
+                - What code to improve
+                - What aspects to focus on
+                - What context to provide
+                - What constraints to enforce
+                - What output format is expected
 
     Returns:
-        Generated code variant
+        Result from Child RLLM execution (typically generated code as string)
 
     Raises:
         ResourceLimitError: If max_child_rllms_per_generation exceeded
+
+    Example:
+        prompt = '''
+        You are improving a Tetris player. Here's the current best program:
+
+        {parent_code}
+
+        This program scores an average of 12,345 points but creates too many holes.
+        Your task: Reduce hole creation while maintaining performance.
+
+        Return only the improved Python code.
+        '''
+
+        new_code = spawn_rllm(prompt)
     """
     pass
 
@@ -215,44 +240,50 @@ The Root LLM can:
 - Inspect performance data and historical trends
 - Identify patterns in successful programs
 - Decide selection criteria dynamically (not hardcoded)
-- Craft contextual mutation directives
-- Spawn multiple Child LLMs in parallel
+- **Craft complete custom prompts for Child RLLMs** (full control over prompt content)
+- Spawn multiple Child LLMs in parallel (all sharing the same REPL)
 - Modify parameters mid-evolution (e.g., increase games_per_eval for closer races)
 - Terminate evolution when satisfied with results
 
-#### 3. Child LLM Interface
+**REPL Sharing**: All Child RLLMs execute in the same REPL as Root, enabling:
+- Access to shared variables (program_database, metrics_summary, etc.)
+- Ability to call shared functions
+- Efficient context passing without explicit serialization
 
-Each Child LLM receives:
+#### 3. Child RLLM Execution
+
+Each Child RLLM:
+- Receives a **custom prompt crafted by Root** (Root has complete control)
+- Executes in the **same REPL environment as Root** (shared context)
+- Can access variables in the REPL (program_database, metrics_summary, etc.)
+- Returns a result (typically generated code as string)
+
+**Example Child RLLM Execution:**
 
 ```python
-{
-  "task": "generate_variant",
-  "parent_program": {
-    "code": str,
-    "metrics": {...},
-    "generation": int
-  },
-  "mutation_directive": {
-    "strategy": "improve_hole_management",  # or other strategy
-    "guidance": "The parent program leaves too many holes. Focus on...",
-    "constraints": ["maintain_performance", "keep_structure"],
-    "examples": [...]  # Optional: similar successful mutations
-  },
-  "context": {
-    "top_performers": [...],  # For reference
-    "common_patterns": [...],
-    "generation_insights": str
-  }
-}
-```
+# Root crafts a custom prompt
+prompt = """
+You are improving a Tetris-playing program.
 
-Child LLM outputs:
-```python
-{
-  "code": str,
-  "explanation": str,
-  "expected_improvements": [str]
-}
+Current program (Generation 5, Score: 12,345):
+{code_here}
+
+Problem: Creates too many holes (avg 15 holes per game).
+Top performer has only 5 holes per game.
+
+Task: Modify the evaluate_position() function to heavily penalize holes.
+Add a hole_penalty term to the scoring.
+
+Available in REPL: program_database, current_gen_programs, metrics_summary
+
+Return only the improved Python code (no explanations).
+"""
+
+# Root spawns Child RLLM with this prompt
+improved_code = spawn_rllm(prompt)
+
+# Child executes in same REPL, can access program_database if needed
+# Returns the improved code
 ```
 
 ## Evolutionary Strategy
@@ -304,17 +335,39 @@ else:
 
     selected = current_analysis['programs'][0:8]  # Dynamic selection
 
-    # Decision: Assign multiple RLLMs to best program
-    spawn_rllm(selected[0], "lookahead_depth", "Increase to depth 3", context)
-    spawn_rllm(selected[0], "hole_management", "Minimize holes during lookahead", context)
-    spawn_rllm(selected[0], "speed_optimization", "Cache lookahead computations", context)
+    # Decision: Assign multiple RLLMs to best program with custom prompts
 
-    # Decision: Single RLLM for programs 2-5
-    for prog in selected[1:5]:
-        spawn_rllm(prog, "exploit_best_strategy", "Incorporate top program's approach", context)
+    # RLLM 1: Focus on lookahead
+    prompt1 = f"""
+    Improve this Tetris player (current score: {selected[0].score}):
+    {selected[0].code}
 
-    # Decision: Exploration for remaining
-    spawn_rllm(selected[5], "novel_approach", "Try beam search instead of greedy", context)
+    Focus: Increase lookahead depth from 2 to 3.
+    The current program uses 2-piece lookahead. Extend to 3 while maintaining speed.
+    Return only the improved Python code.
+    """
+    new_code1 = spawn_rllm(prompt1)
+
+    # RLLM 2: Focus on hole management
+    prompt2 = f"""
+    Improve this Tetris player:
+    {selected[0].code}
+
+    Focus: Minimize hole creation during lookahead evaluation.
+    Add hole penalty to the scoring function.
+    Return only the improved Python code.
+    """
+    new_code2 = spawn_rllm(prompt2)
+
+    # RLLM 3: Speed optimization
+    prompt3 = f"""
+    Optimize this Tetris player for speed:
+    {selected[0].code}
+
+    Add caching for lookahead computations to improve performance.
+    Return only the improved Python code.
+    """
+    new_code3 = spawn_rllm(prompt3)
 
     advance_generation(selected)
     # Loop continues...
@@ -757,16 +810,16 @@ env_evolve/                       # Generic name (not tetris-specific)
 - [ ] Implement EnvironmentConfig ABC and GenericEnvironmentWrapper
 - [ ] Implement TetrisConfig (and optionally another env for testing generality)
 - [ ] Implement evaluation framework (environment-agnostic)
-- [ ] Create program database (SQLite schema + API)
-- [ ] Build basic RLM framework (REPL environment)
+- [ ] Create program database (in-memory + file persistence, no SQLite)
+- [ ] Build shared REPL framework (Root + Children share same REPL)
 - [ ] Verify all tests pass
 
 **Deliverables:**
 - Generic environment wrapper that works with any PufferLib environment
 - At least one environment config (Tetris) fully implemented
 - Evaluation framework that works with any environment
-- Program database with CRUD operations
-- Basic REPL execution environment
+- Program database (in-memory + file persistence)
+- Shared REPL execution environment (Root + Children)
 - All tests passing
 
 ### Phase 2: Root LLM Integration
@@ -876,13 +929,14 @@ env_evolve/                       # Generic name (not tetris-specific)
 - gymnasium: RL environment interface (base for PufferLib)
 - numpy: Array operations and state management
 - openai / anthropic: LLM API calls
-- sqlite3: Program database
 - multiprocessing: Parallel evaluation
 - matplotlib/plotly: Visualization
 - pytest: Test framework (TDD approach)
 - pydantic: Data validation
 - PyYAML: Configuration parsing
 ```
+
+**Note**: No SQLite dependency for now - using file-based storage only.
 
 ## Data Persistence & Logging
 
@@ -1089,54 +1143,15 @@ High-level events for the entire run:
 {"timestamp": "2025-01-23T15:00:00.000Z", "event": "run_complete", "reason": "convergence", "total_generations": 6, "best_score": 15678.9}
 ```
 
-### Database Integration
+### In-Memory Program Database
 
-While the filesystem stores detailed logs and code, SQLite database provides fast querying:
+For now, we use **file-based storage only** (no SQLite). The program database is:
+- Loaded into memory at startup from filesystem
+- Maintained in memory during evolution (as Python data structures)
+- Persisted to filesystem after each generation
+- Available in the shared REPL as `program_database` variable
 
-```sql
-CREATE TABLE programs (
-    program_id TEXT PRIMARY KEY,
-    generation INTEGER,
-    code TEXT,
-    avg_score REAL,
-    avg_lines_cleared REAL,
-    avg_survival_time REAL,
-    parent_ids TEXT,  -- JSON array
-    mutation_type TEXT,
-    focus_area TEXT,
-    created_at TIMESTAMP
-);
-
-CREATE TABLE generations (
-    generation INTEGER PRIMARY KEY,
-    num_programs INTEGER,
-    avg_score REAL,
-    max_score REAL,
-    improvement_rate REAL,
-    diversity_score REAL,
-    started_at TIMESTAMP,
-    completed_at TIMESTAMP
-);
-
-CREATE TABLE rllm_spawns (
-    rllm_id TEXT PRIMARY KEY,
-    generation INTEGER,
-    parent_program_id TEXT,
-    focus_area TEXT,
-    generated_program_id TEXT,
-    tokens_used INTEGER,
-    created_at TIMESTAMP
-);
-
-CREATE TABLE root_decisions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    generation INTEGER,
-    decision_type TEXT,  -- 'continue', 'terminate', 'parameter_change'
-    reasoning TEXT,
-    num_selected INTEGER,
-    timestamp TIMESTAMP
-);
-```
+**Future Enhancement**: Add SQLite for fast querying when the database grows large.
 
 ### Logging API
 
@@ -1270,7 +1285,7 @@ Evolve the best possible Tetris-playing program. You decide strategy, timing, an
 - You will be automatically terminated if you exceed these limits
 
 **Available Functions:**
-- spawn_rllm(parent_program, focus_area, mutation_directive, context) → code
+- spawn_rllm(prompt: str) → result  # You craft the complete prompt
 - evaluate_program(code, num_games) → metrics
 - get_performance_analysis(generation=None) → analysis
 - get_historical_trends() → trends
@@ -1327,40 +1342,58 @@ Historical Trends:
 Think step-by-step and make your decision.
 ```
 
-### Recursive Child LLM Prompt Template
+### Child RLLM Prompting (Root-Controlled)
+
+**Key Design**: Root LLM crafts the ENTIRE prompt for each Child RLLM. No templates or structured format required.
+
+**Example Root-Crafted Prompts:**
+
+**Example 1: Targeted Improvement**
 ```
-You are a Recursive Child LLM specialized in generating Tetris-playing code.
-You have been assigned a specific focus area by the Root LLM.
+You are improving a Tetris player that scores 12,345 points on average.
 
-**IMPORTANT**: You may be one of multiple RLLMs working on the SAME parent program.
-Each RLLM has a different focus area. Your job is to explore YOUR specific focus.
+Current code:
+{code}
 
-Parent Program (Generation {gen}, Score: {score}):
-{parent_code}
+Analysis: The program creates too many holes (avg 15/game).
+Top performers have only 5 holes/game by penalizing hole creation in scoring.
 
-Parent Performance:
-{parent_metrics}
+Task: Modify evaluate_position() to add hole penalty. Weight it heavily.
 
-Your Focus Area: {focus_area}
-Examples: "hole_management", "lookahead_depth", "speed_optimization", "piece_placement_scoring"
-
-Mutation Directive for YOUR focus:
-Strategy: {strategy}
-Guidance: {guidance}
-Constraints: {constraints}
-
-Context:
-{context}
-
-Your task:
-Generate an improved version of the parent program focusing SPECIFICALLY on {focus_area}.
-Other RLLMs may be exploring different aspects of the same parent.
-
-Your code must implement the TetrisPlayer interface:
-- select_action(game_state) -> action
-
-Return your generated code and a brief explanation of changes related to your focus area.
+Return only the improved Python code.
 ```
+
+**Example 2: Exploration**
+```
+You are creating a NEW Tetris-playing approach.
+
+Context: Current best uses greedy 2-lookahead (score: 12,345).
+All top 5 programs use similar greedy approaches.
+
+Task: Implement a beam search algorithm with width=3, depth=2.
+Maintain the same TetrisPlayer interface: select_action(observation) -> action
+
+Return only the complete Python code.
+```
+
+**Example 3: Crossover**
+```
+You are combining features from two Tetris programs.
+
+Program A (score: 12,000):
+{code_a}
+Strength: Excellent hole management
+
+Program B (score: 11,500):
+{code_b}
+Strength: Fast lookahead with caching
+
+Task: Combine A's hole management with B's caching strategy.
+
+Return only the combined Python code.
+```
+
+**Note**: Root has complete freedom in prompt design. No required structure, no required fields. Root decides everything based on strategic analysis.
 
 ## Success Metrics
 

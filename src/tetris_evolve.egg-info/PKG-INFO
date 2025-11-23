@@ -1,3 +1,45 @@
+Metadata-Version: 2.4
+Name: tetris-evolve
+Version: 0.1.0
+Summary: Tetris AI evolution using AlphaEvolve approach - evolving code-based agents
+Author: Tetris Evolve Contributors
+License: MIT
+Project-URL: Homepage, https://github.com/yourusername/tetris_evolve
+Project-URL: Documentation, https://github.com/yourusername/tetris_evolve#readme
+Project-URL: Repository, https://github.com/yourusername/tetris_evolve
+Project-URL: Issues, https://github.com/yourusername/tetris_evolve/issues
+Keywords: tetris,evolution,ai,gymnasium,openevolve,alphaevolve
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Games/Entertainment :: Arcade
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.20.0
+Requires-Dist: gymnasium>=0.28.0
+Requires-Dist: pufferlib>=0.5.0
+Requires-Dist: anthropic>=0.18.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: torch>=2.0.0
+Requires-Dist: tqdm>=4.65.0
+Requires-Dist: matplotlib>=3.7.0
+Requires-Dist: pandas>=2.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: mypy>=1.5.0; extra == "dev"
+
 # Tetris Evolve: LLM-Powered Evolutionary System
 
 An autonomous evolutionary system that combines **AlphaEvolve** (evolutionary coding) with **Recursive LLMs** (hierarchical decision-making) to evolve programs that play PufferLib environments optimally.

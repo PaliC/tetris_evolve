@@ -1,0 +1,65 @@
+# Tetris Evolution Configuration
+
+# Environment Configuration
+environment:
+  type: "tetris"  # Environment type (must match an EnvironmentConfig implementation)
+  env_id: "tetris-v0"  # PufferLib/Gymnasium environment ID
+
+  # Environment-specific kwargs
+  env_kwargs:
+    render_mode: null  # null for training, "human" for visualization
+    max_episode_steps: 1000
+
+  # Evaluation settings
+  evaluation:
+    num_episodes: 10  # Number of episodes to evaluate each program
+    num_workers: 4    # Number of parallel workers for evaluation
+    timeout_seconds: 60  # Timeout per episode
+
+# Evolution Configuration
+evolution:
+  # Resource Limits (HARD LIMITS - Root LLM cannot exceed these)
+  max_generations: 100
+  max_child_rllms_per_generation: 10
+  max_time_minutes: 1440  # 24 hours
+
+  # Initial population
+  initial_population_size: 5
+
+  # Convergence criteria (Root LLM uses these to decide when to terminate)
+  convergence:
+    min_generations: 10  # Minimum generations before termination allowed
+    score_improvement_threshold: 0.01  # Min improvement to continue
+    stagnation_generations: 5  # Stop if no improvement for N generations
+
+# LLM Configuration
+llm:
+  # Root LLM (Depth=0)
+  root:
+    model: "claude-sonnet-4"
+    temperature: 0.7
+    max_tokens: 4096
+
+  # Child RLLMs (Depth=1)
+  child:
+    model: "claude-sonnet-4"
+    temperature: 0.8
+    max_tokens: 8192
+
+# Logging Configuration
+logging:
+  # Output directory for runs
+  runs_dir: "runs"
+
+  # What to log
+  log_level: "INFO"
+
+  # Save frequency
+  save_checkpoint_every_n_generations: 10
+
+  # Visualization
+  enable_visualizations: true
+  save_episode_videos: false
+
+# Seed for reproducibility (null for random)
+seed: 42
