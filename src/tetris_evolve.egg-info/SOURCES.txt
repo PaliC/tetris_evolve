@@ -10,6 +10,9 @@ src/tetris_evolve.egg-info/top_level.txt
 src/tetris_evolve/child_llm/__init__.py
 src/tetris_evolve/database/__init__.py
 src/tetris_evolve/environment/__init__.py
+src/tetris_evolve/environment/base.py
+src/tetris_evolve/environment/tetris.py
+src/tetris_evolve/environment/wrapper.py
 src/tetris_evolve/evaluation/__init__.py
 src/tetris_evolve/evolution/__init__.py
 src/tetris_evolve/rlm/__init__.py
