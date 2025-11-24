@@ -18,12 +18,31 @@ from .evaluator import (
     PlayerExecutionError,
     Player,
 )
+from .parallel import (
+    ParallelEvaluator,
+    EvaluationCache,
+)
+from .diversity import (
+    compute_code_diversity,
+    select_diverse,
+    code_similarity,
+    compute_population_stats,
+)
 
 __all__ = [
+    # Core evaluation
     "evaluate_player",
     "evaluate_player_from_code",
     "EvaluationResult",
     "MetricStats",
     "PlayerExecutionError",
     "Player",
+    # Parallel evaluation
+    "ParallelEvaluator",
+    "EvaluationCache",
+    # Diversity
+    "compute_code_diversity",
+    "select_diverse",
+    "code_similarity",
+    "compute_population_stats",
 ]
