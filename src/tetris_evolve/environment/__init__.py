@@ -5,4 +5,12 @@ This module provides an abstract interface for different environments (Tetris, A
 and a generic wrapper for evaluation.
 """
 
-__all__ = []
+from tetris_evolve.environment.base import EnvironmentConfig
+from tetris_evolve.environment.wrapper import GenericEnvironmentWrapper
+from tetris_evolve.environment.tetris import TetrisConfig
+
+__all__ = [
+    "EnvironmentConfig",
+    "GenericEnvironmentWrapper",
+    "TetrisConfig",
+]
