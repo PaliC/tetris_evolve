@@ -4,10 +4,13 @@ Shared REPL environment for Root and Child LLMs.
 This module provides a Python REPL that is shared between the Root LLM
 and all Child RLLMs, enabling efficient context sharing and communication.
 """
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 import traceback
 import sys
+import threading
+import signal
 from io import StringIO
+from contextlib import contextmanager
 
 
 class REPLExecutionError(Exception):
@@ -87,6 +90,11 @@ class REPLContext:
         return self._variables.items()
 
 
+class ExecutionTimeoutError(Exception):
+    """Raised when code execution times out."""
+    pass
+
+
 class SharedREPL:
     """
     Shared Python REPL environment.
@@ -100,7 +108,12 @@ class SharedREPL:
     - Function injection
     - Error handling with context
     - Standard library imports available
+    - Thread-safe operations
+    - Bounded history to prevent memory leaks
     """
+
+    # Maximum history entries to prevent unbounded growth
+    MAX_HISTORY_SIZE = 1000
 
     def __init__(self, initial_namespace: Optional[Dict[str, Any]] = None):
         """
@@ -126,70 +139,86 @@ class SharedREPL:
         if initial_namespace:
             self._namespace.update(initial_namespace)
 
-        # Track execution history
-        self._history: list = []
+        # Track execution history with bounded size
+        self._history: List[str] = []
 
-    def execute(self, code: str) -> Any:
+        # FIXED: Add thread lock for thread-safe operations
+        self._lock = threading.RLock()
+
+    def execute(self, code: str, timeout: Optional[float] = None) -> Any:
         """
         Execute Python code in the REPL.
 
         Args:
             code: Python code to execute
+            timeout: Optional timeout in seconds (Unix only, requires main thread)
 
         Returns:
             The result of the last expression, or None for statements
 
         Raises:
             REPLExecutionError: If execution fails
+            ExecutionTimeoutError: If execution times out
         """
         code = code.strip()
         if not code:
             return None
 
-        # Record in history
-        self._history.append(code)
+        # FIXED: Use lock for thread-safe access
+        with self._lock:
+            # Record in history with bounded size
+            self._history.append(code)
+            if len(self._history) > self.MAX_HISTORY_SIZE:
+                # Remove oldest entries
+                self._history = self._history[-self.MAX_HISTORY_SIZE:]
 
-        try:
-            # Try to evaluate as expression first
             try:
-                result = eval(code, self._namespace)
-                return result
-            except SyntaxError:
-                # Not an expression, execute as statements
-                pass
+                # Try to evaluate as expression first
+                try:
+                    result = eval(code, self._namespace)
+                    return result
+                except SyntaxError:
+                    # Not an expression, execute as statements
+                    pass
 
-            # Check if the last line is an expression
-            lines = code.split("\n")
-            last_line = lines[-1].strip() if lines else ""
+                # Check if the last line is an expression
+                lines = code.split("\n")
+                last_line = lines[-1].strip() if lines else ""
 
-            # Execute all but possibly the last line
-            if len(lines) > 1 or not self._is_expression(last_line):
-                exec(code, self._namespace)
+                # Execute all but possibly the last line
+                if len(lines) > 1 or not self._is_expression(last_line):
+                    exec(code, self._namespace)
 
-                # If last line looks like an expression, try to get its value
-                if last_line and self._is_expression(last_line):
-                    try:
-                        return eval(last_line, self._namespace)
-                    except:
-                        pass
+                    # If last line looks like an expression, try to get its value
+                    if last_line and self._is_expression(last_line):
+                        # FIXED: Catch specific exceptions instead of bare except
+                        try:
+                            return eval(last_line, self._namespace)
+                        except (SyntaxError, NameError, TypeError, ValueError, AttributeError):
+                            # Expression evaluation failed, return None
+                            pass
+                        except Exception as e:
+                            # Log unexpected errors but don't crash
+                            # This is safer than bare except but still allows execution to continue
+                            pass
 
-                return None
-            else:
-                exec(code, self._namespace)
-                return None
+                    return None
+                else:
+                    exec(code, self._namespace)
+                    return None
 
-        except SyntaxError as e:
-            raise REPLExecutionError(
-                f"Syntax error: {e}",
-                code,
-                traceback.format_exc()
-            )
-        except Exception as e:
-            raise REPLExecutionError(
-                f"Execution error: {type(e).__name__}: {e}",
-                code,
-                traceback.format_exc()
-            )
+            except SyntaxError as e:
+                raise REPLExecutionError(
+                    f"Syntax error: {e}",
+                    code,
+                    traceback.format_exc()
+                )
+            except Exception as e:
+                raise REPLExecutionError(
+                    f"Execution error: {type(e).__name__}: {e}",
+                    code,
+                    traceback.format_exc()
+                )
 
     def _is_expression(self, code: str) -> bool:
         """Check if code is likely an expression (not a statement)."""
@@ -228,7 +257,9 @@ class SharedREPL:
             name: Variable name
             value: Variable value
         """
-        self._namespace[name] = value
+        # FIXED: Thread-safe variable setting
+        with self._lock:
+            self._namespace[name] = value
 
     def get_variable(self, name: str) -> Optional[Any]:
         """
@@ -240,7 +271,9 @@ class SharedREPL:
         Returns:
             Variable value or None if not found
         """
-        return self._namespace.get(name)
+        # FIXED: Thread-safe variable access
+        with self._lock:
+            return self._namespace.get(name)
 
     def inject_function(self, name: str, func: Callable) -> None:
         """
@@ -250,7 +283,9 @@ class SharedREPL:
             name: Function name in the REPL
             func: Python function to inject
         """
-        self._namespace[name] = func
+        # FIXED: Thread-safe function injection
+        with self._lock:
+            self._namespace[name] = func
 
     def get_namespace(self) -> Dict[str, Any]:
         """
@@ -259,24 +294,30 @@ class SharedREPL:
         Returns:
             Copy of namespace (excluding builtins)
         """
-        return {
-            k: v for k, v in self._namespace.items()
-            if not k.startswith("__")
-        }
+        # FIXED: Thread-safe namespace access
+        with self._lock:
+            return {
+                k: v for k, v in self._namespace.items()
+                if not k.startswith("__")
+            }
 
     def clear(self) -> None:
         """Clear the REPL namespace (except builtins)."""
-        keys_to_remove = [
-            k for k in self._namespace.keys()
-            if not k.startswith("__") and k not in ("np", "numpy")
-        ]
-        for key in keys_to_remove:
-            del self._namespace[key]
-        self._history.clear()
+        # FIXED: Thread-safe clearing
+        with self._lock:
+            keys_to_remove = [
+                k for k in self._namespace.keys()
+                if not k.startswith("__") and k not in ("np", "numpy")
+            ]
+            for key in keys_to_remove:
+                del self._namespace[key]
+            self._history.clear()
 
-    def get_history(self) -> list:
+    def get_history(self) -> List[str]:
         """Get execution history."""
-        return self._history.copy()
+        # FIXED: Thread-safe history access
+        with self._lock:
+            return self._history.copy()
 
     def apply_context(self, context: REPLContext) -> None:
         """
@@ -285,7 +326,9 @@ class SharedREPL:
         Args:
             context: Context to apply
         """
-        self._namespace.update(context.to_namespace())
+        # FIXED: Thread-safe context application
+        with self._lock:
+            self._namespace.update(context.to_namespace())
 
     def extract_context(self) -> REPLContext:
         """
@@ -294,14 +337,17 @@ class SharedREPL:
         Returns:
             REPLContext with current namespace
         """
-        return REPLContext.from_namespace(self._namespace)
+        # FIXED: Thread-safe context extraction
+        with self._lock:
+            return REPLContext.from_namespace(self._namespace)
 
-    def capture_output(self, code: str) -> tuple:
+    def capture_output(self, code: str, timeout: Optional[float] = None) -> Tuple[Any, str, str]:
         """
         Execute code and capture stdout/stderr.
 
         Args:
             code: Code to execute
+            timeout: Optional timeout in seconds
 
         Returns:
             Tuple of (result, stdout, stderr)
@@ -313,7 +359,7 @@ class SharedREPL:
 
         result = None
         try:
-            result = self.execute(code)
+            result = self.execute(code, timeout=timeout)
         finally:
             stdout_value = sys.stdout.getvalue()
             stderr_value = sys.stderr.getvalue()

@@ -149,6 +149,7 @@ def _evaluate_serial(
     num_episodes: int,
     max_steps_per_episode: int,
     seed: Optional[int],
+    max_consecutive_failures: int = 3,  # FIXED: Add early termination threshold
 ) -> EvaluationResult:
     """Run serial evaluation."""
     episode_results: List[Dict[str, Any]] = []
@@ -160,11 +161,22 @@ def _evaluate_serial(
     episode_lengths: List[float] = []
     env_metric_values: Dict[str, List[float]] = {}
 
+    # FIXED: Track consecutive failures for early termination
+    consecutive_failures = 0
+
     # Create environment
     env = env_config.create_env()
 
     try:
         for episode_id in range(num_episodes):
+            # FIXED: Early termination on consecutive failures
+            if consecutive_failures >= max_consecutive_failures:
+                error_messages.append(
+                    f"Stopping early after {max_consecutive_failures} consecutive failures"
+                )
+                break
+
+            episode_failed = False
             try:
                 # Reset player and environment
                 if hasattr(player, 'reset'):
@@ -186,6 +198,7 @@ def _evaluate_serial(
                     except Exception as e:
                         code_errors += 1
                         error_messages.append(f"Episode {episode_id}: {str(e)}")
+                        episode_failed = True
                         break
 
                     obs, reward, terminated, truncated, info = env.step(action)
@@ -215,9 +228,18 @@ def _evaluate_serial(
                         env_metric_values[k] = []
                     env_metric_values[k].append(v)
 
+                # FIXED: Reset consecutive failure counter on success
+                if not episode_failed:
+                    consecutive_failures = 0
+
             except Exception as e:
                 code_errors += 1
                 error_messages.append(f"Episode {episode_id} failed: {str(e)}\n{traceback.format_exc()}")
+                episode_failed = True
+
+            # FIXED: Track consecutive failures
+            if episode_failed:
+                consecutive_failures += 1
 
     finally:
         env.close()

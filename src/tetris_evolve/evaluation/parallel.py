@@ -4,6 +4,7 @@ Parallel evaluation and caching for improved performance.
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+import copy
 import hashlib
 from collections import OrderedDict
 import threading
@@ -34,7 +35,8 @@ class EvaluationCache:
 
     def _hash_code(self, code: str) -> str:
         """Create a hash of the code for use as cache key."""
-        return hashlib.sha256(code.encode()).hexdigest()[:16]
+        # FIXED: Use longer hash (32 chars = 128 bits) to reduce collision risk
+        return hashlib.sha256(code.encode()).hexdigest()[:32]
 
     def get(self, code: str) -> Optional[EvaluationResult]:
         """
@@ -44,7 +46,7 @@ class EvaluationCache:
             code: Source code to look up
 
         Returns:
-            Cached EvaluationResult or None if not found
+            A deep copy of the cached EvaluationResult or None if not found
         """
         key = self._hash_code(code)
 
@@ -53,7 +55,8 @@ class EvaluationCache:
                 self._hits += 1
                 # Move to end (most recently used)
                 self._cache.move_to_end(key)
-                return self._cache[key]
+                # FIXED: Return a deep copy to prevent mutation of cached data
+                return copy.deepcopy(self._cache[key])
             else:
                 self._misses += 1
                 return None
@@ -71,11 +74,14 @@ class EvaluationCache:
         with self._lock:
             if key in self._cache:
                 self._cache.move_to_end(key)
+                # FIXED: Store a deep copy to prevent external mutation
+                self._cache[key] = copy.deepcopy(result)
             else:
                 if len(self._cache) >= self.max_size:
                     # Remove oldest (first) item
                     self._cache.popitem(last=False)
-                self._cache[key] = result
+                # FIXED: Store a deep copy to prevent external mutation
+                self._cache[key] = copy.deepcopy(result)
 
     def size(self) -> int:
         """Get current cache size."""

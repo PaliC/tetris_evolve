@@ -87,24 +87,83 @@ class CodeValidator:
     - Potentially dangerous code
     """
 
-    # Dangerous patterns to check for
+    # Dangerous patterns to check for - comprehensive list
     DANGEROUS_PATTERNS = [
+        # System command execution
         r'\bos\.system\b',
+        r'\bos\.popen\b',
+        r'\bos\.spawn\w*\b',
         r'\bsubprocess\b',
+        r'\bcommands\b',
+        # Code execution
         r'\beval\s*\(',
+        r'\beval\(',  # Also catch eval( without space
         r'\bexec\s*\(',
+        r'\bexec\(',  # Also catch exec( without space
+        r'\bcompile\s*\(',
         r'\b__import__\b',
-        r'\bopen\s*\([^)]*["\']w["\']',  # Writing to files
+        r'__builtins__',
+        # File system access (read/write)
+        r'\bopen\s*\(',  # Catch all open() calls
+        r'\bopen\(',
         r'\brm\s+-rf\b',
         r'\bshutil\.rmtree\b',
+        r'\bshutil\.move\b',
+        r'\bshutil\.copy\b',
+        r'\bos\.remove\b',
+        r'\bos\.unlink\b',
+        r'\bos\.rmdir\b',
+        r'\bos\.makedirs\b',
+        r'\bos\.mkdir\b',
+        r'\bpathlib\.Path\b.*\.write',
+        r'\bpathlib\.Path\b.*\.unlink',
+        # Dynamic imports and module manipulation
+        r'\bimportlib\b',
+        r'\b__loader__\b',
+        r'\b__spec__\b',
+        # Network access
+        r'\bsocket\b',
+        r'\burllib\b',
+        r'\brequests\b',
+        r'\bhttplib\b',
+        r'\bhttp\.client\b',
+        r'\bftplib\b',
+        # Serialization (potential code execution)
+        r'\bpickle\b',
+        r'\bcPickle\b',
+        r'\bmarshal\b',
+        r'\bshelve\b',
+        # Low-level access
+        r'\bctypes\b',
+        r'\bcffi\b',
+        # Environment access
+        r'\bos\.environ\b',
+        r'\bos\.getenv\b',
+        r'\bos\.putenv\b',
+        # Signal handling (can affect process)
+        r'\bsignal\b',
+        # Multiprocessing (can spawn processes)
+        r'\bmultiprocessing\b',
+        # Dangerous builtins access
+        r'\bglobals\s*\(\s*\)',
+        r'\blocals\s*\(\s*\)',
+        r'\bvars\s*\(\s*\)',
+        r'\bdir\s*\(\s*__builtins__',
+        r'\bgetattr\s*\(\s*__builtins__',
     ]
+
+    # Allowed imports for game-playing code
+    ALLOWED_IMPORTS = {
+        'numpy', 'np', 'math', 'random', 'collections',
+        'itertools', 'functools', 'typing', 'dataclasses',
+    }
 
     def validate(
         self,
         code: str,
         require_class: Optional[str] = None,
         require_method: Optional[str] = None,
-        check_safety: bool = False,
+        check_safety: bool = True,  # FIXED: Default to True for security
     ) -> ValidationResult:
         """
         Validate Python code.

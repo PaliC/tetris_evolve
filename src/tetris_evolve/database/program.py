@@ -5,7 +5,7 @@ This module provides data structures and storage for programs across
 generations, including metrics, lineage, and mutation history.
 """
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import json
@@ -98,7 +98,8 @@ class Program:
     metrics: Optional[ProgramMetrics] = None
     mutation_info: Optional[MutationInfo] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    # FIXED: Use timezone-aware datetime instead of deprecated utcnow()
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -132,7 +133,7 @@ class Program:
             metrics=metrics,
             mutation_info=mutation_info,
             metadata=d.get("metadata", {}),
-            created_at=d.get("created_at", datetime.utcnow().isoformat()),
+            created_at=d.get("created_at", datetime.now(timezone.utc).isoformat()),
         )
 
 

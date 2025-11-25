@@ -7,25 +7,36 @@ from typing import Dict, Any, Tuple
 
 
 # EVOLVE-BLOCK-START
-def compute_heuristics(board: np.ndarray, current_piece: np.ndarray, 
+def compute_heuristics(board: np.ndarray, current_piece: np.ndarray,
                        next_piece: np.ndarray, position: Tuple[int, int]) -> Dict[str, float]:
     """
     Compute heuristic features for the board state.
     This function can be evolved by AlphaEvolve to discover better features.
-    
+
     Args:
         board: (height, width) binary array of the board state
         current_piece: (4, 4) binary array of current tetromino
         next_piece: (4, 4) binary array of next tetromino
         position: (x, y) current piece position
-    
+
     Returns:
         Dictionary of heuristic values
     """
     height, width = board.shape
-    
+
     # Basic heuristics (these will be evolved)
-    aggregate_height = np.sum(np.max(np.arange(height)[:, None] * (board > 0), axis=0))
+    # FIXED: Correctly calculate aggregate height
+    # Height = (total_rows - row_index) for each filled cell
+    # Row 0 is at the top, so a block at row 0 has height = total_rows
+    column_heights = []
+    for col in range(width):
+        for row in range(height):
+            if board[row, col]:
+                column_heights.append(height - row)
+                break
+        else:
+            column_heights.append(0)
+    aggregate_height = sum(column_heights)
     complete_lines = np.sum(np.all(board, axis=1))
     holes = count_holes(board)
     bumpiness = compute_bumpiness(board)

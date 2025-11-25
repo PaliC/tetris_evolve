@@ -197,12 +197,15 @@ class RootLLMFunctions:
         )
 
         # Build result dict
+        # FIXED: Proper fallback logic - use env_metrics["score"] if available,
+        # otherwise fall back to generic_metrics["total_reward"]
+        score_metric = result.env_metrics.get("score") or result.generic_metrics.get("total_reward")
         metrics_dict = {
             "success": result.code_errors == 0,
-            "avg_score": result.env_metrics.get("score", result.generic_metrics.get("total_reward")).mean if result.env_metrics.get("score") else 0,
-            "std_score": result.env_metrics.get("score", result.generic_metrics.get("total_reward")).std if result.env_metrics.get("score") else 0,
-            "max_score": result.env_metrics.get("score", result.generic_metrics.get("total_reward")).max if result.env_metrics.get("score") else 0,
-            "min_score": result.env_metrics.get("score", result.generic_metrics.get("total_reward")).min if result.env_metrics.get("score") else 0,
+            "avg_score": score_metric.mean if score_metric else 0.0,
+            "std_score": score_metric.std if score_metric else 0.0,
+            "max_score": score_metric.max if score_metric else 0.0,
+            "min_score": score_metric.min if score_metric else 0.0,
             "games_played": len(result.episode_results),
             "code_errors": result.code_errors,
         }
@@ -221,10 +224,12 @@ class RootLLMFunctions:
                 )
                 self.program_database.add_program(program)
 
+            # FIXED: Proper fallback logic for lines_cleared
+            lines_metric = result.env_metrics.get("lines_cleared") or result.generic_metrics.get("episode_length")
             program.metrics = ProgramMetrics(
                 avg_score=metrics_dict["avg_score"],
                 std_score=metrics_dict["std_score"],
-                avg_lines_cleared=result.env_metrics.get("lines_cleared", result.generic_metrics.get("episode_length")).mean if result.env_metrics.get("lines_cleared") else 0,
+                avg_lines_cleared=lines_metric.mean if lines_metric else 0.0,
                 games_played=metrics_dict["games_played"],
                 max_score=metrics_dict["max_score"],
                 min_score=metrics_dict["min_score"],
@@ -322,9 +327,15 @@ class RootLLMFunctions:
                 avg_scores.append(0.0)
 
         # Calculate improvement rate (average improvement per generation)
+        # FIXED: Handle case when starting from 0 - use absolute improvement if initial score is 0
         improvement_rate = 0.0
-        if len(best_scores) >= 2 and best_scores[0] > 0:
-            improvement_rate = (best_scores[-1] - best_scores[0]) / (best_scores[0] * len(best_scores))
+        if len(best_scores) >= 2:
+            if best_scores[0] > 0:
+                # Percentage improvement rate
+                improvement_rate = (best_scores[-1] - best_scores[0]) / (best_scores[0] * len(best_scores))
+            elif best_scores[-1] > 0:
+                # Starting from 0 - report absolute improvement per generation
+                improvement_rate = best_scores[-1] / len(best_scores)
 
         # Calculate convergence indicator (how much scores have stabilized)
         convergence_indicator = 0.0
