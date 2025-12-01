@@ -11,80 +11,80 @@ Tests that verify multiple components work together correctly.
 ## Checklist
 
 ### 8.1 Test Setup
-- [ ] **8.1.1** Create `tests/test_integration.py`
+- [x] **8.1.1** Create `tests/test_integration.py`
   - Dependencies: 1-7 all complete
-- [ ] **8.1.2** Create shared fixtures for component mocking
+- [x] **8.1.2** Create shared fixtures for component mocking
   - Dependencies: 8.1.1
-- [ ] **8.1.3** Create helper functions for test data generation
+- [x] **8.1.3** Create helper functions for test data generation
   - Dependencies: 8.1.1
 
 ### 8.2 Evaluator → Tracker Integration
-- [ ] **8.2.1** Test: Evaluation results save correctly to experiment tracker
+- [x] **8.2.1** Test: Evaluation results save correctly to experiment tracker
   - Dependencies: 1.6.1, 3.5.2
   - Evaluate code → save trial → verify files
-- [ ] **8.2.2** Test: Multiple evaluations tracked with unique IDs
+- [x] **8.2.2** Test: Multiple evaluations tracked with unique IDs
   - Dependencies: 8.2.1
-- [ ] **8.2.3** Test: Failed evaluations recorded with error info
+- [x] **8.2.3** Test: Failed evaluations recorded with error info
   - Dependencies: 8.2.1
 
 ### 8.3 Child LLM → Evaluator Pipeline
-- [ ] **8.3.1** Test: Child generates code → code evaluates successfully
+- [x] **8.3.1** Test: Child generates code → code evaluates successfully
   - Dependencies: 5.5.2, 1.6.1
   - Mock LLM to return valid code
   - Verify evaluation runs
-- [ ] **8.3.2** Test: Child generates invalid code → error handled
+- [x] **8.3.2** Test: Child generates invalid code → error handled
   - Dependencies: 8.3.1
   - Mock LLM to return syntax error code
   - Verify error captured in result
-- [ ] **8.3.3** Test: Child retry produces valid code on second attempt
+- [x] **8.3.3** Test: Child retry produces valid code on second attempt
   - Dependencies: 5.6.3, 1.6.1
   - Mock LLM: first call invalid, second valid
 
 ### 8.4 Root → Child Pipeline
-- [ ] **8.4.1** Test: Root spawn_child creates trial and evaluates
+- [x] **8.4.1** Test: Root spawn_child creates trial and evaluates
   - Dependencies: 6.4.1, 5.5.2, 1.6.1
   - Call spawn_child_llm
   - Verify trial saved with code, metrics, reasoning
-- [ ] **8.4.2** Test: Root spawn_child with parent uses parent code
+- [x] **8.4.2** Test: Root spawn_child with parent uses parent code
   - Dependencies: 8.4.1
   - Create parent trial
   - Spawn child with parent_id
   - Verify parent code in prompt
-- [ ] **8.4.3** Test: Root spawn_child updates cost tracker
+- [x] **8.4.3** Test: Root spawn_child updates cost tracker
   - Dependencies: 6.4.1, 2.4.2
   - Spawn child
   - Verify cost recorded
 
 ### 8.5 Generation Lifecycle
-- [ ] **8.5.1** Test: Full generation cycle (spawn → evaluate → advance)
+- [x] **8.5.1** Test: Full generation cycle (spawn → evaluate → advance)
   - Dependencies: 6.4.1, 6.8.1, 3.4.3
   - Spawn multiple children
   - Advance generation
   - Verify all files created
-- [ ] **8.5.2** Test: Generation stats calculated correctly
+- [x] **8.5.2** Test: Generation stats calculated correctly
   - Dependencies: 8.5.1
   - Verify best_score, avg_score, num_trials
-- [ ] **8.5.3** Test: Selected parents recorded in generation
+- [x] **8.5.3** Test: Selected parents recorded in generation
   - Dependencies: 8.5.1
   - Verify selected_parents.json content
 
 ### 8.6 Cost → Controller Integration
-- [ ] **8.6.1** Test: Controller stops when cost limit reached
+- [x] **8.6.1** Test: Controller stops when cost limit reached
   - Dependencies: 7.6.3, 2.5.5
   - Set low budget
   - Run controller
   - Verify stops with cost reason
-- [ ] **8.6.2** Test: Cost accumulates across generations
+- [x] **8.6.2** Test: Cost accumulates across generations
   - Dependencies: 8.6.1
   - Run multiple generations
   - Verify total cost sums correctly
 
 ### 8.7 Full Pipeline (Mocked LLM)
-- [ ] **8.7.1** Test: Initial population creates N trials
+- [x] **8.7.1** Test: Initial population creates N trials
   - Dependencies: 7.5.2
   - Run with mocked LLM
   - Verify N trials created
-- [ ] **8.7.2** Test: Controller executes root code correctly
+- [x] **8.7.2** Test: Controller executes root code correctly
   - Dependencies: 7.7.6
   - Mock root LLM response
   - Verify functions called as expected
@@ -274,8 +274,8 @@ class TestGenerationLifecycle:
 
 ## Acceptance Criteria
 
-- [ ] All 16 integration tests pass
-- [ ] Tests use real components (not all mocked)
-- [ ] Tests verify cross-component data flow
-- [ ] Tests complete in reasonable time (<30s total)
-- [ ] Coverage of critical integration points
+- [x] All 16 integration tests pass
+- [x] Tests use real components (not all mocked)
+- [x] Tests verify cross-component data flow
+- [x] Tests complete in reasonable time (<30s total)
+- [x] Coverage of critical integration points

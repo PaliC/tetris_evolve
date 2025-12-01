@@ -16,13 +16,13 @@ REPL functions available to the root LLM for controlling evolution.
 ## Checklist
 
 ### 6.1 Project Setup
-- [ ] **6.1.1** Create `root_llm.py` in `src/tetris_evolve/llm/`
+- [x] **6.1.1** Create `root_llm.py` in `src/tetris_evolve/llm/`
   - Dependencies: 4.1.1 (llm folder exists)
-- [ ] **6.1.2** Create `tests/test_root_llm.py` skeleton
+- [x] **6.1.2** Create `tests/test_root_llm.py` skeleton
   - Dependencies: 6.1.1
 
 ### 6.2 Data Classes
-- [ ] **6.2.1** Define `PopulationMember` dataclass
+- [x] **6.2.1** Define `PopulationMember` dataclass
   - Dependencies: 6.1.1
   ```python
   @dataclass
@@ -35,7 +35,7 @@ REPL functions available to the root LLM for controlling evolution.
       survival_steps: int
       code_preview: str  # First 500 chars
   ```
-- [ ] **6.2.2** Define `GenerationSummary` dataclass
+- [x] **6.2.2** Define `GenerationSummary` dataclass
   - Dependencies: 6.1.1
   ```python
   @dataclass
@@ -46,21 +46,21 @@ REPL functions available to the root LLM for controlling evolution.
       num_trials: int
       best_trial_id: str
   ```
-- [ ] **6.2.3** Define `ResourceLimitError` exception
+- [x] **6.2.3** Define `ResourceLimitError` exception
   - Dependencies: 6.1.1
-- [ ] **6.2.4** Write tests for dataclass creation
+- [x] **6.2.4** Write tests for dataclass creation
   - Dependencies: 6.2.1, 6.2.2
 
 ### 6.3 RootLLMInterface Initialization
-- [ ] **6.3.1** Implement `RootLLMInterface.__init__(child_executor, evaluator, exp_tracker, cost_tracker, config)`
+- [x] **6.3.1** Implement `RootLLMInterface.__init__(child_executor, evaluator, exp_tracker, cost_tracker, config)`
   - Dependencies: 6.1.1, 1.7.1, 2.4.1, 3.3.1, 5.5.1
   - Store all component references
   - Initialize state tracking
-- [ ] **6.3.2** Write tests for initialization
+- [x] **6.3.2** Write tests for initialization
   - Dependencies: 6.3.1
 
 ### 6.4 spawn_child_llm Function
-- [ ] **6.4.1** Implement `spawn_child_llm(prompt, parent_id) -> dict`
+- [x] **6.4.1** Implement `spawn_child_llm(prompt, parent_id) -> dict`
   - Dependencies: 6.3.1, 5.5.2, 1.6.1
   - Check: children limit not exceeded
   - Get parent code if parent_id provided
@@ -69,89 +69,89 @@ REPL functions available to the root LLM for controlling evolution.
   - Save trial to experiment tracker
   - Record cost
   - Return: `{trial_id, code, metrics, reasoning}`
-- [ ] **6.4.2** Write tests for `spawn_child_llm` (mocked dependencies)
+- [x] **6.4.2** Write tests for `spawn_child_llm` (mocked dependencies)
   - Dependencies: 6.4.1
-- [ ] **6.4.3** Implement child limit enforcement
+- [x] **6.4.3** Implement child limit enforcement
   - Dependencies: 6.4.1
   - Track children spawned this generation
   - Raise `ResourceLimitError` if exceeded
-- [ ] **6.4.4** Write tests for child limit
+- [x] **6.4.4** Write tests for child limit
   - Dependencies: 6.4.3
 
 ### 6.5 evaluate_program Function
-- [ ] **6.5.1** Implement `evaluate_program(code, num_games) -> dict`
+- [x] **6.5.1** Implement `evaluate_program(code, num_games) -> dict`
   - Dependencies: 6.3.1, 1.6.1
   - Evaluate code without creating trial
   - Return metrics dict
-- [ ] **6.5.2** Write tests for `evaluate_program`
+- [x] **6.5.2** Write tests for `evaluate_program`
   - Dependencies: 6.5.1
 
 ### 6.6 Population Queries
-- [ ] **6.6.1** Implement `get_population() -> list[PopulationMember]`
+- [x] **6.6.1** Implement `get_population() -> list[PopulationMember]`
   - Dependencies: 6.2.1, 6.3.1, 3.6.1
   - Return current generation's trials with metrics
-- [ ] **6.6.2** Write tests for `get_population`
+- [x] **6.6.2** Write tests for `get_population`
   - Dependencies: 6.6.1
-- [ ] **6.6.3** Implement `get_trial_code(trial_id) -> str`
+- [x] **6.6.3** Implement `get_trial_code(trial_id) -> str`
   - Dependencies: 6.3.1, 3.5.4
   - Return full code for a trial
-- [ ] **6.6.4** Write tests for `get_trial_code`
+- [x] **6.6.4** Write tests for `get_trial_code`
   - Dependencies: 6.6.3
 
 ### 6.7 History Queries
-- [ ] **6.7.1** Implement `get_generation_history() -> list[GenerationSummary]`
+- [x] **6.7.1** Implement `get_generation_history() -> list[GenerationSummary]`
   - Dependencies: 6.2.2, 6.3.1, 3.6.3
   - Return stats from all previous generations
-- [ ] **6.7.2** Write tests for `get_generation_history`
+- [x] **6.7.2** Write tests for `get_generation_history`
   - Dependencies: 6.7.1
-- [ ] **6.7.3** Implement `get_improvement_rate() -> float`
+- [x] **6.7.3** Implement `get_improvement_rate() -> float`
   - Dependencies: 6.7.1
   - Calculate avg improvement over last N generations
-- [ ] **6.7.4** Write tests for `get_improvement_rate`
+- [x] **6.7.4** Write tests for `get_improvement_rate`
   - Dependencies: 6.7.3
 
 ### 6.8 Generation Advancement
-- [ ] **6.8.1** Implement `advance_generation(selected_trial_ids, reasoning) -> int`
+- [x] **6.8.1** Implement `advance_generation(selected_trial_ids, reasoning) -> int`
   - Dependencies: 6.3.1, 3.4.3
   - Check: generation limit not exceeded
   - Complete current generation in tracker
   - Start new generation
   - Reset children counter
   - Return new generation number
-- [ ] **6.8.2** Write tests for `advance_generation`
+- [x] **6.8.2** Write tests for `advance_generation`
   - Dependencies: 6.8.1
-- [ ] **6.8.3** Implement generation limit enforcement
+- [x] **6.8.3** Implement generation limit enforcement
   - Dependencies: 6.8.1
   - Raise `ResourceLimitError` if exceeded
-- [ ] **6.8.4** Write tests for generation limit
+- [x] **6.8.4** Write tests for generation limit
   - Dependencies: 6.8.3
 
 ### 6.9 Termination
-- [ ] **6.9.1** Implement `terminate_evolution(reason) -> dict`
+- [x] **6.9.1** Implement `terminate_evolution(reason) -> dict`
   - Dependencies: 6.3.1, 3.7.1, 3.6.5
   - Mark evolution as terminated
   - Save final stats
   - Return summary with best trial
-- [ ] **6.9.2** Write tests for `terminate_evolution`
+- [x] **6.9.2** Write tests for `terminate_evolution`
   - Dependencies: 6.9.1
 
 ### 6.10 Resource Queries
-- [ ] **6.10.1** Implement `get_cost_remaining() -> float`
+- [x] **6.10.1** Implement `get_cost_remaining() -> float`
   - Dependencies: 6.3.1, 2.5.3
-- [ ] **6.10.2** Write tests for `get_cost_remaining`
+- [x] **6.10.2** Write tests for `get_cost_remaining`
   - Dependencies: 6.10.1
-- [ ] **6.10.3** Implement `get_limits() -> dict`
+- [x] **6.10.3** Implement `get_limits() -> dict`
   - Dependencies: 6.3.1
   - Return: `{max_generations, max_cost, max_children_per_gen, current_gen, children_this_gen}`
-- [ ] **6.10.4** Write tests for `get_limits`
+- [x] **6.10.4** Write tests for `get_limits`
   - Dependencies: 6.10.3
 
 ### 6.11 State Properties
-- [ ] **6.11.1** Implement `is_terminated` property
+- [x] **6.11.1** Implement `is_terminated` property
   - Dependencies: 6.9.1
-- [ ] **6.11.2** Implement `current_generation` property
+- [x] **6.11.2** Implement `current_generation` property
   - Dependencies: 6.8.1
-- [ ] **6.11.3** Write tests for state properties
+- [x] **6.11.3** Write tests for state properties
   - Dependencies: 6.11.1, 6.11.2
 
 ---
@@ -337,9 +337,9 @@ else:
 
 ## Acceptance Criteria
 
-- [ ] All 17 tests pass
-- [ ] Code coverage > 90%
-- [ ] All functions work with mocked dependencies
-- [ ] Resource limits properly enforced
-- [ ] State tracked correctly across generations
-- [ ] Integration with all dependent components
+- [x] All 17 tests pass
+- [x] Code coverage > 90%
+- [x] All functions work with mocked dependencies
+- [x] Resource limits properly enforced
+- [x] State tracked correctly across generations
+- [x] Integration with all dependent components

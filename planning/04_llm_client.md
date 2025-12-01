@@ -12,17 +12,17 @@ Wrapper for LLM API calls (Anthropic Claude) with token counting and error handl
 ## Checklist
 
 ### 4.1 Project Setup
-- [ ] **4.1.1** Create directory structure `src/tetris_evolve/llm/`
+- [x] **4.1.1** Create directory structure `src/tetris_evolve/llm/`
   - Dependencies: None
-- [ ] **4.1.2** Create `__init__.py` files for package
+- [x] **4.1.2** Create `__init__.py` files for package
   - Dependencies: 4.1.1
-- [ ] **4.1.3** Create `tests/test_llm_client.py` skeleton
+- [x] **4.1.3** Create `tests/test_llm_client.py` skeleton
   - Dependencies: 4.1.1
-- [ ] **4.1.4** Add `anthropic` to dependencies
+- [x] **4.1.4** Add `anthropic` to dependencies
   - Dependencies: None
 
 ### 4.2 Data Classes
-- [ ] **4.2.1** Define `LLMResponse` dataclass
+- [x] **4.2.1** Define `LLMResponse` dataclass
   - Dependencies: 4.1.2
   ```python
   @dataclass
@@ -33,60 +33,60 @@ Wrapper for LLM API calls (Anthropic Claude) with token counting and error handl
       model: str
       stop_reason: str  # "end_turn", "max_tokens", etc.
   ```
-- [ ] **4.2.2** Write tests for `LLMResponse` creation
+- [x] **4.2.2** Write tests for `LLMResponse` creation
   - Dependencies: 4.2.1
 
 ### 4.3 LLMClient Class - Initialization
-- [ ] **4.3.1** Implement `LLMClient.__init__(model, api_key, max_retries)`
+- [x] **4.3.1** Implement `LLMClient.__init__(model, api_key, max_retries)`
   - Dependencies: 4.1.2, 4.1.4
   - Initialize Anthropic client
   - Store model name and retry config
-- [ ] **4.3.2** Write tests for initialization (with mocked client)
+- [x] **4.3.2** Write tests for initialization (with mocked client)
   - Dependencies: 4.3.1
-- [ ] **4.3.3** Implement API key from environment variable fallback
+- [x] **4.3.3** Implement API key from environment variable fallback
   - Dependencies: 4.3.1
   - Use `ANTHROPIC_API_KEY` env var if not provided
-- [ ] **4.3.4** Write tests for env var fallback
+- [x] **4.3.4** Write tests for env var fallback
   - Dependencies: 4.3.3
 
 ### 4.4 Message Sending
-- [ ] **4.4.1** Implement `send_message(messages, system, temperature, max_tokens) -> LLMResponse`
+- [x] **4.4.1** Implement `send_message(messages, system, temperature, max_tokens) -> LLMResponse`
   - Dependencies: 4.2.1, 4.3.1
   - Call Anthropic API
   - Return structured response with token counts
-- [ ] **4.4.2** Write tests for `send_message` (with mocked API)
+- [x] **4.4.2** Write tests for `send_message` (with mocked API)
   - Dependencies: 4.4.1
-- [ ] **4.4.3** Implement retry logic for transient errors
+- [x] **4.4.3** Implement retry logic for transient errors
   - Dependencies: 4.4.1
   - Retry on: rate limits, server errors
   - Exponential backoff
-- [ ] **4.4.4** Write tests for retry logic
+- [x] **4.4.4** Write tests for retry logic
   - Dependencies: 4.4.3
-- [ ] **4.4.5** Implement proper error handling
+- [x] **4.4.5** Implement proper error handling
   - Dependencies: 4.4.1
   - Handle: authentication errors, invalid requests, API errors
   - Raise appropriate exceptions
-- [ ] **4.4.6** Write tests for error handling
+- [x] **4.4.6** Write tests for error handling
   - Dependencies: 4.4.5
 
 ### 4.5 Token Counting
-- [ ] **4.5.1** Implement `count_tokens(text: str) -> int`
+- [x] **4.5.1** Implement `count_tokens(text: str) -> int`
   - Dependencies: 4.3.1
   - Use Anthropic's token counting API or estimate
-- [ ] **4.5.2** Write tests for `count_tokens`
+- [x] **4.5.2** Write tests for `count_tokens`
   - Dependencies: 4.5.1
-- [ ] **4.5.3** Implement `estimate_cost(input_text, output_tokens) -> float`
+- [x] **4.5.3** Implement `estimate_cost(input_text, output_tokens) -> float`
   - Dependencies: 4.5.1
   - Estimate cost before making call
-- [ ] **4.5.4** Write tests for `estimate_cost`
+- [x] **4.5.4** Write tests for `estimate_cost`
   - Dependencies: 4.5.3
 
 ### 4.6 Convenience Methods
-- [ ] **4.6.1** Implement `send_single(prompt: str, system: str = None) -> str`
+- [x] **4.6.1** Implement `send_single(prompt: str, system: str = None) -> str`
   - Dependencies: 4.4.1
   - Simplified interface for single prompt → response
   - Returns just the content string
-- [ ] **4.6.2** Write tests for `send_single`
+- [x] **4.6.2** Write tests for `send_single`
   - Dependencies: 4.6.1
 
 ---
@@ -233,9 +233,9 @@ def test_send_message_success(mock_anthropic):
 
 ## Acceptance Criteria
 
-- [ ] All 12 tests pass
-- [ ] Code coverage > 90%
-- [ ] Works with real Anthropic API (manual test)
-- [ ] Retry logic handles transient failures
-- [ ] Proper error messages for common failures
-- [ ] Token counting is reasonably accurate
+- [x] All 12 tests pass
+- [x] Code coverage > 90%
+- [x] Works with real Anthropic API (manual test)
+- [x] Retry logic handles transient failures
+- [x] Proper error messages for common failures
+- [x] Token counting is reasonably accurate

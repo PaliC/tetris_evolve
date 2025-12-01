@@ -14,13 +14,13 @@ Generates Tetris-playing code from prompts provided by the root LLM.
 ## Checklist
 
 ### 5.1 Project Setup
-- [ ] **5.1.1** Create `child_llm.py` in `src/tetris_evolve/llm/`
+- [x] **5.1.1** Create `child_llm.py` in `src/tetris_evolve/llm/`
   - Dependencies: 4.1.1 (llm folder exists)
-- [ ] **5.1.2** Create `tests/test_child_llm.py` skeleton
+- [x] **5.1.2** Create `tests/test_child_llm.py` skeleton
   - Dependencies: 5.1.1
 
 ### 5.2 Data Classes
-- [ ] **5.2.1** Define `ChildLLMResult` dataclass
+- [x] **5.2.1** Define `ChildLLMResult` dataclass
   - Dependencies: 5.1.1
   ```python
   @dataclass
@@ -33,89 +33,89 @@ Generates Tetris-playing code from prompts provided by the root LLM.
       success: bool
       error: Optional[str]
   ```
-- [ ] **5.2.2** Write tests for `ChildLLMResult` creation
+- [x] **5.2.2** Write tests for `ChildLLMResult` creation
   - Dependencies: 5.2.1
 
 ### 5.3 Prompt Templates
-- [ ] **5.3.1** Define `SYSTEM_PROMPT` constant
+- [x] **5.3.1** Define `SYSTEM_PROMPT` constant
   - Dependencies: 5.1.1
   - Tetris environment description
   - Observation format (PufferLib 244-dim)
   - Action space (7 actions)
   - Required interface (`choose_action`)
-- [ ] **5.3.2** Define `HELPER_CODE` constant
+- [x] **5.3.2** Define `HELPER_CODE` constant
   - Dependencies: 5.1.1
   - `parse_observation()` helper function
   - Piece names constant
-- [ ] **5.3.3** Implement `_build_user_prompt(task_prompt, parent_code) -> str`
+- [x] **5.3.3** Implement `_build_user_prompt(task_prompt, parent_code) -> str`
   - Dependencies: 5.3.1
   - Combines task from root with optional parent code
   - Specifies output format (`<reasoning>`, `<code>`)
-- [ ] **5.3.4** Write tests for prompt building
+- [x] **5.3.4** Write tests for prompt building
   - Dependencies: 5.3.3
 
 ### 5.4 Response Parsing
-- [ ] **5.4.1** Implement `_extract_code(response: str) -> str`
+- [x] **5.4.1** Implement `_extract_code(response: str) -> str`
   - Dependencies: 5.1.1
   - Extract content between `<code>` and `</code>` tags
   - Handle missing tags gracefully
-- [ ] **5.4.2** Write tests for `_extract_code`
+- [x] **5.4.2** Write tests for `_extract_code`
   - Dependencies: 5.4.1
   - Test: valid tags, missing tags, multiple code blocks
-- [ ] **5.4.3** Implement `_extract_reasoning(response: str) -> str`
+- [x] **5.4.3** Implement `_extract_reasoning(response: str) -> str`
   - Dependencies: 5.1.1
   - Extract content between `<reasoning>` and `</reasoning>` tags
   - Return empty string if not found
-- [ ] **5.4.4** Write tests for `_extract_reasoning`
+- [x] **5.4.4** Write tests for `_extract_reasoning`
   - Dependencies: 5.4.3
-- [ ] **5.4.5** Implement `_clean_code(code: str) -> str`
+- [x] **5.4.5** Implement `_clean_code(code: str) -> str`
   - Dependencies: 5.4.1
   - Remove markdown code fences if present
   - Strip leading/trailing whitespace
   - Normalize indentation
-- [ ] **5.4.6** Write tests for `_clean_code`
+- [x] **5.4.6** Write tests for `_clean_code`
   - Dependencies: 5.4.5
 
 ### 5.5 ChildLLMExecutor Class
-- [ ] **5.5.1** Implement `ChildLLMExecutor.__init__(llm_client, temperature)`
+- [x] **5.5.1** Implement `ChildLLMExecutor.__init__(llm_client, temperature)`
   - Dependencies: 5.1.1, 4.4.1
   - Store LLM client reference
   - Store generation parameters
-- [ ] **5.5.2** Implement `generate(prompt, parent_code) -> ChildLLMResult`
+- [x] **5.5.2** Implement `generate(prompt, parent_code) -> ChildLLMResult`
   - Dependencies: 5.2.1, 5.3.3, 5.4.1, 5.4.3, 5.5.1
   - Build full prompt
   - Call LLM
   - Parse response
   - Return structured result
-- [ ] **5.5.3** Write tests for `generate` with mocked LLM
+- [x] **5.5.3** Write tests for `generate` with mocked LLM
   - Dependencies: 5.5.2
-- [ ] **5.5.4** Implement error handling for LLM failures
+- [x] **5.5.4** Implement error handling for LLM failures
   - Dependencies: 5.5.2
   - Handle: API errors, parsing failures, empty responses
-- [ ] **5.5.5** Write tests for error handling
+- [x] **5.5.5** Write tests for error handling
   - Dependencies: 5.5.4
 
 ### 5.6 Code Validation Integration
-- [ ] **5.6.1** Implement `generate_and_validate(prompt, parent_code, evaluator) -> ChildLLMResult`
+- [x] **5.6.1** Implement `generate_and_validate(prompt, parent_code, evaluator) -> ChildLLMResult`
   - Dependencies: 5.5.2, 1.3.1 (syntax validation)
   - Generate code
   - Validate syntax
   - Update result with validation status
-- [ ] **5.6.2** Write tests for `generate_and_validate`
+- [x] **5.6.2** Write tests for `generate_and_validate`
   - Dependencies: 5.6.1
-- [ ] **5.6.3** Implement retry on invalid code (optional)
+- [x] **5.6.3** Implement retry on invalid code (optional)
   - Dependencies: 5.6.1
   - If syntax invalid, retry with error feedback
   - Max 2 retries
-- [ ] **5.6.4** Write tests for retry logic
+- [x] **5.6.4** Write tests for retry logic
   - Dependencies: 5.6.3
 
 ### 5.7 Batch Generation
-- [ ] **5.7.1** Implement `generate_batch(prompts: list[tuple[str, str]]) -> list[ChildLLMResult]`
+- [x] **5.7.1** Implement `generate_batch(prompts: list[tuple[str, str]]) -> list[ChildLLMResult]`
   - Dependencies: 5.5.2
   - Generate multiple codes in sequence
   - Could be parallelized later
-- [ ] **5.7.2** Write tests for `generate_batch`
+- [x] **5.7.2** Write tests for `generate_batch`
   - Dependencies: 5.7.1
 
 ---
@@ -317,9 +317,9 @@ def count_holes_if_drop(board, col):
 
 ## Acceptance Criteria
 
-- [ ] All 14 tests pass
-- [ ] Code coverage > 90%
-- [ ] Can generate valid Tetris player code
-- [ ] Properly extracts code and reasoning from responses
-- [ ] Handles LLM errors gracefully
-- [ ] Retry logic works for invalid code
+- [x] All 14 tests pass
+- [x] Code coverage > 90%
+- [x] Can generate valid Tetris player code
+- [x] Properly extracts code and reasoning from responses
+- [x] Handles LLM errors gracefully
+- [x] Retry logic works for invalid code

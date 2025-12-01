@@ -12,17 +12,17 @@ Safely executes evolved code and measures Tetris performance using PufferLib.
 ## Checklist
 
 ### 1.1 Project Setup
-- [ ] **1.1.1** Create directory structure `src/tetris_evolve/evaluation/`
+- [x] **1.1.1** Create directory structure `src/tetris_evolve/evaluation/`
   - Dependencies: None
-- [ ] **1.1.2** Create `__init__.py` files for package
+- [x] **1.1.2** Create `__init__.py` files for package
   - Dependencies: 1.1.1
-- [ ] **1.1.3** Create `tests/test_evaluator.py` skeleton
+- [x] **1.1.3** Create `tests/test_evaluator.py` skeleton
   - Dependencies: 1.1.1
-- [ ] **1.1.4** Verify PufferLib Tetris import works
+- [x] **1.1.4** Verify PufferLib Tetris import works
   - Dependencies: None (external dep)
 
 ### 1.2 Data Classes
-- [ ] **1.2.1** Define `GameResult` dataclass
+- [x] **1.2.1** Define `GameResult` dataclass
   - Dependencies: 1.1.2
   ```python
   @dataclass
@@ -33,7 +33,7 @@ Safely executes evolved code and measures Tetris performance using PufferLib.
       ep_return: float
       terminated_reason: str  # "overflow", "max_ticks", "error"
   ```
-- [ ] **1.2.2** Define `EvaluationResult` dataclass
+- [x] **1.2.2** Define `EvaluationResult` dataclass
   - Dependencies: 1.2.1
   ```python
   @dataclass
@@ -49,79 +49,79 @@ Safely executes evolved code and measures Tetris performance using PufferLib.
       min_score: Optional[int]
       game_results: list[GameResult]
   ```
-- [ ] **1.2.3** Write tests for dataclass creation
+- [x] **1.2.3** Write tests for dataclass creation
   - Dependencies: 1.2.1, 1.2.2
 
 ### 1.3 Code Validation
-- [ ] **1.3.1** Implement `_validate_syntax(code: str) -> tuple[bool, str]`
+- [x] **1.3.1** Implement `_validate_syntax(code: str) -> tuple[bool, str]`
   - Dependencies: 1.1.2
   - Uses `ast.parse()` to check syntax
-- [ ] **1.3.2** Write tests for syntax validation (valid, invalid, edge cases)
+- [x] **1.3.2** Write tests for syntax validation (valid, invalid, edge cases)
   - Dependencies: 1.3.1
-- [ ] **1.3.3** Implement `_check_safety(code: str) -> tuple[bool, str]`
+- [x] **1.3.3** Implement `_check_safety(code: str) -> tuple[bool, str]`
   - Dependencies: 1.1.2
   - Block: `os`, `subprocess`, `sys`, `eval`, `exec`, `__import__`
   - Block: file operations, network access
-- [ ] **1.3.4** Write tests for safety checks
+- [x] **1.3.4** Write tests for safety checks
   - Dependencies: 1.3.3
-- [ ] **1.3.5** Implement `_validate_interface(code: str) -> tuple[bool, str]`
+- [x] **1.3.5** Implement `_validate_interface(code: str) -> tuple[bool, str]`
   - Dependencies: 1.1.2
   - Check: `choose_action` function exists
   - Check: function signature is correct
-- [ ] **1.3.6** Write tests for interface validation
+- [x] **1.3.6** Write tests for interface validation
   - Dependencies: 1.3.5
 
 ### 1.4 Code Execution
-- [ ] **1.4.1** Implement `_execute_code(code: str) -> Callable`
+- [x] **1.4.1** Implement `_execute_code(code: str) -> Callable`
   - Dependencies: 1.3.1, 1.3.3, 1.3.5
   - Execute in restricted namespace
   - Extract `choose_action` function
-- [ ] **1.4.2** Write tests for code execution (valid code extracts function)
+- [x] **1.4.2** Write tests for code execution (valid code extracts function)
   - Dependencies: 1.4.1
-- [ ] **1.4.3** Write tests for execution errors (runtime errors caught)
+- [x] **1.4.3** Write tests for execution errors (runtime errors caught)
   - Dependencies: 1.4.1
 
 ### 1.5 Single Game Execution
-- [ ] **1.5.1** Implement `_run_single_game(player_fn, env, max_steps) -> GameResult`
+- [x] **1.5.1** Implement `_run_single_game(player_fn, env, max_steps) -> GameResult`
   - Dependencies: 1.2.1, 1.4.1, 1.1.4
   - Create PufferLib Tetris env
   - Run until terminal or max_steps
   - Catch and handle player errors
-- [ ] **1.5.2** Write tests for single game (completes, returns valid GameResult)
+- [x] **1.5.2** Write tests for single game (completes, returns valid GameResult)
   - Dependencies: 1.5.1
-- [ ] **1.5.3** Implement timeout handling for slow player functions
+- [x] **1.5.3** Implement timeout handling for slow player functions
   - Dependencies: 1.5.1
   - Use `signal.alarm` or `multiprocessing` with timeout
-- [ ] **1.5.4** Write tests for timeout (infinite loop terminated)
+- [x] **1.5.4** Write tests for timeout (infinite loop terminated)
   - Dependencies: 1.5.3
 
 ### 1.6 Multi-Game Evaluation
-- [ ] **1.6.1** Implement `evaluate(code: str, trial_id: str, num_games: int) -> EvaluationResult`
+- [x] **1.6.1** Implement `evaluate(code: str, trial_id: str, num_games: int) -> EvaluationResult`
   - Dependencies: 1.2.2, 1.4.1, 1.5.1
   - Run num_games episodes
   - Aggregate results
   - Handle partial failures gracefully
-- [ ] **1.6.2** Write tests for multi-game evaluation
+- [x] **1.6.2** Write tests for multi-game evaluation
   - Dependencies: 1.6.1
-- [ ] **1.6.3** Implement result aggregation (avg, min, max, std)
+- [x] **1.6.3** Implement result aggregation (avg, min, max, std)
   - Dependencies: 1.6.1
-- [ ] **1.6.4** Write tests for aggregation correctness
+- [x] **1.6.4** Write tests for aggregation correctness
   - Dependencies: 1.6.3
 
 ### 1.7 ProgramEvaluator Class
-- [ ] **1.7.1** Implement `ProgramEvaluator.__init__(num_games, max_steps, timeout_seconds)`
+- [x] **1.7.1** Implement `ProgramEvaluator.__init__(num_games, max_steps, timeout_seconds)`
   - Dependencies: 1.6.1
-- [ ] **1.7.2** Implement `ProgramEvaluator.evaluate(code, trial_id)` public method
+- [x] **1.7.2** Implement `ProgramEvaluator.evaluate(code, trial_id)` public method
   - Dependencies: 1.7.1, 1.6.1
-- [ ] **1.7.3** Write integration test: valid code → metrics
+- [x] **1.7.3** Write integration test: valid code → metrics
   - Dependencies: 1.7.2
-- [ ] **1.7.4** Write integration test: syntax error → error result
+- [x] **1.7.4** Write integration test: syntax error → error result
   - Dependencies: 1.7.2
-- [ ] **1.7.5** Write integration test: runtime error → error result
+- [x] **1.7.5** Write integration test: runtime error → error result
   - Dependencies: 1.7.2
-- [ ] **1.7.6** Write integration test: timeout → error result
+- [x] **1.7.6** Write integration test: timeout → error result
   - Dependencies: 1.7.2
-- [ ] **1.7.7** Write integration test: unsafe code → error result
+- [x] **1.7.7** Write integration test: unsafe code → error result
   - Dependencies: 1.7.2
 
 ---
@@ -227,9 +227,9 @@ class ProgramEvaluator:
 
 ## Acceptance Criteria
 
-- [ ] All 19 tests pass
-- [ ] Code coverage > 90%
-- [ ] Can evaluate a simple hard-drop agent
-- [ ] Properly handles all error cases
-- [ ] Timeout works for infinite loops
-- [ ] Safety checks block dangerous code
+- [x] All 19 tests pass
+- [x] Code coverage > 90%
+- [x] Can evaluate a simple hard-drop agent
+- [x] Properly handles all error cases
+- [x] Timeout works for infinite loops
+- [x] Safety checks block dangerous code

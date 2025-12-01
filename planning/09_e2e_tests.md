@@ -11,100 +11,100 @@ Full system tests that verify the complete evolution pipeline works correctly.
 ## Checklist
 
 ### 9.1 Test Setup
-- [ ] **9.1.1** Create `tests/test_e2e.py`
+- [x] **9.1.1** Create `tests/test_e2e.py`
   - Dependencies: 1-8 all complete
-- [ ] **9.1.2** Create mock LLM that returns deterministic responses
+- [x] **9.1.2** Create mock LLM that returns deterministic responses
   - Dependencies: 9.1.1
   - Returns valid code when prompted
   - Tracks call count for verification
-- [ ] **9.1.3** Create test configuration files
+- [x] **9.1.3** Create test configuration files
   - Dependencies: 9.1.1
   - Small limits for fast tests (2 generations, $1 budget)
-- [ ] **9.1.4** Create helper to verify experiment directory structure
+- [x] **9.1.4** Create helper to verify experiment directory structure
   - Dependencies: 9.1.1
 
 ### 9.2 Minimal Evolution Test
-- [ ] **9.2.1** Test: Single generation with 2 children completes
+- [x] **9.2.1** Test: Single generation with 2 children completes
   - Dependencies: 9.1.2, 9.1.3
   - Config: max_generations=1, initial_population=2
   - Verify: 2 trials created, generation completes
-- [ ] **9.2.2** Test: Experiment directory structure created correctly
+- [x] **9.2.2** Test: Experiment directory structure created correctly
   - Dependencies: 9.2.1
   - Verify: experiment.json, generations/, cost_history.json
-- [ ] **9.2.3** Test: All trial files present
+- [x] **9.2.3** Test: All trial files present
   - Dependencies: 9.2.1
   - Verify: code.py, metrics.json, reasoning.md for each trial
 
 ### 9.3 Multi-Generation Evolution
-- [ ] **9.3.1** Test: 3 generations with selection completes
+- [x] **9.3.1** Test: 3 generations with selection completes
   - Dependencies: 9.2.1
   - Mock root LLM to spawn, select, advance
   - Verify: 3 generation folders created
-- [ ] **9.3.2** Test: Parent-child relationships tracked
+- [x] **9.3.2** Test: Parent-child relationships tracked
   - Dependencies: 9.3.1
   - Verify: trial.json has correct parent_id
-- [ ] **9.3.3** Test: Generation stats calculated
+- [x] **9.3.3** Test: Generation stats calculated
   - Dependencies: 9.3.1
   - Verify: generation_stats.json has best_score, avg_score
 
 ### 9.4 Hard Limit Enforcement
-- [ ] **9.4.1** Test: Stops at max_generations
+- [x] **9.4.1** Test: Stops at max_generations
   - Dependencies: 9.2.1
   - Config: max_generations=2
   - Verify: terminates with "generation_limit" reason
-- [ ] **9.4.2** Test: Stops at max_cost
+- [x] **9.4.2** Test: Stops at max_cost
   - Dependencies: 9.2.1
   - Config: max_cost=0.01
   - Verify: terminates with "cost_limit" reason
-- [ ] **9.4.3** Test: Stops at max_time
+- [x] **9.4.3** Test: Stops at max_time
   - Dependencies: 9.2.1
   - Config: max_time_minutes=0.01
   - Verify: terminates with "time_limit" reason
 
 ### 9.5 Root LLM Termination
-- [ ] **9.5.1** Test: Root LLM can voluntarily terminate
+- [x] **9.5.1** Test: Root LLM can voluntarily terminate
   - Dependencies: 9.2.1
   - Mock root to call terminate_evolution()
   - Verify: terminates with custom reason
-- [ ] **9.5.2** Test: Root termination saves final state
+- [x] **9.5.2** Test: Root termination saves final state
   - Dependencies: 9.5.1
   - Verify: best trial recorded in experiment.json
 
 ### 9.6 Error Recovery
-- [ ] **9.6.1** Test: Continues when child generates invalid code
+- [x] **9.6.1** Test: Continues when child generates invalid code
   - Dependencies: 9.2.1
   - Mock child to return syntax error code sometimes
   - Verify: evolution continues, error recorded
-- [ ] **9.6.2** Test: Continues when evaluation fails
+- [x] **9.6.2** Test: Continues when evaluation fails
   - Dependencies: 9.2.1
   - Mock evaluator to fail sometimes
   - Verify: evolution continues, failure recorded
-- [ ] **9.6.3** Test: Root LLM error handled gracefully
+- [x] **9.6.3** Test: Root LLM error handled gracefully
   - Dependencies: 9.2.1
   - Mock root LLM to return unparseable code
   - Verify: logs error, continues or terminates safely
 
 ### 9.7 Resume Functionality
-- [ ] **9.7.1** Test: Resume continues from last generation
+- [x] **9.7.1** Test: Resume continues from last generation
   - Dependencies: 9.3.1
   - Run 2 generations, stop
   - Resume and run 1 more
   - Verify: 3 total generations, state preserved
-- [ ] **9.7.2** Test: Resume preserves cost history
+- [x] **9.7.2** Test: Resume preserves cost history
   - Dependencies: 9.7.1
   - Verify: costs from before resume are included
-- [ ] **9.7.3** Test: Resume loads population correctly
+- [x] **9.7.3** Test: Resume loads population correctly
   - Dependencies: 9.7.1
   - Verify: parent IDs reference original trials
 
 ### 9.8 Output Verification
-- [ ] **9.8.1** Test: Final result contains best code
+- [x] **9.8.1** Test: Final result contains best code
   - Dependencies: 9.3.1
   - Verify: best_code is valid, evaluatable
-- [ ] **9.8.2** Test: Cost tracking accurate
+- [x] **9.8.2** Test: Cost tracking accurate
   - Dependencies: 9.3.1
   - Compare tracked cost vs expected from mocks
-- [ ] **9.8.3** Test: All reasoning recorded
+- [x] **9.8.3** Test: All reasoning recorded
   - Dependencies: 9.3.1
   - Verify: root_llm_reasoning.md for each generation
 
@@ -393,10 +393,10 @@ For faster tests, mock the evaluator to return predetermined scores instead of r
 
 ## Acceptance Criteria
 
-- [ ] All 20 E2E tests pass
-- [ ] Tests complete in < 60 seconds total
-- [ ] Tests use realistic mock data
-- [ ] Tests verify actual file output
-- [ ] Tests cover all termination conditions
-- [ ] Resume functionality fully tested
-- [ ] Error handling verified
+- [x] All 20 E2E tests pass
+- [x] Tests complete in < 60 seconds total
+- [x] Tests use realistic mock data
+- [x] Tests verify actual file output
+- [x] Tests cover all termination conditions
+- [x] Resume functionality fully tested
+- [x] Error handling verified

@@ -12,15 +12,15 @@ Tracks all LLM API costs with per-call granularity and enforces budget limits.
 ## Checklist
 
 ### 2.1 Project Setup
-- [ ] **2.1.1** Create directory structure `src/tetris_evolve/tracking/`
+- [x] **2.1.1** Create directory structure `src/tetris_evolve/tracking/`
   - Dependencies: None
-- [ ] **2.1.2** Create `__init__.py` files for package
+- [x] **2.1.2** Create `__init__.py` files for package
   - Dependencies: 2.1.1
-- [ ] **2.1.3** Create `tests/test_cost_tracker.py` skeleton
+- [x] **2.1.3** Create `tests/test_cost_tracker.py` skeleton
   - Dependencies: 2.1.1
 
 ### 2.2 Data Classes
-- [ ] **2.2.1** Define `LLMCall` dataclass
+- [x] **2.2.1** Define `LLMCall` dataclass
   - Dependencies: 2.1.2
   ```python
   @dataclass
@@ -34,11 +34,11 @@ Tracks all LLM API costs with per-call granularity and enforces budget limits.
       output_tokens: int
       cost_usd: float
   ```
-- [ ] **2.2.2** Write tests for `LLMCall` creation
+- [x] **2.2.2** Write tests for `LLMCall` creation
   - Dependencies: 2.2.1
 
 ### 2.3 Cost Calculation
-- [ ] **2.3.1** Define default cost config structure
+- [x] **2.3.1** Define default cost config structure
   - Dependencies: 2.1.2
   ```python
   DEFAULT_COST_CONFIG = {
@@ -46,71 +46,71 @@ Tracks all LLM API costs with per-call granularity and enforces budget limits.
       "claude-haiku": {"input": 0.00025, "output": 0.00125},
   }
   ```
-- [ ] **2.3.2** Implement `_calculate_cost(model, input_tokens, output_tokens) -> float`
+- [x] **2.3.2** Implement `_calculate_cost(model, input_tokens, output_tokens) -> float`
   - Dependencies: 2.3.1
   - Formula: `(input_tokens * input_rate + output_tokens * output_rate) / 1000`
-- [ ] **2.3.3** Write tests for cost calculation (various models, token counts)
+- [x] **2.3.3** Write tests for cost calculation (various models, token counts)
   - Dependencies: 2.3.2
-- [ ] **2.3.4** Handle unknown model gracefully (raise or use default)
+- [x] **2.3.4** Handle unknown model gracefully (raise or use default)
   - Dependencies: 2.3.2
-- [ ] **2.3.5** Write tests for unknown model handling
+- [x] **2.3.5** Write tests for unknown model handling
   - Dependencies: 2.3.4
 
 ### 2.4 CostTracker Class - Core
-- [ ] **2.4.1** Implement `CostTracker.__init__(max_cost_usd, cost_config)`
+- [x] **2.4.1** Implement `CostTracker.__init__(max_cost_usd, cost_config)`
   - Dependencies: 2.3.1
-- [ ] **2.4.2** Implement `record_call(model, role, generation, input_tokens, output_tokens, trial_id) -> LLMCall`
+- [x] **2.4.2** Implement `record_call(model, role, generation, input_tokens, output_tokens, trial_id) -> LLMCall`
   - Dependencies: 2.2.1, 2.3.2, 2.4.1
   - Creates `LLMCall` with calculated cost
   - Appends to internal list
   - Returns the created call
-- [ ] **2.4.3** Write tests for `record_call`
+- [x] **2.4.3** Write tests for `record_call`
   - Dependencies: 2.4.2
 
 ### 2.5 CostTracker Class - Queries
-- [ ] **2.5.1** Implement `get_total_cost() -> float`
+- [x] **2.5.1** Implement `get_total_cost() -> float`
   - Dependencies: 2.4.2
   - Sum of all call costs
-- [ ] **2.5.2** Write tests for `get_total_cost`
+- [x] **2.5.2** Write tests for `get_total_cost`
   - Dependencies: 2.5.1
-- [ ] **2.5.3** Implement `get_remaining_budget() -> float`
+- [x] **2.5.3** Implement `get_remaining_budget() -> float`
   - Dependencies: 2.5.1
   - `max_cost_usd - get_total_cost()`
-- [ ] **2.5.4** Write tests for `get_remaining_budget`
+- [x] **2.5.4** Write tests for `get_remaining_budget`
   - Dependencies: 2.5.3
-- [ ] **2.5.5** Implement `would_exceed_budget(estimated_cost: float) -> bool`
+- [x] **2.5.5** Implement `would_exceed_budget(estimated_cost: float) -> bool`
   - Dependencies: 2.5.1
   - `get_total_cost() + estimated_cost > max_cost_usd`
-- [ ] **2.5.6** Write tests for `would_exceed_budget`
+- [x] **2.5.6** Write tests for `would_exceed_budget`
   - Dependencies: 2.5.5
 
 ### 2.6 CostTracker Class - Summaries
-- [ ] **2.6.1** Implement `get_summary() -> dict`
+- [x] **2.6.1** Implement `get_summary() -> dict`
   - Dependencies: 2.4.2
   - Returns breakdown by role (root/child)
   - Total calls, tokens, cost per role
-- [ ] **2.6.2** Write tests for `get_summary`
+- [x] **2.6.2** Write tests for `get_summary`
   - Dependencies: 2.6.1
-- [ ] **2.6.3** Implement `get_per_generation_costs() -> list[dict]`
+- [x] **2.6.3** Implement `get_per_generation_costs() -> list[dict]`
   - Dependencies: 2.4.2
   - Returns cost breakdown per generation
-- [ ] **2.6.4** Write tests for `get_per_generation_costs`
+- [x] **2.6.4** Write tests for `get_per_generation_costs`
   - Dependencies: 2.6.3
 
 ### 2.7 Persistence
-- [ ] **2.7.1** Implement `save(path: Path) -> None`
+- [x] **2.7.1** Implement `save(path: Path) -> None`
   - Dependencies: 2.4.2, 2.6.1, 2.6.3
   - Save as JSON with full call history and summaries
-- [ ] **2.7.2** Write tests for `save` (file created, valid JSON)
+- [x] **2.7.2** Write tests for `save` (file created, valid JSON)
   - Dependencies: 2.7.1
-- [ ] **2.7.3** Implement `load(path: Path, cost_config: dict) -> CostTracker` (classmethod)
+- [x] **2.7.3** Implement `load(path: Path, cost_config: dict) -> CostTracker` (classmethod)
   - Dependencies: 2.7.1
   - Load from JSON, reconstruct state
-- [ ] **2.7.4** Write tests for `load` (round-trip save/load)
+- [x] **2.7.4** Write tests for `load` (round-trip save/load)
   - Dependencies: 2.7.3
-- [ ] **2.7.5** Handle missing/corrupted file gracefully
+- [x] **2.7.5** Handle missing/corrupted file gracefully
   - Dependencies: 2.7.3
-- [ ] **2.7.6** Write tests for error handling in load
+- [x] **2.7.6** Write tests for error handling in load
   - Dependencies: 2.7.5
 
 ---
@@ -242,9 +242,9 @@ class CostTracker:
 
 ## Acceptance Criteria
 
-- [ ] All 16 tests pass
-- [ ] Code coverage > 90%
-- [ ] Can track costs across multiple generations
-- [ ] Budget enforcement works correctly
-- [ ] Save/load round-trip preserves all data
-- [ ] Unknown models handled gracefully
+- [x] All 16 tests pass
+- [x] Code coverage > 90%
+- [x] Can track costs across multiple generations
+- [x] Budget enforcement works correctly
+- [x] Save/load round-trip preserves all data
+- [x] Unknown models handled gracefully

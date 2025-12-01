@@ -12,15 +12,15 @@ Main orchestrator that runs the evolution loop and enforces hard limits.
 ## Checklist
 
 ### 7.1 Project Setup
-- [ ] **7.1.1** Create directory structure `src/tetris_evolve/evolution/`
+- [x] **7.1.1** Create directory structure `src/tetris_evolve/evolution/`
   - Dependencies: None
-- [ ] **7.1.2** Create `__init__.py` files for package
+- [x] **7.1.2** Create `__init__.py` files for package
   - Dependencies: 7.1.1
-- [ ] **7.1.3** Create `tests/test_controller.py` skeleton
+- [x] **7.1.3** Create `tests/test_controller.py` skeleton
   - Dependencies: 7.1.1
 
 ### 7.2 Configuration
-- [ ] **7.2.1** Define `EvolutionConfig` dataclass
+- [x] **7.2.1** Define `EvolutionConfig` dataclass
   - Dependencies: 7.1.2
   ```python
   @dataclass
@@ -37,20 +37,20 @@ Main orchestrator that runs the evolution loop and enforces hard limits.
       child_temperature: float
       output_dir: Path
   ```
-- [ ] **7.2.2** Implement `EvolutionConfig.from_yaml(path) -> EvolutionConfig`
+- [x] **7.2.2** Implement `EvolutionConfig.from_yaml(path) -> EvolutionConfig`
   - Dependencies: 7.2.1
   - Load config from YAML file
-- [ ] **7.2.3** Write tests for config loading
+- [x] **7.2.3** Write tests for config loading
   - Dependencies: 7.2.2
-- [ ] **7.2.4** Implement config validation
+- [x] **7.2.4** Implement config validation
   - Dependencies: 7.2.1
   - Check all required fields present
   - Check values are valid (positive, within ranges)
-- [ ] **7.2.5** Write tests for config validation
+- [x] **7.2.5** Write tests for config validation
   - Dependencies: 7.2.4
 
 ### 7.3 Result Data Classes
-- [ ] **7.3.1** Define `EvolutionResult` dataclass
+- [x] **7.3.1** Define `EvolutionResult` dataclass
   - Dependencies: 7.1.2
   ```python
   @dataclass
@@ -64,24 +64,24 @@ Main orchestrator that runs the evolution loop and enforces hard limits.
       best_code: str
       termination_reason: str
   ```
-- [ ] **7.3.2** Write tests for result dataclass
+- [x] **7.3.2** Write tests for result dataclass
   - Dependencies: 7.3.1
 
 ### 7.4 EvolutionController Initialization
-- [ ] **7.4.1** Implement `EvolutionController.__init__(config)`
+- [x] **7.4.1** Implement `EvolutionController.__init__(config)`
   - Dependencies: 7.2.1
   - Initialize all trackers (cost, experiment)
   - Initialize LLM clients
   - Initialize evaluator
   - Initialize root interface
-- [ ] **7.4.2** Write tests for initialization (mocked dependencies)
+- [x] **7.4.2** Write tests for initialization (mocked dependencies)
   - Dependencies: 7.4.1
-- [ ] **7.4.3** Implement component wiring
+- [x] **7.4.3** Implement component wiring
   - Dependencies: 7.4.1, 1-6 all
   - Connect: evaluator → child executor → root interface
 
 ### 7.5 Initial Population
-- [ ] **7.5.1** Define initial prompts list
+- [x] **7.5.1** Define initial prompts list
   - Dependencies: 7.1.2
   ```python
   INITIAL_PROMPTS = [
@@ -92,84 +92,84 @@ Main orchestrator that runs the evolution loop and enforces hard limits.
       "Create a simple random baseline Tetris player",
   ]
   ```
-- [ ] **7.5.2** Implement `_create_initial_population()`
+- [x] **7.5.2** Implement `_create_initial_population()`
   - Dependencies: 7.5.1, 6.4.1
   - Use root interface to spawn initial children
   - No parent_id for initial population
-- [ ] **7.5.3** Write tests for initial population
+- [x] **7.5.3** Write tests for initial population
   - Dependencies: 7.5.2
 
 ### 7.6 Hard Limit Checking
-- [ ] **7.6.1** Implement `_check_generation_limit() -> Optional[str]`
+- [x] **7.6.1** Implement `_check_generation_limit() -> Optional[str]`
   - Dependencies: 7.4.1
   - Return termination reason if exceeded, None otherwise
-- [ ] **7.6.2** Write tests for generation limit
+- [x] **7.6.2** Write tests for generation limit
   - Dependencies: 7.6.1
-- [ ] **7.6.3** Implement `_check_cost_limit() -> Optional[str]`
+- [x] **7.6.3** Implement `_check_cost_limit() -> Optional[str]`
   - Dependencies: 7.4.1, 2.5.1
   - Return termination reason if exceeded
-- [ ] **7.6.4** Write tests for cost limit
+- [x] **7.6.4** Write tests for cost limit
   - Dependencies: 7.6.3
-- [ ] **7.6.5** Implement `_check_time_limit() -> Optional[str]`
+- [x] **7.6.5** Implement `_check_time_limit() -> Optional[str]`
   - Dependencies: 7.4.1
   - Track wall-clock time since start
   - Return termination reason if exceeded
-- [ ] **7.6.6** Write tests for time limit
+- [x] **7.6.6** Write tests for time limit
   - Dependencies: 7.6.5
-- [ ] **7.6.7** Implement `_check_all_limits() -> Optional[str]`
+- [x] **7.6.7** Implement `_check_all_limits() -> Optional[str]`
   - Dependencies: 7.6.1, 7.6.3, 7.6.5
   - Check all limits, return first exceeded
-- [ ] **7.6.8** Write tests for combined limit checking
+- [x] **7.6.8** Write tests for combined limit checking
   - Dependencies: 7.6.7
 
 ### 7.7 Root LLM Turn Execution
-- [ ] **7.7.1** Define `ROOT_SYSTEM_PROMPT` constant
+- [x] **7.7.1** Define `ROOT_SYSTEM_PROMPT` constant
   - Dependencies: 7.1.2
   - Full system prompt with available functions
   - Current state placeholders
-- [ ] **7.7.2** Implement `_build_root_prompt() -> str`
+- [x] **7.7.2** Implement `_build_root_prompt() -> str`
   - Dependencies: 7.7.1
   - Fill in current state (generation, budget, population)
-- [ ] **7.7.3** Write tests for prompt building
+- [x] **7.7.3** Write tests for prompt building
   - Dependencies: 7.7.2
-- [ ] **7.7.4** Implement `_execute_root_code(code: str)`
+- [x] **7.7.4** Implement `_execute_root_code(code: str)`
   - Dependencies: 7.4.1, 6.3.1
   - Execute Python code in context with root interface functions
   - Catch and handle errors
-- [ ] **7.7.5** Write tests for root code execution
+- [x] **7.7.5** Write tests for root code execution
   - Dependencies: 7.7.4
-- [ ] **7.7.6** Implement `_run_root_llm_turn() -> bool`
+- [x] **7.7.6** Implement `_run_root_llm_turn() -> bool`
   - Dependencies: 7.7.2, 7.7.4, 4.4.1
   - Call root LLM with prompt
   - Execute returned code
   - Record cost
   - Return False if terminated
-- [ ] **7.7.7** Write tests for root LLM turn
+- [x] **7.7.7** Write tests for root LLM turn
   - Dependencies: 7.7.6
 
 ### 7.8 Main Evolution Loop
-- [ ] **7.8.1** Implement `run() -> EvolutionResult`
+- [x] **7.8.1** Implement `run() -> EvolutionResult`
   - Dependencies: 7.5.2, 7.6.7, 7.7.6
   - Initialize experiment
   - Create initial population
   - Loop: check limits → run root turn → repeat
   - Return final result
-- [ ] **7.8.2** Write tests for `run()` with mocked components
+- [x] **7.8.2** Write tests for `run()` with mocked components
   - Dependencies: 7.8.1
-- [ ] **7.8.3** Implement logging throughout loop
+- [x] **7.8.3** Implement logging throughout loop
   - Dependencies: 7.8.1
   - Log: generation start, trial created, generation end
-- [ ] **7.8.4** Implement graceful shutdown on interrupt
+- [x] **7.8.4** Implement graceful shutdown on interrupt
   - Dependencies: 7.8.1
   - Handle SIGINT/SIGTERM
   - Save current state before exit
 
 ### 7.9 Resume Support
-- [ ] **7.9.1** Implement `resume(experiment_dir) -> EvolutionResult`
+- [x] **7.9.1** Implement `resume(experiment_dir) -> EvolutionResult`
   - Dependencies: 7.8.1, 3.8.1
   - Load existing experiment
   - Continue from last generation
-- [ ] **7.9.2** Write tests for resume
+- [x] **7.9.2** Write tests for resume
   - Dependencies: 7.9.1
 
 ---
@@ -353,9 +353,9 @@ context = {
 
 ## Acceptance Criteria
 
-- [ ] All 17 tests pass
-- [ ] Code coverage > 90%
-- [ ] Full evolution loop runs with mocked LLMs
-- [ ] All hard limits enforced correctly
-- [ ] Graceful shutdown on interrupt
-- [ ] Resume from interrupted experiment works
+- [x] All 17 tests pass
+- [x] Code coverage > 90%
+- [x] Full evolution loop runs with mocked LLMs
+- [x] All hard limits enforced correctly
+- [x] Graceful shutdown on interrupt
+- [x] Resume from interrupted experiment works
