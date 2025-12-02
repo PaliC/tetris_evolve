@@ -1,0 +1,26 @@
+experiment:
+  name: "circle_packing_v1"
+  output_dir: "./experiments"
+
+root_llm:
+  model: "claude-sonnet-4-20250514"
+  cost_per_input_token: 0.000003
+  cost_per_output_token: 0.000015
+  max_iterations: 30
+
+child_llm:
+  model: "claude-sonnet-4-20250514"
+  cost_per_input_token: 0.000003
+  cost_per_output_token: 0.000015
+
+evolution:
+  max_generations: 10
+  max_children_per_generation: 10
+
+budget:
+  max_total_cost: 20.0
+
+evaluation:
+  n_circles: 26
+  target_sum: 2.635
+  timeout_seconds: 30
