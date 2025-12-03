@@ -26,6 +26,14 @@ from .config import (
 from .cost_tracker import CostTracker, TokenUsage, CostSummary
 from .logger import ExperimentLogger
 from .repl import REPLEnvironment, REPLResult
+from .evolution_api import EvolutionAPI, TrialResult, GenerationSummary
+from .llm import (
+    LLMClient,
+    LLMResponse,
+    MockLLMClient,
+    ROOT_LLM_SYSTEM_PROMPT,
+    get_root_system_prompt,
+)
 
 __all__ = [
     # Exceptions
@@ -53,6 +61,16 @@ __all__ = [
     # REPL
     "REPLEnvironment",
     "REPLResult",
+    # Evolution API
+    "EvolutionAPI",
+    "TrialResult",
+    "GenerationSummary",
+    # LLM
+    "LLMClient",
+    "LLMResponse",
+    "MockLLMClient",
+    "ROOT_LLM_SYSTEM_PROMPT",
+    "get_root_system_prompt",
 ]
 
 __version__ = "0.1.0"

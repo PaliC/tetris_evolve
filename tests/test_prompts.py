@@ -1,0 +1,123 @@
+"""
+Tests for the prompts module.
+"""
+
+import pytest
+
+from tetris_evolve.llm.prompts import (
+    ROOT_LLM_SYSTEM_PROMPT,
+    get_root_system_prompt,
+    format_child_mutation_prompt,
+)
+
+
+class TestRootSystemPrompt:
+    """Tests for the Root LLM system prompt."""
+
+    def test_prompt_documents_spawn_child_llm(self):
+        """Test that spawn_child_llm is documented."""
+        prompt = get_root_system_prompt()
+        assert "spawn_child_llm" in prompt
+        assert "prompt: str" in prompt or "prompt:" in prompt
+
+    def test_prompt_documents_evaluate_program(self):
+        """Test that evaluate_program is documented."""
+        prompt = get_root_system_prompt()
+        assert "evaluate_program" in prompt
+
+    def test_prompt_documents_advance_generation(self):
+        """Test that advance_generation is documented."""
+        prompt = get_root_system_prompt()
+        assert "advance_generation" in prompt
+
+    def test_prompt_documents_terminate_evolution(self):
+        """Test that terminate_evolution is documented."""
+        prompt = get_root_system_prompt()
+        assert "terminate_evolution" in prompt
+        assert "best_program" in prompt  # New argument
+
+    def test_prompt_documents_only_4_functions(self):
+        """Test that only 4 core functions are documented."""
+        prompt = get_root_system_prompt()
+        assert "4 functions" in prompt or "these 4" in prompt.lower()
+
+    def test_prompt_does_not_document_removed_functions(self):
+        """Test that removed helper functions are not documented."""
+        prompt = get_root_system_prompt()
+        # These should not be listed as available functions
+        assert "### get_best_trials" not in prompt
+        assert "### get_cost_remaining" not in prompt
+        assert "### get_trial" not in prompt
+        assert "### get_generation_history" not in prompt
+
+    def test_prompt_explains_repl_usage(self):
+        """Test that REPL usage is explained."""
+        prompt = get_root_system_prompt()
+        assert "```repl" in prompt
+        assert "REPL" in prompt
+
+    def test_prompt_describes_problem(self):
+        """Test that the problem is described."""
+        prompt = get_root_system_prompt()
+        assert "26 circles" in prompt
+        assert "unit square" in prompt
+        assert "2.635" in prompt  # Benchmark
+
+    def test_prompt_documents_code_specification(self):
+        """Test that code specification is documented."""
+        prompt = get_root_system_prompt()
+        assert "construct_packing" in prompt
+        assert "run_packing" in prompt
+
+    def test_get_root_system_prompt_returns_string(self):
+        """Test that get_root_system_prompt returns a string."""
+        prompt = get_root_system_prompt()
+        assert isinstance(prompt, str)
+        assert len(prompt) > 0
+
+
+class TestFormatChildMutationPrompt:
+    """Tests for format_child_mutation_prompt."""
+
+    def test_includes_parent_code(self):
+        """Test that parent code is included."""
+        parent_code = "def construct_packing(): pass"
+        prompt = format_child_mutation_prompt(parent_code, 1.5)
+
+        assert parent_code in prompt
+
+    def test_includes_parent_score(self):
+        """Test that parent score is included."""
+        prompt = format_child_mutation_prompt("code", 1.5)
+
+        assert "1.5" in prompt or "1.50" in prompt
+
+    def test_includes_guidance(self):
+        """Test that guidance is included."""
+        prompt = format_child_mutation_prompt(
+            "code",
+            1.5,
+            guidance="Try using hexagonal packing",
+        )
+
+        assert "hexagonal" in prompt
+
+    def test_includes_requirements(self):
+        """Test that requirements are included."""
+        prompt = format_child_mutation_prompt("code", 1.5)
+
+        assert "26 circles" in prompt
+        assert "construct_packing" in prompt
+        assert "run_packing" in prompt
+
+
+class TestRootLLMSystemPromptConstant:
+    """Tests for the ROOT_LLM_SYSTEM_PROMPT constant."""
+
+    def test_constant_equals_function_result(self):
+        """Test that constant matches function return."""
+        assert ROOT_LLM_SYSTEM_PROMPT == get_root_system_prompt()
+
+    def test_constant_is_not_empty(self):
+        """Test that constant is not empty."""
+        assert len(ROOT_LLM_SYSTEM_PROMPT) > 0
