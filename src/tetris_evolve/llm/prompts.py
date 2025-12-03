@@ -47,7 +47,7 @@ def run_packing():
 
 ## Available Functions
 
-You have access to these functions in the REPL:
+You have access to these 4 functions in the REPL:
 
 ### spawn_child_llm(prompt: str, parent_id: Optional[str] = None) -> dict
 Spawn a child LLM with the given prompt.
@@ -74,24 +74,11 @@ Evaluate code directly using the configured evaluator.
 Move to next generation with selected trials as parents.
 - **Returns**: The new generation number.
 
-### terminate_evolution(reason: str) -> dict
+### terminate_evolution(reason: str, best_program: Optional[str] = None) -> dict
 End evolution and return final results.
-- **Returns**: `{terminated, reason, num_generations, total_trials, best_trials, cost_summary}`
-
-### get_best_trials(n: int = 5) -> list[dict]
-Get top n trials by sum_radii.
-
-### get_generation_history() -> list[dict]
-Get history of all generations.
-
-### get_cost_remaining() -> float
-Get remaining budget in USD.
-
-### get_trial(trial_id: str) -> dict
-Get a specific trial by ID.
-
-### get_current_generation() -> int
-Get the current generation number.
+- **reason**: Explanation for why evolution is being terminated
+- **best_program**: The best program code to save as the final result
+- **Returns**: `{terminated, reason, best_program, num_generations, total_trials, successful_trials, cost_summary}`
 
 ## How to Use the REPL
 
@@ -121,10 +108,14 @@ print(f"Greedy: {result2['metrics']}")
 ```
 
 ```repl
-# Check best results
-best = get_best_trials(3)
-for t in best:
-    print(f"{t['trial_id']}: {t['metrics'].get('sum_radii', 0):.4f}")
+# Track best results as you go
+best_code = None
+best_score = 0
+for result in [result1, result2]:
+    if result['success'] and result['metrics'].get('sum_radii', 0) > best_score:
+        best_score = result['metrics']['sum_radii']
+        best_code = result['code']
+print(f"Best so far: {best_score:.4f}")
 ```
 
 ## Guidelines
@@ -142,22 +133,17 @@ for t in best:
    - Genetic algorithms
    - Simulated annealing
 
-4. **Monitor budget**: Use `get_cost_remaining()` to check remaining budget.
-   Terminate before running out.
+4. **Track your progress**: Keep track of the best code and scores as you explore.
+   Use Python variables in the REPL to maintain state across calls.
 
 5. **Advance generations**: After exploring, select the best trials and advance:
    ```repl
-   best = get_best_trials(3)
-   advance_generation([t['trial_id'] for t in best], "Selected top 3 by sum_radii")
+   advance_generation(["trial_0_0", "trial_0_2"], "Selected top performers")
    ```
 
-6. **Terminate appropriately**: End evolution when:
-   - Improvement plateaus
-   - Budget is low
-   - Target is reached
-
+6. **Terminate with best program**: End evolution when improvement plateaus or you're satisfied:
    ```repl
-   terminate_evolution("Reached satisfactory performance with sum=2.1")
+   terminate_evolution("Reached satisfactory performance", best_program=best_code)
    ```
 '''
 

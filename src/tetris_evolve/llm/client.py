@@ -4,12 +4,17 @@ LLM Client for tetris_evolve.
 Wraps the Anthropic API with cost tracking and budget enforcement.
 """
 
-import time
 import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import anthropic
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 
 from ..cost_tracker import CostTracker
 from ..exceptions import BudgetExceededError
@@ -40,7 +45,6 @@ class LLMClient:
         cost_tracker: CostTracker,
         llm_type: str,
         max_retries: int = 3,
-        retry_delay: float = 1.0,
     ):
         """
         Initialize the LLM client.
@@ -50,13 +54,11 @@ class LLMClient:
             cost_tracker: CostTracker instance for budget enforcement
             llm_type: Either "root" or "child" - used for cost tracking
             max_retries: Maximum number of retries on transient errors
-            retry_delay: Base delay between retries (exponential backoff)
         """
         self.model = model
         self.cost_tracker = cost_tracker
         self.llm_type = llm_type
         self.max_retries = max_retries
-        self.retry_delay = retry_delay
         self._client = anthropic.Anthropic()
 
     def generate(
@@ -141,32 +143,20 @@ class LLMClient:
         Raises:
             anthropic.APIError: If all retries fail
         """
-        last_error = None
 
-        for attempt in range(self.max_retries + 1):
-            try:
-                return self._client.messages.create(**kwargs)
-            except anthropic.RateLimitError as e:
-                last_error = e
-                if attempt < self.max_retries:
-                    delay = self.retry_delay * (2**attempt)
-                    time.sleep(delay)
-            except anthropic.APIConnectionError as e:
-                last_error = e
-                if attempt < self.max_retries:
-                    delay = self.retry_delay * (2**attempt)
-                    time.sleep(delay)
-            except anthropic.APIStatusError as e:
-                # Don't retry on client errors (4xx except rate limit)
-                if e.status_code < 500 and e.status_code != 429:
-                    raise
-                last_error = e
-                if attempt < self.max_retries:
-                    delay = self.retry_delay * (2**attempt)
-                    time.sleep(delay)
+        @retry(
+            stop=stop_after_attempt(self.max_retries + 1),
+            wait=wait_exponential(multiplier=1, min=1, max=10),
+            retry=retry_if_exception_type((
+                anthropic.RateLimitError,
+                anthropic.APIConnectionError,
+            )),
+            reraise=True,
+        )
+        def _make_call():
+            return self._client.messages.create(**kwargs)
 
-        # All retries exhausted
-        raise last_error
+        return _make_call()
 
 
 class MockLLMClient:

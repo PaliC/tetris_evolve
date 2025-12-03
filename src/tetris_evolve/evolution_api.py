@@ -4,13 +4,12 @@ Evolution API for tetris_evolve.
 Provides the core API exposed to the Root LLM for controlling the evolution process.
 """
 
-import re
-import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Protocol
 
 from .cost_tracker import CostTracker
 from .logger import ExperimentLogger
+from .utils.code_extraction import extract_code_blocks, extract_reasoning
 
 
 class Evaluator(Protocol):
@@ -89,11 +88,11 @@ class GenerationSummary:
         }
 
 
-def extract_python_code(text: str) -> Optional[str]:
+def _extract_python_code(text: str) -> Optional[str]:
     """
     Extract Python code from LLM response.
 
-    Looks for ```python code blocks.
+    Looks for ```python code blocks first, falls back to unlabeled blocks.
 
     Args:
         text: LLM response text
@@ -101,37 +100,20 @@ def extract_python_code(text: str) -> Optional[str]:
     Returns:
         Extracted code or None if not found
     """
-    # Look for python code blocks
-    pattern = r"```python\s*\n(.*?)```"
-    matches = re.findall(pattern, text, re.DOTALL)
+    # Try python blocks first
+    blocks = extract_code_blocks(text, language="python")
+    if blocks:
+        return blocks[0].code
 
-    if matches:
-        return matches[0].strip()
-
-    # Fallback: try generic code blocks
+    # Fallback: try unlabeled code blocks (empty language)
+    # Use a simple pattern for unlabeled blocks
+    import re
     pattern = r"```\s*\n(.*?)```"
     matches = re.findall(pattern, text, re.DOTALL)
-
     if matches:
         return matches[0].strip()
 
     return None
-
-
-def extract_reasoning(text: str) -> str:
-    """
-    Extract reasoning (text outside code blocks).
-
-    Args:
-        text: LLM response text
-
-    Returns:
-        Text with code blocks removed
-    """
-    pattern = r"```\w*\s*\n.*?```"
-    reasoning = re.sub(pattern, "", text, flags=re.DOTALL)
-    reasoning = re.sub(r"\n{3,}", "\n\n", reasoning)
-    return reasoning.strip()
 
 
 class EvolutionAPI:
@@ -241,7 +223,7 @@ class EvolutionAPI:
             return trial.to_dict()
 
         # Extract code from response
-        code = extract_python_code(response_text)
+        code = _extract_python_code(response_text)
         reasoning = extract_reasoning(response_text)
 
         if not code:
@@ -373,25 +355,30 @@ class EvolutionAPI:
 
         return self.current_generation
 
-    def terminate_evolution(self, reason: str) -> Dict[str, Any]:
+    def terminate_evolution(self, reason: str, best_program: Optional[str] = None) -> Dict[str, Any]:
         """
         End the evolution process and return final results.
 
         Args:
             reason: Explanation for termination
+            best_program: The best program code to save as the final result
 
         Returns:
-            Final results dictionary with best trials and statistics
+            Final results dictionary with best program and statistics
         """
         self._terminated = True
         self._termination_reason = reason
 
-        # Get best trials overall
-        best_trials = self.get_best_trials(n=5)
-
         # Compute statistics
         total_trials = len(self.all_trials)
         successful_trials = sum(1 for t in self.all_trials.values() if t.success)
+
+        # Get best trials for reference
+        best_trials = self._get_best_trials(n=5)
+
+        # If no best_program provided, use the best trial's code
+        if best_program is None and best_trials:
+            best_program = best_trials[0].get("code", "")
 
         # Save experiment
         self.logger.log_cost_tracking(self.cost_tracker.to_dict())
@@ -400,16 +387,16 @@ class EvolutionAPI:
         return {
             "terminated": True,
             "reason": reason,
+            "best_program": best_program,
             "num_generations": self.current_generation + 1,
             "total_trials": total_trials,
             "successful_trials": successful_trials,
-            "best_trials": best_trials,
             "cost_summary": self.cost_tracker.get_summary().__dict__,
         }
 
-    def get_best_trials(self, n: int = 5) -> List[Dict[str, Any]]:
+    def _get_best_trials(self, n: int = 5) -> List[Dict[str, Any]]:
         """
-        Get the top n trials by score.
+        Get the top n trials by score (internal method).
 
         Args:
             n: Number of trials to return
@@ -431,27 +418,27 @@ class EvolutionAPI:
 
         return [t.to_dict() for t in sorted_trials[:n]]
 
-    def get_generation_history(self) -> List[Dict[str, Any]]:
+    def _get_generation_history(self) -> List[Dict[str, Any]]:
         """
-        Get history of all generations.
+        Get history of all generations (internal method).
 
         Returns:
             List of generation summary dictionaries
         """
         return [gen.to_dict() for gen in self.generations]
 
-    def get_cost_remaining(self) -> float:
+    def _get_cost_remaining(self) -> float:
         """
-        Get remaining budget in USD.
+        Get remaining budget in USD (internal method).
 
         Returns:
             Remaining budget
         """
         return self.cost_tracker.get_remaining_budget()
 
-    def get_trial(self, trial_id: str) -> Optional[Dict[str, Any]]:
+    def _get_trial(self, trial_id: str) -> Optional[Dict[str, Any]]:
         """
-        Get a specific trial by ID.
+        Get a specific trial by ID (internal method).
 
         Args:
             trial_id: The trial ID to look up
@@ -462,13 +449,19 @@ class EvolutionAPI:
         trial = self.all_trials.get(trial_id)
         return trial.to_dict() if trial else None
 
-    def get_current_generation(self) -> int:
-        """Get the current generation number."""
+    def _get_current_generation(self) -> int:
+        """Get the current generation number (internal method)."""
         return self.current_generation
 
     def get_api_functions(self) -> Dict[str, Callable]:
         """
         Get a dictionary of API functions to inject into the REPL.
+
+        Only the 4 core evolution functions are exposed:
+        - spawn_child_llm: Generate new programs via child LLM
+        - evaluate_program: Evaluate code directly
+        - advance_generation: Move to next generation
+        - terminate_evolution: End the evolution process
 
         Returns:
             Dictionary mapping function names to callables
@@ -478,9 +471,4 @@ class EvolutionAPI:
             "evaluate_program": self.evaluate_program,
             "advance_generation": self.advance_generation,
             "terminate_evolution": self.terminate_evolution,
-            "get_best_trials": self.get_best_trials,
-            "get_generation_history": self.get_generation_history,
-            "get_cost_remaining": self.get_cost_remaining,
-            "get_trial": self.get_trial,
-            "get_current_generation": self.get_current_generation,
         }

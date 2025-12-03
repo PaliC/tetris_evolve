@@ -34,16 +34,21 @@ class TestRootSystemPrompt:
         """Test that terminate_evolution is documented."""
         prompt = get_root_system_prompt()
         assert "terminate_evolution" in prompt
+        assert "best_program" in prompt  # New argument
 
-    def test_prompt_documents_get_best_trials(self):
-        """Test that get_best_trials is documented."""
+    def test_prompt_documents_only_4_functions(self):
+        """Test that only 4 core functions are documented."""
         prompt = get_root_system_prompt()
-        assert "get_best_trials" in prompt
+        assert "4 functions" in prompt or "these 4" in prompt.lower()
 
-    def test_prompt_documents_get_cost_remaining(self):
-        """Test that get_cost_remaining is documented."""
+    def test_prompt_does_not_document_removed_functions(self):
+        """Test that removed helper functions are not documented."""
         prompt = get_root_system_prompt()
-        assert "get_cost_remaining" in prompt
+        # These should not be listed as available functions
+        assert "### get_best_trials" not in prompt
+        assert "### get_cost_remaining" not in prompt
+        assert "### get_trial" not in prompt
+        assert "### get_generation_history" not in prompt
 
     def test_prompt_explains_repl_usage(self):
         """Test that REPL usage is explained."""

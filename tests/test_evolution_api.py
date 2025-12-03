@@ -75,11 +75,11 @@ class TestEvolutionAPIBasic:
 
     def test_get_current_generation(self, evolution_api):
         """Test getting current generation."""
-        assert evolution_api.get_current_generation() == 0
+        assert evolution_api._get_current_generation() == 0
 
     def test_get_cost_remaining(self, evolution_api):
         """Test getting remaining cost."""
-        remaining = evolution_api.get_cost_remaining()
+        remaining = evolution_api._get_cost_remaining()
         assert remaining > 0
 
 
@@ -258,15 +258,23 @@ class TestTerminateEvolution:
 
         assert result["terminated"] is True
         assert result["reason"] == "Test complete"
-        assert "best_trials" in result
+        assert "best_program" in result
         assert "cost_summary" in result
 
+    def test_terminate_with_best_program(self, evolution_api):
+        """Test that terminate accepts best_program argument."""
+        evolution_api.spawn_child_llm(prompt="Test")
+        best_code = "def run_packing(): return best_solution()"
+        result = evolution_api.terminate_evolution("Done", best_program=best_code)
 
-class TestGetBestTrials:
-    """Tests for get_best_trials."""
+        assert result["best_program"] == best_code
 
-    def test_get_best_returns_sorted(self, sample_config, temp_dir):
-        """Test that get_best_trials returns sorted trials."""
+
+class TestInternalMethods:
+    """Tests for internal helper methods."""
+
+    def test_get_best_trials_returns_sorted(self, sample_config, temp_dir):
+        """Test that _get_best_trials returns sorted trials."""
         sample_config.experiment.output_dir = str(temp_dir)
         cost_tracker = CostTracker(sample_config)
         logger = ExperimentLogger(sample_config)
@@ -314,7 +322,7 @@ class TestGetBestTrials:
         api.spawn_child_llm(prompt="Test 2")
         api.spawn_child_llm(prompt="Test 3")
 
-        best = api.get_best_trials(n=3)
+        best = api._get_best_trials(n=3)
 
         assert len(best) == 3
         assert best[0]["metrics"]["sum_radii"] == 2.0
@@ -322,7 +330,7 @@ class TestGetBestTrials:
         assert best[2]["metrics"]["sum_radii"] == 1.5
 
     def test_get_best_filters_invalid(self, evolution_api, mock_evaluator):
-        """Test that get_best_trials filters invalid trials."""
+        """Test that _get_best_trials filters invalid trials."""
         # Make evaluator return invalid
         mock_evaluator.evaluate.return_value = {
             "valid": False,
@@ -331,20 +339,16 @@ class TestGetBestTrials:
         }
 
         evolution_api.spawn_child_llm(prompt="Test")
-        best = evolution_api.get_best_trials(n=5)
+        best = evolution_api._get_best_trials(n=5)
 
         assert len(best) == 0
 
-
-class TestGetGenerationHistory:
-    """Tests for get_generation_history."""
-
-    def test_returns_all_generations(self, evolution_api):
+    def test_get_generation_history(self, evolution_api):
         """Test that generation history is returned."""
         evolution_api.spawn_child_llm(prompt="Test")
         evolution_api.advance_generation(["trial_0_0"], "Test")
 
-        history = evolution_api.get_generation_history()
+        history = evolution_api._get_generation_history()
 
         assert len(history) == 2
         assert history[0]["generation_num"] == 0
@@ -354,19 +358,26 @@ class TestGetGenerationHistory:
 class TestGetAPIFunctions:
     """Tests for get_api_functions."""
 
-    def test_returns_all_functions(self, evolution_api):
-        """Test that all API functions are returned."""
+    def test_returns_only_4_functions(self, evolution_api):
+        """Test that only 4 core API functions are returned."""
         funcs = evolution_api.get_api_functions()
 
+        assert len(funcs) == 4
         assert "spawn_child_llm" in funcs
         assert "evaluate_program" in funcs
         assert "advance_generation" in funcs
         assert "terminate_evolution" in funcs
-        assert "get_best_trials" in funcs
-        assert "get_generation_history" in funcs
-        assert "get_cost_remaining" in funcs
-        assert "get_trial" in funcs
-        assert "get_current_generation" in funcs
+
+    def test_internal_functions_not_exposed(self, evolution_api):
+        """Test that internal helper functions are not exposed."""
+        funcs = evolution_api.get_api_functions()
+
+        # These should NOT be in the API
+        assert "get_best_trials" not in funcs
+        assert "get_generation_history" not in funcs
+        assert "get_cost_remaining" not in funcs
+        assert "get_trial" not in funcs
+        assert "get_current_generation" not in funcs
 
     def test_functions_are_callable(self, evolution_api):
         """Test that returned functions are callable."""
