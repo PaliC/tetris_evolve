@@ -143,23 +143,27 @@ child_llm:
   cost_per_input_token: 0.000003
   cost_per_output_token: 0.000015
 
+# Evaluation points to an evaluator function/class (pluggable)
+evaluation:
+  evaluator_fn: "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    target: 2.635
+    timeout_seconds: 30
+
 evolution:
   max_generations: 10
   max_children_per_generation: 10
 
 budget:
   max_total_cost: 20.0
-
-evaluation:
-  n_circles: 26
-  target_sum: 2.635
-  timeout_seconds: 30
 ```
 
 **Acceptance Criteria**:
-- [ ] All tests pass
-- [ ] Example config loads without errors
-- [ ] `Config` dataclass has typed fields for all config sections
+- [x] All tests pass
+- [x] Example config loads without errors
+- [x] `Config` dataclass has typed fields for all config sections
+- [x] `load_evaluator()` function loads evaluator from module path
 
 ---
 
@@ -247,28 +251,31 @@ evaluation:
 
 ---
 
-### Task 1.7: Code Extraction Utilities
-**Description**: Utilities for extracting Python code from LLM responses.
+### Task 1.7: Code Extraction Utilities ✅ DONE
+**Description**: Utilities for extracting REPL code blocks from Root LLM responses.
+
+The Root LLM uses ```repl``` blocks to indicate code that should be executed.
+This module extracts those blocks for execution in the REPL environment.
 
 **Dependencies**: [1.1, 1.2]
 
 **Files**:
-- `src/tetris_evolve/utils/code_extraction.py`
+- `src/tetris_evolve/utils/code_extraction.py` ✅ Implemented
 
 **Tests**:
 - `tests/test_code_extraction.py`
 
 **Test Cases**:
-1. `test_extract_python_block`: Extract code from ```python``` block
-2. `test_extract_repl_block`: Extract code from ```repl``` block
-3. `test_multiple_blocks`: Handle multiple code blocks
-4. `test_no_code_block`: Return None when no code found
-5. `test_malformed_block`: Handle edge cases gracefully
-6. `test_extract_reasoning`: Extract text outside code blocks
+1. `test_extract_repl_block`: Extract code from ```repl``` block
+2. `test_multiple_repl_blocks`: Handle multiple repl code blocks
+3. `test_no_code_block`: Return empty list when no repl blocks found
+4. `test_ignores_other_languages`: Only extract repl, not python/js/etc
+5. `test_extract_reasoning`: Extract text outside code blocks
 
 **Acceptance Criteria**:
-- [ ] All tests pass
-- [ ] Handles various markdown code block formats
+- [x] All tests pass
+- [x] Extracts ```repl``` blocks correctly
+- [x] Ignores non-repl blocks (python, javascript, etc.)
 
 ---
 
@@ -366,70 +373,31 @@ def run_packing():
 
 ---
 
-### Task 2.2: Prompt Templates
-**Description**: Define prompt templates for root and child LLMs.
+### Task 2.2: Root LLM System Prompt
+**Description**: Define the system prompt for the Root LLM that documents available functions.
+
+**Note**: There is NO child LLM prompt template. The Root LLM is responsible for crafting
+all prompts sent to child LLMs. This gives the Root LLM full control over:
+- Problem specification
+- Strategy guidance
+- Parent code inclusion for mutations
+- Adapting prompts based on what works
 
 **Dependencies**: [1.1]
 
 **Files**:
-- `src/tetris_evolve/llm/prompts.py`
+- Root LLM system prompt can be defined in `root_llm.py` or a constants file
 
 **Tests**:
-- `tests/test_prompts.py`
+- `tests/test_root_llm.py` (system prompt construction tests)
 
 **Test Cases**:
-1. `test_root_system_prompt_complete`: System prompt has all API docs
-2. `test_child_prompt_includes_spec`: Child prompt has circle packing spec
-3. `test_child_prompt_with_parent`: Parent code included when provided
-4. `test_prompt_formatting`: Variables substituted correctly
-
-**Child LLM Prompt Template**:
-```
-You are tasked with writing a circle packing algorithm.
-
-## Problem
-Pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their radii.
-
-## Constraints
-- All circles must be entirely inside the unit square
-- No two circles may overlap
-- All radii must be non-negative
-
-## Function Specification
-
-```python
-import numpy as np
-
-def construct_packing():
-    """
-    Returns:
-        centers: np.array of shape (26, 2) with (x, y) coordinates
-        radii: np.array of shape (26,) with radius of each circle
-        sum_radii: float - sum of all radii
-    """
-    pass
-
-def run_packing():
-    return construct_packing()
-```
-
-## Strategy Guidance
-{user_prompt}
-
-{parent_context}
-
-## Requirements
-1. Code must be self-contained (imports at top)
-2. Must define run_packing() or construct_packing()
-3. Must return valid numpy arrays of correct shape
-4. Use numpy (available as np)
-
-Provide your implementation in a Python code block.
-```
+1. `test_root_system_prompt_complete`: System prompt documents all API functions
+2. `test_root_system_prompt_repl_usage`: Explains how to use ```repl``` blocks
 
 **Acceptance Criteria**:
-- [ ] All tests pass
-- [ ] Prompts are well-formatted and complete
+- [ ] Root LLM system prompt documents all Evolution API functions
+- [ ] Explains REPL usage with ```repl``` blocks
 
 ---
 
@@ -698,10 +666,19 @@ Phase 4 (Polish):
 
 | Task | Status | Notes |
 |------|--------|-------|
+| 1.1 Project Structure | ✅ DONE | All directories and __init__.py files |
+| 1.2 Exceptions | ✅ DONE | `src/tetris_evolve/exceptions.py` |
+| 1.3 Configuration | ✅ DONE | `src/tetris_evolve/config.py` - with pluggable evaluator |
+| 1.4 Cost Tracker | ✅ DONE | `src/tetris_evolve/cost_tracker.py` |
+| 1.5 Logger | ✅ DONE | `src/tetris_evolve/logger.py` |
+| 1.6 REPL | ✅ DONE | `src/tetris_evolve/repl.py` |
+| 1.7 Code Extraction | ✅ DONE | `src/tetris_evolve/utils/code_extraction.py` - repl blocks only |
 | 1.8 CirclePackingEvaluator | ✅ DONE | `src/tetris_evolve/evaluation/circle_packing.py` |
 | PoC: REPL | ✅ Validated | `experiments/poc_repl.py` |
 | PoC: Cost Tracker | ✅ Validated | `experiments/poc_cost_tracker.py` |
 | PoC: Integration | ✅ Validated | `experiments/poc_circle_packing_integration.py` |
+
+**Phase 1 Complete**: 89 tests passing
 
 **PoC Results**: Hexagonal packing achieved 2.08 sum (79% of 2.635 benchmark)
 

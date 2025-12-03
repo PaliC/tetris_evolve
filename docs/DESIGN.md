@@ -218,17 +218,21 @@ child_llm:
   cost_per_input_token: 0.000003
   cost_per_output_token: 0.000015
 
+# Evaluation config points to an evaluator function/class
+# This makes the system pluggable for different evaluation problems
+evaluation:
+  evaluator_fn: "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    target: 2.635
+    timeout_seconds: 30
+
 evolution:
   max_generations: 10
   max_children_per_generation: 10
 
 budget:
   max_total_cost: 20.0
-
-evaluation:
-  n_circles: 26
-  target_sum: 2.635
-  timeout_seconds: 30
 ```
 
 **Data Classes:**
@@ -239,15 +243,22 @@ class Config:
     experiment: ExperimentConfig
     root_llm: LLMConfig
     child_llm: LLMConfig
+    evaluation: EvaluationConfig  # Required - points to evaluator
     evolution: EvolutionConfig
     budget: BudgetConfig
-    evaluation: EvaluationConfig
 
 @dataclass
 class EvaluationConfig:
-    n_circles: int = 26
-    target_sum: float = 2.635
-    timeout_seconds: int = 30
+    evaluator_fn: str  # Module path like "module.path:ClassName"
+    evaluator_kwargs: Dict[str, Any] = field(default_factory=dict)
+
+# Load evaluator dynamically at runtime:
+def load_evaluator(config: EvaluationConfig) -> Any:
+    """Load evaluator from module path."""
+    module_path, obj_name = config.evaluator_fn.rsplit(":", 1)
+    module = importlib.import_module(module_path)
+    evaluator_class = getattr(module, obj_name)
+    return evaluator_class(**config.evaluator_kwargs)
 ```
 
 ### 2. Cost Tracking System (`cost_tracker.py`)
@@ -489,16 +500,16 @@ User runs: python -m tetris_evolve --config config.yaml
 Root LLM calls: spawn_child_llm(prompt, parent_id)
 
 1. Check budget (raise if exceeded)
-2. Build child prompt:
-   - Base prompt with circle packing specification
-   - User-provided prompt (strategy to try)
-   - Parent code if parent_id provided
-3. Call child LLM API
-4. Extract code from response
-5. Evaluate using CirclePackingEvaluator:
+2. Pass the prompt directly to the child LLM
+   - The Root LLM is responsible for crafting the full prompt
+   - This includes problem specification, strategy guidance, and parent code
+   - No template wrapping - the Root LLM has full control over child prompts
+3. Call child LLM API with the provided prompt
+4. Extract code from response (```python``` blocks)
+5. Evaluate using the configured evaluator:
    - Run in subprocess with timeout
-   - Validate geometric constraints
-   - Compute sum_radii and target_ratio
+   - Validate constraints
+   - Compute metrics
 6. Log trial
 7. Return result to Root LLM
 ```
@@ -509,24 +520,26 @@ Root LLM calls: spawn_child_llm(prompt, parent_id)
 
 ### Root LLM System Prompt
 
-```
-You are orchestrating an evolutionary process to develop circle packing algorithms.
+The Root LLM receives a system prompt documenting the available functions and REPL usage.
+The Root LLM is responsible for:
+1. Crafting all prompts sent to child LLMs (no predefined templates)
+2. Deciding what problem specification, constraints, and guidance to include
+3. Managing the evolutionary process through the available functions
 
-## Problem
-Pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their radii.
-Benchmark: AlphaEvolve achieved sum = 2.635
+```
+You are orchestrating an evolutionary process to develop algorithms.
 
 ## Available Functions
 
 ### spawn_child_llm(prompt: str, parent_id: Optional[str] = None) -> dict
-Spawn a child LLM to generate a circle packing program.
-- prompt: Strategy/approach for the child to try
-- parent_id: Optional trial ID to base mutations on
+Spawn a child LLM with the given prompt.
+- prompt: The complete prompt to send to the child LLM (you control the full content)
+- parent_id: Optional trial ID to associate as parent (for tracking lineage)
 - Returns: {trial_id, code, metrics, reasoning, success, error}
 
 ### evaluate_program(code: str) -> dict
-Evaluate a circle packing program directly.
-- Returns: {valid, sum_radii, target_ratio, combined_score, eval_time, error}
+Evaluate code directly using the configured evaluator.
+- Returns: {valid, ..., eval_time, error} (metrics depend on evaluator)
 
 ### advance_generation(selected_trial_ids: list[str], reasoning: str) -> int
 Move to next generation with selected trials as parents.
@@ -535,70 +548,40 @@ Move to next generation with selected trials as parents.
 End evolution and return final results.
 
 ### get_best_trials(n: int = 5) -> list[dict]
-Get top n trials by sum_radii.
+Get top n trials by score.
 
 ### get_cost_remaining() -> float
 Get remaining budget in USD.
 
 ## How to Use the REPL
 
-Write Python code in ```repl blocks:
+Write Python code in ```repl``` blocks:
 
 ```repl
-# Explore different strategies
-result1 = spawn_child_llm("Grid-based packing with uniform spacing")
-result2 = spawn_child_llm("Hexagonal close-packing pattern")
-print(f"Grid: sum={result1['metrics']['sum_radii']:.4f}")
-print(f"Hex: sum={result2['metrics']['sum_radii']:.4f}")
+# Craft a detailed prompt for the child LLM
+prompt = """
+You are tasked with writing a circle packing algorithm.
+Pack 26 circles into a unit square [0,1] x [0,1] to maximize sum of radii.
+...your detailed instructions...
+"""
+result = spawn_child_llm(prompt)
+print(f"Score: {result['metrics']}")
 ```
 
-## Strategy Guidelines
+## Guidelines
 
-1. Start with diverse strategies (grid, hex, greedy, concentric, optimization-based)
-2. Analyze what makes successful approaches work
-3. Use parent_id to mutate successful trials
+1. You are responsible for crafting effective prompts for child LLMs
+2. Include problem specification, constraints, and strategy guidance in your prompts
+3. When mutating, include the parent code in your prompt to the child
 4. Monitor budget with get_cost_remaining()
 5. Terminate when improvement plateaus or budget is low
 ```
 
-### Child LLM Prompt Template
-
-```
-You are tasked with writing a circle packing algorithm.
-
-## Problem
-Pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their radii.
-
-## Constraints
-- All circles must be entirely inside the unit square
-- No two circles may overlap
-- All radii must be non-negative
-
-## Function Specification
-
-```python
-import numpy as np
-
-def construct_packing():
-    """
-    Returns:
-        centers: np.array of shape (26, 2) with (x, y) coordinates
-        radii: np.array of shape (26,) with radius of each circle
-        sum_radii: float - sum of all radii
-    """
-    pass
-
-def run_packing():
-    return construct_packing()
-```
-
-## Strategy Guidance
-{user_prompt}
-
-{parent_context}
-
-Provide your implementation in a Python code block, then briefly explain your approach.
-```
+**Note**: There is no predefined "Child LLM Prompt Template". The Root LLM has full control
+over what prompts are sent to child LLMs. This allows the Root LLM to:
+- Adapt prompts based on what strategies are working
+- Include different levels of detail for different approaches
+- Incorporate learned insights into subsequent prompts
 
 ---
 
@@ -640,8 +623,7 @@ src/tetris_evolve/
 │   └── circle_packing.py               # Circle packing evaluator (DONE)
 ├── llm/
 │   ├── __init__.py
-│   ├── client.py                       # Anthropic wrapper
-│   └── prompts.py                      # Prompt templates
+│   └── client.py                       # Anthropic wrapper
 └── utils/
     ├── __init__.py
     └── code_extraction.py              # Code parsing utilities
