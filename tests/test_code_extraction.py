@@ -8,6 +8,7 @@ from tetris_evolve.utils import (
     extract_code_blocks,
     extract_repl_blocks,
     extract_reasoning,
+    extract_python_code,
     CodeBlock,
 )
 
@@ -220,3 +221,86 @@ Done.
         reasoning = extract_reasoning(text)
 
         assert reasoning == "Just plain text with no code."
+
+
+class TestExtractPythonCode:
+    """Tests for extract_python_code function."""
+
+    def test_extract_python_block(self):
+        """Extract code from ```python block."""
+        text = """
+Here's my solution:
+
+```python
+def construct_packing():
+    return centers, radii, sum_radii
+```
+
+This implements the algorithm.
+"""
+        code = extract_python_code(text)
+
+        assert code is not None
+        assert "def construct_packing" in code
+
+    def test_extract_unlabeled_block(self):
+        """Fall back to unlabeled code block if no python block."""
+        text = """
+Here's some code:
+
+```
+x = 5
+y = 10
+```
+"""
+        code = extract_python_code(text)
+
+        assert code is not None
+        assert "x = 5" in code
+
+    def test_prefers_python_over_unlabeled(self):
+        """Prefer ```python block over unlabeled."""
+        text = """
+```
+unlabeled code
+```
+
+```python
+python_code()
+```
+"""
+        code = extract_python_code(text)
+
+        assert code is not None
+        assert "python_code" in code
+        assert "unlabeled" not in code
+
+    def test_no_code_block_returns_none(self):
+        """Return None when no code blocks found."""
+        text = "Just plain text with no code."
+
+        code = extract_python_code(text)
+
+        assert code is None
+
+    def test_ignores_repl_blocks(self):
+        """Only extract python or unlabeled blocks, not repl."""
+        text = """
+```repl
+spawn_child_llm("test")
+```
+"""
+        code = extract_python_code(text)
+
+        assert code is None
+
+    def test_ignores_other_languages(self):
+        """Ignore non-python language tags."""
+        text = """
+```javascript
+console.log("hello");
+```
+"""
+        code = extract_python_code(text)
+
+        assert code is None

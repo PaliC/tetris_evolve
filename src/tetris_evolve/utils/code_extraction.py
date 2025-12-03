@@ -94,3 +94,29 @@ def extract_reasoning(text: str) -> str:
     reasoning = re.sub(r"\n{3,}", "\n\n", reasoning)
 
     return reasoning.strip()
+
+
+def extract_python_code(text: str) -> Optional[str]:
+    """
+    Extract Python code from LLM response.
+
+    Looks for ```python code blocks first, falls back to unlabeled blocks.
+
+    Args:
+        text: LLM response text
+
+    Returns:
+        Extracted code or None if not found
+    """
+    # Try python blocks first
+    blocks = extract_code_blocks(text, language="python")
+    if blocks:
+        return blocks[0].code
+
+    # Fallback: try unlabeled code blocks
+    pattern = r"```\s*\n(.*?)```"
+    matches = re.findall(pattern, text, re.DOTALL)
+    if matches:
+        return matches[0].strip()
+
+    return None
