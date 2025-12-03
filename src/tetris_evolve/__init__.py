@@ -34,6 +34,7 @@ from .llm import (
     ROOT_LLM_SYSTEM_PROMPT,
     get_root_system_prompt,
 )
+from .root_llm import RootLLMOrchestrator, OrchestratorResult
 
 __all__ = [
     # Exceptions
@@ -71,6 +72,9 @@ __all__ = [
     "MockLLMClient",
     "ROOT_LLM_SYSTEM_PROMPT",
     "get_root_system_prompt",
+    # Root LLM Orchestrator
+    "RootLLMOrchestrator",
+    "OrchestratorResult",
 ]
 
 __version__ = "0.1.0"

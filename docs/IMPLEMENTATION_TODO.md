@@ -60,9 +60,9 @@ configs/
 ```
 
 **Acceptance Criteria**:
-- [ ] All directories exist
-- [ ] All `__init__.py` files exist
-- [ ] `uv run pytest` runs without import errors
+- [x] All directories exist
+- [x] All `__init__.py` files exist
+- [x] `uv run pytest` runs without import errors
 
 ---
 
@@ -101,8 +101,8 @@ class EvaluationError(LLMEvolveError):
 ```
 
 **Acceptance Criteria**:
-- [ ] All exceptions inherit from `LLMEvolveError`
-- [ ] Exceptions can be imported from `tetris_evolve.exceptions`
+- [x] All exceptions inherit from `LLMEvolveError`
+- [x] Exceptions can be imported from `tetris_evolve.exceptions`
 
 ---
 
@@ -459,16 +459,16 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 
 ## Phase 3: Root LLM Orchestrator
 
-### Task 3.1: Root LLM Orchestrator
+### Task 3.1: Root LLM Orchestrator ✅ DONE
 **Description**: Main orchestrator that runs the Root LLM evolution loop.
 
 **Dependencies**: [1.5, 2.1, 2.2, 2.4]
 
 **Files**:
-- `src/tetris_evolve/root_llm.py`
+- `src/tetris_evolve/root_llm.py` ✅ Implemented
 
 **Tests**:
-- `tests/test_root_llm.py`
+- `tests/test_root_llm.py` ✅ Implemented
 
 **Test Cases**:
 1. `test_initialization`: All components initialized correctly
@@ -481,21 +481,22 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 8. `test_conversation_history`: History maintained correctly
 
 **Acceptance Criteria**:
-- [ ] All tests pass
-- [ ] Full orchestration loop works with mock LLM
+- [x] All tests pass
+- [x] Full orchestration loop works with mock LLM
 
 ---
 
-### Task 3.2: Main Entry Point
+### Task 3.2: Main Entry Point ✅ DONE
 **Description**: CLI entry point for running experiments.
 
 **Dependencies**: [1.3, 3.1]
 
 **Files**:
-- `src/tetris_evolve/main.py`
+- `src/tetris_evolve/main.py` ✅ Implemented
+- `src/tetris_evolve/__main__.py` ✅ Implemented (module entry point)
 
 **Tests**:
-- `tests/test_main.py`
+- `tests/test_main.py` ✅ Implemented
 
 **Test Cases**:
 1. `test_cli_help`: --help works
@@ -505,8 +506,8 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 5. `test_cli_runs_orchestrator`: Orchestrator starts
 
 **Acceptance Criteria**:
-- [ ] All tests pass
-- [ ] Can run: `uv run python -m tetris_evolve --config configs/example.yaml`
+- [x] All tests pass
+- [x] Can run: `uv run python -m tetris_evolve --config configs/example.yaml`
 
 ---
 
@@ -679,6 +680,8 @@ Phase 4 (Polish):
 | 2.2 Root LLM System Prompt | ✅ DONE | `src/tetris_evolve/llm/prompts.py` |
 | 2.3 Evolution API | ✅ DONE | `src/tetris_evolve/evolution_api.py` |
 | 2.4 REPL + Evolution API | ✅ DONE | API injection via `get_api_functions()` |
+| 3.1 Root LLM Orchestrator | ✅ DONE | `src/tetris_evolve/root_llm.py` |
+| 3.2 Main Entry Point | ✅ DONE | `src/tetris_evolve/main.py` + `__main__.py` |
 | PoC: REPL | ✅ Validated | `experiments/poc_repl.py` |
 | PoC: Cost Tracker | ✅ Validated | `experiments/poc_cost_tracker.py` |
 | PoC: Integration | ✅ Validated | `experiments/poc_circle_packing_integration.py` |
@@ -686,6 +689,8 @@ Phase 4 (Polish):
 **Phase 1 Complete**: 89 tests passing
 
 **Phase 2 Complete**: LLM integration implemented
+
+**Phase 3 Complete**: Root LLM Orchestrator and CLI implemented (177 tests passing)
 
 **PoC Results**: Hexagonal packing achieved 2.08 sum (79% of 2.635 benchmark)
 

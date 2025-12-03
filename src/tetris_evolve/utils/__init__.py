@@ -7,6 +7,7 @@ from .code_extraction import (
     extract_code_blocks,
     extract_repl_blocks,
     extract_reasoning,
+    extract_python_code,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "extract_code_blocks",
     "extract_repl_blocks",
     "extract_reasoning",
+    "extract_python_code",
 ]

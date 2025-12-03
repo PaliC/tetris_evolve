@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol
 
 from .cost_tracker import CostTracker
 from .logger import ExperimentLogger
-from .utils.code_extraction import extract_code_blocks, extract_reasoning
+from .utils.code_extraction import extract_python_code, extract_reasoning
 
 
 class Evaluator(Protocol):
@@ -86,34 +86,6 @@ class GenerationSummary:
             "best_trial_id": self.best_trial_id,
             "best_score": self.best_score,
         }
-
-
-def _extract_python_code(text: str) -> Optional[str]:
-    """
-    Extract Python code from LLM response.
-
-    Looks for ```python code blocks first, falls back to unlabeled blocks.
-
-    Args:
-        text: LLM response text
-
-    Returns:
-        Extracted code or None if not found
-    """
-    # Try python blocks first
-    blocks = extract_code_blocks(text, language="python")
-    if blocks:
-        return blocks[0].code
-
-    # Fallback: try unlabeled code blocks (empty language)
-    # Use a simple pattern for unlabeled blocks
-    import re
-    pattern = r"```\s*\n(.*?)```"
-    matches = re.findall(pattern, text, re.DOTALL)
-    if matches:
-        return matches[0].strip()
-
-    return None
 
 
 class EvolutionAPI:
@@ -223,7 +195,7 @@ class EvolutionAPI:
             return trial.to_dict()
 
         # Extract code from response
-        code = _extract_python_code(response_text)
+        code = extract_python_code(response_text)
         reasoning = extract_reasoning(response_text)
 
         if not code:
