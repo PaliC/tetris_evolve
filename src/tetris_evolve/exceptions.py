@@ -33,3 +33,15 @@ class EvaluationError(LLMEvolveError):
     """Raised when program evaluation fails."""
 
     pass
+
+
+class GenerationLimitError(LLMEvolveError):
+    """Raised when attempting to exceed max_generations limit."""
+
+    pass
+
+
+class ChildrenLimitError(LLMEvolveError):
+    """Raised when attempting to exceed max_children_per_generation limit."""
+
+    pass

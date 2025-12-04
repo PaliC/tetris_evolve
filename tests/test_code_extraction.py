@@ -221,6 +221,168 @@ Done.
         assert reasoning == "Just plain text with no code."
 
 
+class TestNestedCodeBlocks:
+    """Tests for handling nested code blocks (code blocks inside code blocks)."""
+
+    def test_repl_block_with_nested_python(self):
+        """Extract REPL block containing nested ```python``` example."""
+        text = '''Here's my approach:
+
+```repl
+# Strategy 1: Hexagonal lattice packing
+prompt1 = """
+Write a circle packing algorithm.
+
+Example structure:
+```python
+import numpy as np
+
+def construct_packing():
+    return centers, radii, np.sum(radii)
+```
+
+Focus on maximizing sum of radii.
+"""
+
+result1 = spawn_child_llm(prompt1)
+print(f"Trial {result1['trial_id']}")
+```
+
+Now try another approach.
+'''
+        blocks = extract_code_blocks(text, language="repl")
+
+        assert len(blocks) == 1
+        # The extracted code should contain the nested ```python block
+        assert "```python" in blocks[0].code
+        assert "spawn_child_llm" in blocks[0].code
+        assert "import numpy" in blocks[0].code
+
+    def test_repl_block_with_multiple_nested_blocks(self):
+        """Handle REPL block with multiple nested code blocks."""
+        text = '''Explanation:
+
+```repl
+prompt = """
+Here are two approaches:
+
+Approach 1:
+```python
+def method1():
+    pass
+```
+
+Approach 2:
+```python
+def method2():
+    pass
+```
+
+Choose the best one.
+"""
+result = spawn_child_llm(prompt)
+```
+
+Done.
+'''
+        blocks = extract_code_blocks(text, language="repl")
+
+        assert len(blocks) == 1
+        assert "method1" in blocks[0].code
+        assert "method2" in blocks[0].code
+        assert "spawn_child_llm" in blocks[0].code
+
+    def test_multiple_repl_blocks_with_nested(self):
+        """Handle multiple REPL blocks each with nested code."""
+        text = '''First:
+
+```repl
+prompt1 = """
+```python
+def foo():
+    pass
+```
+"""
+result1 = spawn_child_llm(prompt1)
+```
+
+Second:
+
+```repl
+prompt2 = """
+```python
+def bar():
+    pass
+```
+"""
+result2 = spawn_child_llm(prompt2)
+```
+
+Done.
+'''
+        blocks = extract_code_blocks(text, language="repl")
+
+        assert len(blocks) == 2
+        assert "foo" in blocks[0].code
+        assert "result1" in blocks[0].code
+        assert "bar" in blocks[1].code
+        assert "result2" in blocks[1].code
+
+    def test_extract_reasoning_with_nested_blocks(self):
+        """Reasoning extraction should remove entire blocks including nested ones."""
+        text = '''First, I'll explain my approach.
+
+```repl
+prompt = """
+Example:
+```python
+x = 5
+```
+"""
+spawn_child_llm(prompt)
+```
+
+This implements the solution.
+'''
+        reasoning = extract_reasoning(text)
+
+        assert "First, I'll explain" in reasoning
+        assert "This implements" in reasoning
+        # All code including nested should be removed
+        assert "spawn_child_llm" not in reasoning
+        assert "x = 5" not in reasoning
+        assert "```" not in reasoning
+
+    def test_unlabeled_nested_block_closes_outer(self):
+        """Unlabeled nested blocks (no language tag) close the outer block.
+
+        This is expected behavior - only labeled code blocks (```python, etc.)
+        are treated as nested. Unlabeled ``` markers close blocks.
+        """
+        text = '''Start:
+
+```repl
+prompt = """
+Example:
+```
+code_here
+```
+"""
+result = func(prompt)
+```
+
+End.
+'''
+        blocks = extract_code_blocks(text, language="repl")
+
+        # The first unlabeled ``` closes the repl block early
+        # This is a known limitation - use labeled blocks for nesting
+        assert len(blocks) == 1
+        # Only content up to the first ``` is captured
+        assert "prompt" in blocks[0].code
+        assert "Example:" in blocks[0].code
+
+
 class TestExtractPythonCode:
     """Tests for extract_python_code function."""
 

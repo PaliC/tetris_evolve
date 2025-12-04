@@ -14,6 +14,7 @@ from tetris_evolve import (
     TrialResult,
 )
 from tetris_evolve.evaluation.circle_packing import CirclePackingEvaluator
+from tetris_evolve.exceptions import ChildrenLimitError, GenerationLimitError
 from tetris_evolve.llm import MockLLMClient
 
 
@@ -412,6 +413,220 @@ class TestTrialResult:
         assert d["metrics"] == {"sum_radii": 1.5}
         assert d["success"] is True
         assert d["parent_id"] == "parent_0_0"
+
+
+class TestChildrenLimitEnforcement:
+    """Tests for max_children_per_generation limit enforcement."""
+
+    def test_spawn_up_to_limit(self, sample_config, temp_dir, mock_evaluator):
+        """Test spawning children up to the limit succeeds."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        child_llm = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            responses=['```python\ndef run_packing(): pass\n```'] * 3,
+        )
+
+        api = EvolutionAPI(
+            evaluator=mock_evaluator,
+            child_llm=child_llm,
+            cost_tracker=cost_tracker,
+            logger=logger,
+            max_generations=5,
+            max_children_per_generation=3,
+        )
+
+        # Spawn 3 children (the limit)
+        for i in range(3):
+            result = api.spawn_child_llm(prompt=f"Test {i}")
+            assert result["trial_id"] == f"trial_0_{i}"
+
+        assert len(api.generations[0].trials) == 3
+
+    def test_spawn_exceeds_limit_raises(self, sample_config, temp_dir, mock_evaluator):
+        """Test that spawning beyond the limit raises ChildrenLimitError."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        child_llm = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            responses=['```python\ndef run_packing(): pass\n```'] * 4,
+        )
+
+        api = EvolutionAPI(
+            evaluator=mock_evaluator,
+            child_llm=child_llm,
+            cost_tracker=cost_tracker,
+            logger=logger,
+            max_generations=5,
+            max_children_per_generation=3,
+        )
+
+        # Spawn 3 children (the limit)
+        for i in range(3):
+            api.spawn_child_llm(prompt=f"Test {i}")
+
+        # 4th spawn should raise
+        with pytest.raises(ChildrenLimitError) as exc_info:
+            api.spawn_child_llm(prompt="One too many")
+
+        assert "Limit of 3 children reached" in str(exc_info.value)
+        assert "Call advance_generation()" in str(exc_info.value)
+
+    def test_spawn_after_advance_resets_limit(self, sample_config, temp_dir, mock_evaluator):
+        """Test that advancing generation resets the children count."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        child_llm = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            responses=['```python\ndef run_packing(): pass\n```'] * 6,
+        )
+
+        api = EvolutionAPI(
+            evaluator=mock_evaluator,
+            child_llm=child_llm,
+            cost_tracker=cost_tracker,
+            logger=logger,
+            max_generations=5,
+            max_children_per_generation=3,
+        )
+
+        # Spawn 3 children in gen 0
+        for i in range(3):
+            api.spawn_child_llm(prompt=f"Gen0 Test {i}")
+
+        # Advance to gen 1
+        api.advance_generation(["trial_0_0"], "Moving on")
+
+        # Should be able to spawn 3 more in gen 1
+        for i in range(3):
+            result = api.spawn_child_llm(prompt=f"Gen1 Test {i}")
+            assert result["trial_id"] == f"trial_1_{i}"
+
+        assert len(api.generations[1].trials) == 3
+
+
+class TestGenerationLimitEnforcement:
+    """Tests for max_generations limit enforcement."""
+
+    def test_advance_up_to_limit(self, sample_config, temp_dir, mock_evaluator):
+        """Test advancing generations up to the limit succeeds."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        child_llm = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            responses=['```python\ndef run_packing(): pass\n```'] * 3,
+        )
+
+        api = EvolutionAPI(
+            evaluator=mock_evaluator,
+            child_llm=child_llm,
+            cost_tracker=cost_tracker,
+            logger=logger,
+            max_generations=3,  # Can have gen 0, 1, 2
+            max_children_per_generation=1,
+        )
+
+        # Gen 0
+        api.spawn_child_llm(prompt="Gen 0")
+        new_gen = api.advance_generation(["trial_0_0"], "To gen 1")
+        assert new_gen == 1
+
+        # Gen 1
+        api.spawn_child_llm(prompt="Gen 1")
+        new_gen = api.advance_generation(["trial_1_0"], "To gen 2")
+        assert new_gen == 2
+
+        # Now at gen 2, which is the last allowed (0, 1, 2 = 3 generations)
+        assert api.current_generation == 2
+
+    def test_advance_exceeds_limit_raises(self, sample_config, temp_dir, mock_evaluator):
+        """Test that advancing beyond the limit raises GenerationLimitError."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        child_llm = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            responses=['```python\ndef run_packing(): pass\n```'] * 4,
+        )
+
+        api = EvolutionAPI(
+            evaluator=mock_evaluator,
+            child_llm=child_llm,
+            cost_tracker=cost_tracker,
+            logger=logger,
+            max_generations=2,  # Only gen 0 and 1 allowed
+            max_children_per_generation=1,
+        )
+
+        # Gen 0 -> Gen 1
+        api.spawn_child_llm(prompt="Gen 0")
+        api.advance_generation(["trial_0_0"], "To gen 1")
+
+        # Gen 1 spawn
+        api.spawn_child_llm(prompt="Gen 1")
+
+        # Try to advance to gen 2 - should fail
+        with pytest.raises(GenerationLimitError) as exc_info:
+            api.advance_generation(["trial_1_0"], "To gen 2")
+
+        assert "Maximum of 2 generations reached" in str(exc_info.value)
+        assert "Call terminate_evolution()" in str(exc_info.value)
+
+    def test_can_still_spawn_in_last_generation(self, sample_config, temp_dir, mock_evaluator):
+        """Test that children can still be spawned in the last generation."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        child_llm = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            responses=['```python\ndef run_packing(): pass\n```'] * 4,
+        )
+
+        api = EvolutionAPI(
+            evaluator=mock_evaluator,
+            child_llm=child_llm,
+            cost_tracker=cost_tracker,
+            logger=logger,
+            max_generations=2,
+            max_children_per_generation=3,
+        )
+
+        # Move to last generation
+        api.spawn_child_llm(prompt="Gen 0")
+        api.advance_generation(["trial_0_0"], "To gen 1")
+
+        # Should still be able to spawn children in gen 1
+        for i in range(3):
+            result = api.spawn_child_llm(prompt=f"Gen 1 child {i}")
+            assert result["trial_id"] == f"trial_1_{i}"
 
 
 class TestIntegrationWithRealEvaluator:

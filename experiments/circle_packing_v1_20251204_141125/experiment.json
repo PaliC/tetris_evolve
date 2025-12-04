@@ -1,0 +1,61 @@
+{
+  "experiment_id": "circle_packing_v1_20251204_141125",
+  "config": {
+    "experiment": {
+      "name": "circle_packing_v1",
+      "output_dir": "./experiments",
+      "seed": null
+    },
+    "root_llm": {
+      "model": "claude-sonnet-4-5-20250929",
+      "cost_per_million_input_tokens": 3.0,
+      "cost_per_million_output_tokens": 15.0,
+      "max_iterations": 30
+    },
+    "child_llm": {
+      "model": "claude-sonnet-4-5-20250929",
+      "cost_per_million_input_tokens": 3.0,
+      "cost_per_million_output_tokens": 15.0,
+      "max_iterations": null
+    },
+    "evaluation": {
+      "evaluator_fn": "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+      "evaluator_kwargs": {
+        "n_circles": 26,
+        "target": 2.635,
+        "timeout_seconds": 30
+      }
+    },
+    "evolution": {
+      "max_generations": 2,
+      "max_children_per_generation": 3
+    },
+    "budget": {
+      "max_total_cost": 20.0
+    }
+  },
+  "start_time": "2025-12-04T14:11:25.395119",
+  "end_time": "2025-12-04T14:16:16.147190",
+  "termination_reason": "Achieved 92.6% of benchmark (2.4390/2.635) using hexagonal packing. Further improvements would require more generations and sophisticated optimization techniques.",
+  "num_generations": 1,
+  "total_trials": 6,
+  "best_trial": {
+    "trial_id": "trial_0_2",
+    "sum_radii": 2.166666666666667,
+    "generation": 0
+  },
+  "generations": [
+    {
+      "generation_num": 0,
+      "num_trials": 3,
+      "num_successful_trials": 2,
+      "best_trial_id": "trial_0_2",
+      "best_sum_radii": 2.166666666666667,
+      "selected_trial_ids": [
+        "trial_0_2"
+      ],
+      "selection_reasoning": "Grid-based approach showed best results. Will build on this foundation.",
+      "timestamp": "2025-12-04T14:13:38.593634"
+    }
+  ]
+}

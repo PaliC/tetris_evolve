@@ -5,15 +5,15 @@
     "seed": null
   },
   "root_llm": {
-    "model": "claude-haiku-4-5-20251001",
-    "cost_per_million_input_tokens": 1.0,
-    "cost_per_million_output_tokens": 5.0,
+    "model": "claude-sonnet-4-5-20250929",
+    "cost_per_million_input_tokens": 3.0,
+    "cost_per_million_output_tokens": 15.0,
     "max_iterations": 30
   },
   "child_llm": {
-    "model": "claude-haiku-4-5-20251001",
-    "cost_per_million_input_tokens": 1.0,
-    "cost_per_million_output_tokens": 5.0,
+    "model": "claude-sonnet-4-5-20250929",
+    "cost_per_million_input_tokens": 3.0,
+    "cost_per_million_output_tokens": 15.0,
     "max_iterations": null
   },
   "evaluation": {
@@ -26,7 +26,7 @@
   },
   "evolution": {
     "max_generations": 2,
-    "max_children_per_generation": 2
+    "max_children_per_generation": 3
   },
   "budget": {
     "max_total_cost": 20.0

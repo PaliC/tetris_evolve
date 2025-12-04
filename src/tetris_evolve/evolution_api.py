@@ -11,6 +11,7 @@ from typing import Any, Protocol
 from tqdm import tqdm
 
 from .cost_tracker import CostTracker
+from .exceptions import ChildrenLimitError, GenerationLimitError
 from .logger import ExperimentLogger
 from .utils.code_extraction import extract_python_code, extract_reasoning
 
@@ -165,12 +166,23 @@ class EvolutionAPI:
                 'success': bool,
                 'error': Optional[str]
             }
+
+        Raises:
+            ChildrenLimitError: If max_children_per_generation limit is reached
         """
         # Check budget
         self.cost_tracker.raise_if_over_budget()
 
-        # Generate trial ID
+        # Check children limit
         trial_num = len(self.generations[self.current_generation].trials)
+        if trial_num >= self.max_children_per_generation:
+            raise ChildrenLimitError(
+                f"Cannot spawn more children in generation {self.current_generation}. "
+                f"Limit of {self.max_children_per_generation} children reached. "
+                f"Call advance_generation() to move to the next generation."
+            )
+
+        # Generate trial ID
         trial_id = f"trial_{self.current_generation}_{trial_num}"
 
         # Show progress for child LLM spawn
@@ -324,7 +336,19 @@ class EvolutionAPI:
 
         Returns:
             The new generation number
+
+        Raises:
+            GenerationLimitError: If max_generations limit is reached
         """
+        # Check generation limit (current_generation is 0-indexed,
+        # so if we're at generation max_generations-1, we can't advance)
+        if self.current_generation >= self.max_generations - 1:
+            raise GenerationLimitError(
+                f"Cannot advance beyond generation {self.current_generation}. "
+                f"Maximum of {self.max_generations} generations reached. "
+                f"Call terminate_evolution() to end the evolution process."
+            )
+
         # Update current generation summary
         gen = self.generations[self.current_generation]
         gen.selected_trial_ids = selected_trial_ids

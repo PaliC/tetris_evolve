@@ -23,8 +23,8 @@ evaluation:
     timeout_seconds: 30
 
 evolution:
-  max_generations: 3
-  max_children_per_generation: 5
+  max_generations: 2
+  max_children_per_generation: 3
 
 budget:
   max_total_cost: 20.0
