@@ -529,8 +529,8 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 5. `test_resume_experiment`: Can resume from saved state
 
 **Acceptance Criteria**:
-- [ ] All tests pass with mock LLMs
-- [ ] Full pipeline works end-to-end
+- [x] All tests pass with mock LLMs
+- [x] Full pipeline works end-to-end
 
 ---
 
@@ -549,8 +549,8 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 **Note**: These tests require API key and are skipped in CI by default.
 
 **Acceptance Criteria**:
-- [ ] Tests pass when run manually with API key
-- [ ] Tests skip gracefully when no API key
+- [x] Tests pass when run manually with API key
+- [x] Tests skip gracefully when no API key
 
 ---
 
@@ -593,9 +593,9 @@ evaluation:
 ```
 
 **Acceptance Criteria**:
-- [ ] Config loads without errors
-- [ ] All required fields present
-- [ ] Reasonable defaults for testing
+- [x] Config loads without errors
+- [x] All required fields present
+- [x] Reasonable defaults for testing
 
 ---
 
@@ -616,9 +616,9 @@ evaluation:
 6. Development guide
 
 **Acceptance Criteria**:
-- [ ] README explains how to install
-- [ ] README explains how to run
-- [ ] Configuration options documented
+- [x] README explains how to install
+- [x] README explains how to run
+- [x] Configuration options documented
 
 ---
 
@@ -682,6 +682,10 @@ Phase 4 (Polish):
 | 2.4 REPL + Evolution API | ✅ DONE | API injection via `get_api_functions()` |
 | 3.1 Root LLM Orchestrator | ✅ DONE | `src/tetris_evolve/root_llm.py` |
 | 3.2 Main Entry Point | ✅ DONE | `src/tetris_evolve/main.py` + `__main__.py` |
+| 4.1 Integration Tests | ✅ DONE | `tests/test_integration.py` |
+| 4.2 E2E Tests | ✅ DONE | `tests/test_e2e.py` (skipped without API key) |
+| 4.3 Example Configuration | ✅ DONE | `configs/example_config.yaml` |
+| 4.4 Documentation | ✅ DONE | `README.md` - full documentation |
 | PoC: REPL | ✅ Validated | `experiments/poc_repl.py` |
 | PoC: Cost Tracker | ✅ Validated | `experiments/poc_cost_tracker.py` |
 | PoC: Integration | ✅ Validated | `experiments/poc_circle_packing_integration.py` |
@@ -691,6 +695,8 @@ Phase 4 (Polish):
 **Phase 2 Complete**: LLM integration implemented
 
 **Phase 3 Complete**: Root LLM Orchestrator and CLI implemented (177 tests passing)
+
+**Phase 4 Complete**: Polish and E2E implemented (195 tests passing, 3 skipped)
 
 **PoC Results**: Hexagonal packing achieved 2.08 sum (79% of 2.635 benchmark)
 
