@@ -275,8 +275,14 @@ class EvolutionAPI:
         self._record_trial(trial)
         return trial.to_dict()
 
-    def _record_trial(self, trial: TrialResult) -> None:
-        """Record a trial in the current generation and log it."""
+    def _record_trial(self, trial: TrialResult, skip_file_write: bool = False) -> None:
+        """Record a trial in the current generation and log it.
+
+        Args:
+            trial: The trial result to record
+            skip_file_write: If True, skip writing the trial file (used when
+                            file was already written by parallel worker)
+        """
         self.generations[self.current_generation].trials.append(trial)
         self.all_trials[trial.trial_id] = trial
 
@@ -296,17 +302,18 @@ class EvolutionAPI:
             error_short = (trial.error or "unknown error")[:50]
             tqdm.write(f"       ✗ {trial.trial_id}: {error_short}")
 
-        # Log the trial
-        self.logger.log_trial(
-            trial_id=trial.trial_id,
-            generation=trial.generation,
-            code=trial.code,
-            metrics=trial.metrics,
-            prompt=trial.prompt,
-            response=trial.response,
-            reasoning=trial.reasoning,
-            parent_id=trial.parent_id,
-        )
+        # Log the trial (write file) unless already written by worker
+        if not skip_file_write:
+            self.logger.log_trial(
+                trial_id=trial.trial_id,
+                generation=trial.generation,
+                code=trial.code,
+                metrics=trial.metrics,
+                prompt=trial.prompt,
+                response=trial.response,
+                reasoning=trial.reasoning,
+                parent_id=trial.parent_id,
+            )
 
     def spawn_children_parallel(
         self,
@@ -423,7 +430,7 @@ class EvolutionAPI:
                 generation=self.current_generation,
             )
 
-            self._record_trial(trial)
+            self._record_trial(trial, skip_file_write=True)
             results.append(trial.to_dict())
 
         return results
