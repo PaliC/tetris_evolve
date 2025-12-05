@@ -5,8 +5,11 @@ This module contains the worker function that runs in a separate process
 to make LLM calls and evaluate the results.
 """
 
+import json
 import uuid
 from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import anthropic
@@ -36,6 +39,39 @@ class WorkerResult:
     input_tokens: int
     output_tokens: int
     call_id: str
+
+
+def _write_trial_file(
+    trial_id: str,
+    generation: int,
+    experiment_dir: str,
+    code: str,
+    metrics: dict[str, Any],
+    prompt: str,
+    response: str,
+    reasoning: str,
+    parent_id: str | None,
+) -> None:
+    """Write trial JSON file to disk for real-time progress tracking."""
+    gen_dir = Path(experiment_dir) / "generations" / f"gen_{generation}"
+    gen_dir.mkdir(parents=True, exist_ok=True)
+
+    trial_data = {
+        "trial_id": trial_id,
+        "generation": generation,
+        "parent_id": parent_id,
+        "code": code,
+        "metrics": metrics,
+        "prompt": prompt,
+        "response": response,
+        "reasoning": reasoning,
+        "timestamp": datetime.now().isoformat(),
+        "cost_data": None,
+    }
+
+    trial_path = gen_dir / f"{trial_id}.json"
+    with open(trial_path, "w") as f:
+        json.dump(trial_data, f, indent=2)
 
 
 def _make_llm_call_with_retry(
@@ -79,15 +115,27 @@ def child_worker(args: tuple) -> dict[str, Any]:
     2. Makes the LLM call
     3. Extracts code from the response
     4. Evaluates the code
-    5. Returns all results
+    5. Writes trial JSON file for real-time progress tracking
+    6. Returns all results
 
     Args:
-        args: Tuple of (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature)
+        args: Tuple of (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
+                        trial_id, generation, experiment_dir)
 
     Returns:
         Dictionary with all results needed to record the trial
     """
-    prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature = args
+    (
+        prompt,
+        parent_id,
+        model,
+        evaluator_kwargs,
+        max_tokens,
+        temperature,
+        trial_id,
+        generation,
+        experiment_dir,
+    ) = args
 
     call_id = str(uuid.uuid4())
     response_text = ""
@@ -124,7 +172,20 @@ def child_worker(args: tuple) -> dict[str, Any]:
 
         if not code:
             error = "No Python code block found in response"
+            # Write trial file for tracking even on failure
+            _write_trial_file(
+                trial_id=trial_id,
+                generation=generation,
+                experiment_dir=experiment_dir,
+                code="",
+                metrics={},
+                prompt=prompt,
+                response=response_text,
+                reasoning=reasoning,
+                parent_id=parent_id,
+            )
             return {
+                "trial_id": trial_id,
                 "prompt": prompt,
                 "parent_id": parent_id,
                 "response_text": response_text,
@@ -157,7 +218,21 @@ def child_worker(args: tuple) -> dict[str, Any]:
     except Exception as e:
         error = f"LLM call failed: {str(e)}"
 
+    # Write trial file for real-time progress tracking
+    _write_trial_file(
+        trial_id=trial_id,
+        generation=generation,
+        experiment_dir=experiment_dir,
+        code=code,
+        metrics=metrics,
+        prompt=prompt,
+        response=response_text,
+        reasoning=reasoning,
+        parent_id=parent_id,
+    )
+
     return {
+        "trial_id": trial_id,
         "prompt": prompt,
         "parent_id": parent_id,
         "response_text": response_text,

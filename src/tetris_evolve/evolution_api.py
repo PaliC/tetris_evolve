@@ -355,10 +355,21 @@ class EvolutionAPI:
             f"gen {self.current_generation}"
         )
 
+        # Pre-assign trial IDs for each child
+        starting_trial_num = len(self.generations[self.current_generation].trials)
+        trial_ids = [
+            f"trial_{self.current_generation}_{starting_trial_num + i}"
+            for i in range(len(children))
+        ]
+
+        # Get experiment directory for workers to write trial files
+        experiment_dir = str(self.logger.base_dir)
+
         # Prepare worker arguments
-        # Each worker gets: (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature)
+        # Each worker gets: (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
+        #                    trial_id, generation, experiment_dir)
         worker_args = []
-        for child in children:
+        for i, child in enumerate(children):
             prompt = child.get("prompt", "")
             parent_id = child.get("parent_id")
             worker_args.append((
@@ -368,6 +379,9 @@ class EvolutionAPI:
                 self.evaluator_kwargs,
                 4096,  # max_tokens
                 0.7,   # temperature
+                trial_ids[i],
+                self.current_generation,
+                experiment_dir,
             ))
 
         # Determine number of workers
@@ -383,9 +397,8 @@ class EvolutionAPI:
 
         # Process results and record trials
         for worker_result in worker_results:
-            # Generate trial ID
-            trial_num = len(self.generations[self.current_generation].trials)
-            trial_id = f"trial_{self.current_generation}_{trial_num}"
+            # Use pre-assigned trial ID from worker
+            trial_id = worker_result["trial_id"]
 
             # Record token usage in cost tracker
             if worker_result["input_tokens"] > 0 or worker_result["output_tokens"] > 0:
