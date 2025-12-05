@@ -204,16 +204,13 @@ class TestEvaluateProgram:
         assert "Evaluation error" in result["error"]
 
 
-class TestAdvanceGeneration:
-    """Tests for advance_generation."""
+class TestInternalAdvanceGeneration:
+    """Tests for _advance_generation (internal method)."""
 
     def test_advance_increments_generation(self, evolution_api):
-        """Test that advance_generation increments the counter."""
+        """Test that _advance_generation increments the counter."""
         evolution_api.spawn_child_llm(prompt="Test")
-        new_gen = evolution_api.advance_generation(
-            selected_trial_ids=["trial_0_0"],
-            reasoning="Selected best trial",
-        )
+        new_gen = evolution_api._advance_generation()
 
         assert new_gen == 1
         assert evolution_api.current_generation == 1
@@ -221,25 +218,38 @@ class TestAdvanceGeneration:
     def test_advance_creates_new_generation(self, evolution_api):
         """Test that advance creates a new generation entry."""
         evolution_api.spawn_child_llm(prompt="Test")
-        evolution_api.advance_generation(
-            selected_trial_ids=["trial_0_0"],
-            reasoning="Test",
-        )
+        evolution_api._advance_generation()
 
         assert len(evolution_api.generations) == 2
         assert evolution_api.generations[1].generation_num == 1
 
-    def test_advance_records_selection(self, evolution_api):
-        """Test that selection is recorded."""
+    def test_advance_auto_selects_best_trials(self, evolution_api):
+        """Test that best trials are auto-selected."""
         evolution_api.spawn_child_llm(prompt="Test")
-        evolution_api.advance_generation(
-            selected_trial_ids=["trial_0_0"],
-            reasoning="Selected best trial",
-        )
+        evolution_api._advance_generation()
 
         gen0 = evolution_api.generations[0]
-        assert gen0.selected_trial_ids == ["trial_0_0"]
-        assert gen0.selection_reasoning == "Selected best trial"
+        # Auto-selects best performing trials
+        assert gen0.selection_reasoning == "Auto-selected top performing trials"
+
+    def test_can_advance_generation(self, evolution_api):
+        """Test can_advance_generation helper."""
+        assert evolution_api.can_advance_generation() is True
+
+        # Advance to near max
+        for i in range(4):
+            evolution_api.spawn_child_llm(prompt=f"Test {i}")
+            evolution_api._advance_generation()
+
+        # At generation 4 (max is 5), can't advance further
+        assert evolution_api.can_advance_generation() is False
+
+    def test_has_children_in_current_generation(self, evolution_api):
+        """Test has_children_in_current_generation helper."""
+        assert evolution_api.has_children_in_current_generation() is False
+
+        evolution_api.spawn_child_llm(prompt="Test")
+        assert evolution_api.has_children_in_current_generation() is True
 
 
 class TestTerminateEvolution:
@@ -347,7 +357,7 @@ class TestInternalMethods:
     def test_get_generation_history(self, evolution_api):
         """Test that generation history is returned."""
         evolution_api.spawn_child_llm(prompt="Test")
-        evolution_api.advance_generation(["trial_0_0"], "Test")
+        evolution_api._advance_generation()
 
         history = evolution_api._get_generation_history()
 
@@ -365,9 +375,16 @@ class TestGetAPIFunctions:
 
         assert len(funcs) == 4
         assert "spawn_child_llm" in funcs
+        assert "spawn_children_parallel" in funcs
         assert "evaluate_program" in funcs
-        assert "advance_generation" in funcs
         assert "terminate_evolution" in funcs
+
+    def test_advance_generation_not_exposed(self, evolution_api):
+        """Test that advance_generation is not in the public API."""
+        funcs = evolution_api.get_api_functions()
+
+        # advance_generation is now internal, not exposed to Root LLM
+        assert "advance_generation" not in funcs
 
     def test_internal_functions_not_exposed(self, evolution_api):
         """Test that internal helper functions are not exposed."""
@@ -379,6 +396,7 @@ class TestGetAPIFunctions:
         assert "get_cost_remaining" not in funcs
         assert "get_trial" not in funcs
         assert "get_current_generation" not in funcs
+        assert "_advance_generation" not in funcs
 
     def test_functions_are_callable(self, evolution_api):
         """Test that returned functions are callable."""
@@ -480,7 +498,6 @@ class TestChildrenLimitEnforcement:
             api.spawn_child_llm(prompt="One too many")
 
         assert "Limit of 3 children reached" in str(exc_info.value)
-        assert "Call advance_generation()" in str(exc_info.value)
 
     def test_spawn_after_advance_resets_limit(self, sample_config, temp_dir, mock_evaluator):
         """Test that advancing generation resets the children count."""
@@ -509,8 +526,8 @@ class TestChildrenLimitEnforcement:
         for i in range(3):
             api.spawn_child_llm(prompt=f"Gen0 Test {i}")
 
-        # Advance to gen 1
-        api.advance_generation(["trial_0_0"], "Moving on")
+        # Advance to gen 1 (using internal method)
+        api._advance_generation()
 
         # Should be able to spawn 3 more in gen 1
         for i in range(3):
@@ -548,12 +565,12 @@ class TestGenerationLimitEnforcement:
 
         # Gen 0
         api.spawn_child_llm(prompt="Gen 0")
-        new_gen = api.advance_generation(["trial_0_0"], "To gen 1")
+        new_gen = api._advance_generation()
         assert new_gen == 1
 
         # Gen 1
         api.spawn_child_llm(prompt="Gen 1")
-        new_gen = api.advance_generation(["trial_1_0"], "To gen 2")
+        new_gen = api._advance_generation()
         assert new_gen == 2
 
         # Now at gen 2, which is the last allowed (0, 1, 2 = 3 generations)
@@ -584,17 +601,16 @@ class TestGenerationLimitEnforcement:
 
         # Gen 0 -> Gen 1
         api.spawn_child_llm(prompt="Gen 0")
-        api.advance_generation(["trial_0_0"], "To gen 1")
+        api._advance_generation()
 
         # Gen 1 spawn
         api.spawn_child_llm(prompt="Gen 1")
 
         # Try to advance to gen 2 - should fail
         with pytest.raises(GenerationLimitError) as exc_info:
-            api.advance_generation(["trial_1_0"], "To gen 2")
+            api._advance_generation()
 
         assert "Maximum of 2 generations reached" in str(exc_info.value)
-        assert "Call terminate_evolution()" in str(exc_info.value)
 
     def test_can_still_spawn_in_last_generation(self, sample_config, temp_dir, mock_evaluator):
         """Test that children can still be spawned in the last generation."""
@@ -621,7 +637,7 @@ class TestGenerationLimitEnforcement:
 
         # Move to last generation
         api.spawn_child_llm(prompt="Gen 0")
-        api.advance_generation(["trial_0_0"], "To gen 1")
+        api._advance_generation()
 
         # Should still be able to spawn children in gen 1
         for i in range(3):

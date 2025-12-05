@@ -13,7 +13,7 @@ from tqdm import tqdm
 from .config import Config, load_evaluator
 from .cost_tracker import CostTracker
 from .evolution_api import EvolutionAPI
-from .exceptions import BudgetExceededError
+from .exceptions import BudgetExceededError, GenerationLimitError
 from .llm.client import LLMClient, MockLLMClient
 from .llm.prompts import get_root_system_prompt
 from .logger import ExperimentLogger
@@ -27,7 +27,7 @@ class OrchestratorResult:
 
     terminated: bool
     reason: str
-    num_iterations: int
+    num_generations: int
     best_program: str | None = None
     best_score: float = 0.0
     total_trials: int = 0
@@ -39,15 +39,13 @@ class RootLLMOrchestrator:
     """
     Main orchestrator for the Root LLM evolution loop.
 
-    The orchestrator:
+    The orchestrator runs a generation-driven loop:
     1. Initializes all components (LLM clients, REPL, Evolution API, etc.)
-    2. Builds the initial conversation with system prompt
-    3. Runs the conversation loop:
-       - Send messages to Root LLM
-       - Extract and execute ```repl``` code blocks
-       - Add results back to conversation
-       - Check for termination conditions
-    4. Returns final results
+    2. For each generation:
+       - Call Root LLM with current generation info
+       - Execute REPL code to spawn children
+       - Automatically advance to next generation
+    3. Returns final results
     """
 
     def __init__(
@@ -67,7 +65,8 @@ class RootLLMOrchestrator:
             logger: Optional pre-configured logger (for testing)
         """
         self.config = config
-        self.max_iterations = config.root_llm.max_iterations or 30
+        self.max_generations = config.evolution.max_generations
+        self.max_children_per_generation = config.evolution.max_children_per_generation
 
         # Initialize cost tracker
         self.cost_tracker = CostTracker(config)
@@ -118,8 +117,15 @@ class RootLLMOrchestrator:
 
         # Conversation state
         self.messages: list[dict[str, str]] = []
-        self.system_prompt = get_root_system_prompt()
         self.turn_number = 0
+
+    def _get_system_prompt(self) -> str:
+        """Get the system prompt with current generation info."""
+        return get_root_system_prompt(
+            max_children_per_generation=self.max_children_per_generation,
+            max_generations=self.max_generations,
+            current_generation=self.evolution_api.current_generation,
+        )
 
     def build_initial_messages(self) -> list[dict[str, str]]:
         """
@@ -133,8 +139,8 @@ class RootLLMOrchestrator:
             {
                 "role": "user",
                 "content": (
-                    "Begin the evolution process. Start by exploring different "
-                    "circle packing strategies to understand what works well."
+                    f"Begin generation 0. Spawn up to {self.max_children_per_generation} children "
+                    "exploring different circle packing strategies."
                 ),
             }
         ]
@@ -196,9 +202,64 @@ class RootLLMOrchestrator:
         """
         return self.evolution_api.is_terminated
 
+    def _build_generation_feedback_message(self) -> str:
+        """Build a feedback message with results from the previous generation."""
+        prev_gen = self.evolution_api.current_generation - 1
+        if prev_gen < 0:
+            return ""
+
+        gen_summary = self.evolution_api.generations[prev_gen]
+        trials = gen_summary.trials
+
+        # Build feedback message
+        lines = [
+            f"Generation {prev_gen} complete. {len(trials)} children spawned.",
+            "",
+            "Results:",
+        ]
+
+        # Sort by score
+        sorted_trials = sorted(
+            trials,
+            key=lambda t: t.metrics.get("sum_radii", 0) if t.success else 0,
+            reverse=True,
+        )
+
+        for trial in sorted_trials:
+            score = trial.metrics.get("sum_radii", 0) if trial.success else 0
+            status = "valid" if trial.success else f"invalid: {trial.error or 'unknown'}"
+            lines.append(f"  - {trial.trial_id}: {status}, sum_radii={score:.4f}")
+
+        # Include best code for mutation
+        if gen_summary.best_trial_id and gen_summary.best_score > 0:
+            best_trial = self.evolution_api.all_trials.get(gen_summary.best_trial_id)
+            if best_trial and best_trial.code:
+                lines.extend([
+                    "",
+                    f"Best trial: {gen_summary.best_trial_id} (score: {gen_summary.best_score:.4f})",
+                    "Best code for reference/mutation:",
+                    "```python",
+                    best_trial.code,
+                    "```",
+                ])
+
+        lines.extend([
+            "",
+            f"Now starting generation {self.evolution_api.current_generation}. "
+            f"Spawn up to {self.max_children_per_generation} children.",
+        ])
+
+        return "\n".join(lines)
+
     def run(self) -> OrchestratorResult:
         """
         Run the Root LLM evolution loop.
+
+        The loop is generation-driven:
+        1. Root LLM is called once per generation
+        2. Children are spawned via REPL execution
+        3. Generation advances automatically after spawning
+        4. Results are fed back for next generation
 
         Returns:
             OrchestratorResult with final statistics
@@ -206,14 +267,12 @@ class RootLLMOrchestrator:
         # Build initial messages
         self.build_initial_messages()
 
-        termination_reason = "max_iterations_reached"
-        iteration = 0
-        max_generations = self.config.evolution.max_generations
-        max_children = self.config.evolution.max_children_per_generation
+        termination_reason = "max_generations_reached"
+        generations_completed = 0
 
         # Create outer progress bar for generations
         gen_pbar = tqdm(
-            total=max_generations,
+            total=self.max_generations,
             desc="Generations",
             unit="gen",
             position=0,
@@ -222,7 +281,7 @@ class RootLLMOrchestrator:
 
         # Create inner progress bar for children in current generation
         children_pbar = tqdm(
-            total=max_children,
+            total=self.max_children_per_generation,
             desc="  Children",
             unit="child",
             position=1,
@@ -230,14 +289,9 @@ class RootLLMOrchestrator:
             bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}]",
         )
 
-        last_generation = 0
-        last_children_count = 0
-
         def update_pbar_postfix() -> None:
             """Update progress bars with current stats."""
-            nonlocal last_generation, last_children_count
             cost_summary = self.cost_tracker.get_summary()
-            current_gen = self.evolution_api.current_generation
             trials = len(self.evolution_api.all_trials)
             successes = sum(1 for t in self.evolution_api.all_trials.values() if t.success)
             best_score = max(
@@ -245,20 +299,11 @@ class RootLLMOrchestrator:
                 default=0,
             )
 
-            # Update generation progress bar if generation changed
-            if current_gen > last_generation:
-                gen_pbar.update(current_gen - last_generation)
-                last_generation = current_gen
-                # Reset children progress bar for new generation
-                children_pbar.reset()
-                children_pbar.set_description(f"  Gen {current_gen} children")
-                last_children_count = 0
-
             # Update children progress bar
+            current_gen = self.evolution_api.current_generation
             current_gen_trials = len(self.evolution_api.generations[current_gen].trials)
-            if current_gen_trials > last_children_count:
-                children_pbar.update(current_gen_trials - last_children_count)
-                last_children_count = current_gen_trials
+            children_pbar.n = current_gen_trials
+            children_pbar.refresh()
 
             gen_pbar.set_postfix(
                 trials=trials,
@@ -268,8 +313,10 @@ class RootLLMOrchestrator:
             )
 
         try:
-            for _iteration in range(self.max_iterations):
-                iteration = _iteration  # Track iteration for result
+            for generation in range(self.max_generations):
+                current_gen = self.evolution_api.current_generation
+                children_pbar.reset()
+                children_pbar.set_description(f"  Gen {current_gen} children")
                 update_pbar_postfix()
 
                 # Check budget before LLM call
@@ -279,10 +326,13 @@ class RootLLMOrchestrator:
                     termination_reason = f"budget_exceeded: {str(e)}"
                     break
 
+                # Get system prompt with current generation info
+                system_prompt = self._get_system_prompt()
+
                 # Call Root LLM
                 response = self.root_llm.generate(
                     messages=self.messages,
-                    system=self.system_prompt,
+                    system=system_prompt,
                     max_tokens=4096,
                     temperature=0.7,
                 )
@@ -316,44 +366,63 @@ class RootLLMOrchestrator:
                     )
                     self.turn_number += 1
 
-                # Update progress bars (children count is updated inside update_pbar_postfix)
-                update_pbar_postfix()
+                    # Update progress after each code block
+                    update_pbar_postfix()
 
-                # Check if evolution was terminated
+                # Check if evolution was explicitly terminated by Root LLM
                 if self.check_termination(assistant_message):
                     termination_reason = (
                         self.evolution_api._termination_reason or "evolution_terminated"
                     )
+                    generations_completed = generation + 1
                     break
 
-                # Add execution results as user message for next iteration
-                if execution_results:
-                    user_message = "Execution results:\n\n" + "\n\n---\n\n".join(
-                        execution_results
+                # Automatically advance generation if children were spawned
+                if self.evolution_api.has_children_in_current_generation():
+                    try:
+                        self.evolution_api._advance_generation()
+                        gen_pbar.update(1)
+                        generations_completed = generation + 1
+                    except GenerationLimitError:
+                        # Reached max generations
+                        termination_reason = "max_generations_reached"
+                        generations_completed = generation + 1
+                        break
+
+                    # Build feedback message for next generation
+                    feedback = self._build_generation_feedback_message()
+                    self.messages.append({"role": "user", "content": feedback})
+
+                    # Log the user turn
+                    self.logger.log_root_turn(
+                        turn_number=self.turn_number,
+                        role="user",
+                        content=feedback,
                     )
+                    self.turn_number += 1
                 else:
-                    user_message = (
-                        "No REPL code was executed. Please continue with the "
-                        "evolution process using ```repl``` code blocks."
+                    # No children spawned - add execution results and continue
+                    if execution_results:
+                        user_message = "Execution results:\n\n" + "\n\n---\n\n".join(
+                            execution_results
+                        )
+                    else:
+                        user_message = (
+                            "No children were spawned. Please spawn children using "
+                            "`spawn_children_parallel()` in a ```repl``` code block."
+                        )
+
+                    self.messages.append({"role": "user", "content": user_message})
+                    self.logger.log_root_turn(
+                        turn_number=self.turn_number,
+                        role="user",
+                        content=user_message,
                     )
-
-                self.messages.append({"role": "user", "content": user_message})
-
-                # Log the user turn
-                self.logger.log_root_turn(
-                    turn_number=self.turn_number,
-                    role="user",
-                    content=user_message,
-                )
-                self.turn_number += 1
+                    self.turn_number += 1
 
         except BudgetExceededError as e:
             termination_reason = f"budget_exceeded: {str(e)}"
         finally:
-            # Update generation bar one final time to reflect completed generation
-            final_gen = self.evolution_api.current_generation
-            if final_gen >= last_generation:
-                gen_pbar.update(final_gen - last_generation + 1)
             children_pbar.close()
             gen_pbar.close()
 
@@ -376,7 +445,7 @@ class RootLLMOrchestrator:
         return OrchestratorResult(
             terminated=True,
             reason=termination_reason,
-            num_iterations=iteration + 1,
+            num_generations=generations_completed,
             best_program=best_program,
             best_score=best_score,
             total_trials=total_trials,

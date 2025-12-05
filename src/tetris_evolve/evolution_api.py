@@ -186,8 +186,7 @@ class EvolutionAPI:
         if trial_num >= self.max_children_per_generation:
             raise ChildrenLimitError(
                 f"Cannot spawn more children in generation {self.current_generation}. "
-                f"Limit of {self.max_children_per_generation} children reached. "
-                f"Call advance_generation() to move to the next generation."
+                f"Limit of {self.max_children_per_generation} children reached."
             )
 
         # Generate trial ID
@@ -347,8 +346,7 @@ class EvolutionAPI:
         if current_count + len(children) > self.max_children_per_generation:
             raise ChildrenLimitError(
                 f"Cannot spawn {len(children)} children in generation {self.current_generation}. "
-                f"Current count: {current_count}, limit: {self.max_children_per_generation}. "
-                f"Call advance_generation() to move to the next generation."
+                f"Current count: {current_count}, limit: {self.max_children_per_generation}."
             )
 
         # Show progress
@@ -436,17 +434,12 @@ class EvolutionAPI:
                 "error": f"Evaluation error: {str(e)}",
             }
 
-    def advance_generation(
-        self,
-        selected_trial_ids: list[str],
-        reasoning: str,
-    ) -> int:
+    def _advance_generation(self) -> int:
         """
-        Advance to the next generation with selected trials as parents.
+        Advance to the next generation automatically.
 
-        Args:
-            selected_trial_ids: IDs of trials to use as parents
-            reasoning: Explanation for selection
+        This is an internal method called by the orchestrator after children
+        are spawned for a generation. It is not exposed to the Root LLM.
 
         Returns:
             The new generation number
@@ -459,12 +452,17 @@ class EvolutionAPI:
         if self.current_generation >= self.max_generations - 1:
             raise GenerationLimitError(
                 f"Cannot advance beyond generation {self.current_generation}. "
-                f"Maximum of {self.max_generations} generations reached. "
-                f"Call terminate_evolution() to end the evolution process."
+                f"Maximum of {self.max_generations} generations reached."
             )
 
         # Update current generation summary
         gen = self.generations[self.current_generation]
+
+        # Auto-select best trials as parents
+        best_trials = self._get_best_trials(n=min(3, len(gen.trials)))
+        selected_trial_ids = [t["trial_id"] for t in best_trials]
+        reasoning = "Auto-selected top performing trials"
+
         gen.selected_trial_ids = selected_trial_ids
         gen.selection_reasoning = reasoning
 
@@ -494,6 +492,14 @@ class EvolutionAPI:
         )
 
         return self.current_generation
+
+    def can_advance_generation(self) -> bool:
+        """Check if we can advance to the next generation."""
+        return self.current_generation < self.max_generations - 1
+
+    def has_children_in_current_generation(self) -> bool:
+        """Check if any children have been spawned in the current generation."""
+        return len(self.generations[self.current_generation].trials) > 0
 
     def terminate_evolution(self, reason: str, best_program: str | None = None) -> dict[str, Any]:
         """
@@ -609,12 +615,13 @@ class EvolutionAPI:
         """
         Get a dictionary of API functions to inject into the REPL.
 
-        The 5 core evolution functions are exposed:
+        The 4 core evolution functions are exposed:
         - spawn_child_llm: Generate new programs via child LLM (sequential)
         - spawn_children_parallel: Generate multiple programs in parallel
         - evaluate_program: Evaluate code directly
-        - advance_generation: Move to next generation
         - terminate_evolution: End the evolution process
+
+        Note: advance_generation is no longer exposed - it happens automatically.
 
         Returns:
             Dictionary mapping function names to callables
@@ -623,6 +630,5 @@ class EvolutionAPI:
             "spawn_child_llm": self.spawn_child_llm,
             "spawn_children_parallel": self.spawn_children_parallel,
             "evaluate_program": self.evaluate_program,
-            "advance_generation": self.advance_generation,
             "terminate_evolution": self.terminate_evolution,
         }

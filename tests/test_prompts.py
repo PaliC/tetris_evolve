@@ -4,7 +4,7 @@ Tests for the prompts module.
 
 
 from tetris_evolve.llm.prompts import (
-    ROOT_LLM_SYSTEM_PROMPT,
+    ROOT_LLM_SYSTEM_PROMPT_TEMPLATE,
     format_child_mutation_prompt,
     get_root_system_prompt,
 )
@@ -19,35 +19,43 @@ class TestRootSystemPrompt:
         assert "spawn_child_llm" in prompt
         assert "prompt: str" in prompt or "prompt:" in prompt
 
+    def test_prompt_documents_spawn_children_parallel(self):
+        """Test that spawn_children_parallel is documented."""
+        prompt = get_root_system_prompt()
+        assert "spawn_children_parallel" in prompt
+        assert "PRIMARY FUNCTION" in prompt
+
     def test_prompt_documents_evaluate_program(self):
         """Test that evaluate_program is documented."""
         prompt = get_root_system_prompt()
         assert "evaluate_program" in prompt
 
-    def test_prompt_documents_advance_generation(self):
-        """Test that advance_generation is documented."""
+    def test_prompt_does_not_document_advance_generation(self):
+        """Test that advance_generation is NOT documented (now internal)."""
         prompt = get_root_system_prompt()
-        assert "advance_generation" in prompt
+        # advance_generation should not be in the available functions
+        assert "### advance_generation" not in prompt
 
     def test_prompt_documents_terminate_evolution(self):
         """Test that terminate_evolution is documented."""
         prompt = get_root_system_prompt()
         assert "terminate_evolution" in prompt
-        assert "best_program" in prompt  # New argument
+        assert "best_program" in prompt
 
     def test_prompt_documents_only_4_functions(self):
         """Test that only 4 core functions are documented."""
         prompt = get_root_system_prompt()
         assert "4 functions" in prompt or "these 4" in prompt.lower()
 
-    def test_prompt_does_not_document_removed_functions(self):
-        """Test that removed helper functions are not documented."""
+    def test_prompt_does_not_document_internal_functions(self):
+        """Test that internal helper functions are not documented."""
         prompt = get_root_system_prompt()
         # These should not be listed as available functions
         assert "### get_best_trials" not in prompt
         assert "### get_cost_remaining" not in prompt
         assert "### get_trial" not in prompt
         assert "### get_generation_history" not in prompt
+        assert "### _advance_generation" not in prompt
 
     def test_prompt_explains_repl_usage(self):
         """Test that REPL usage is explained."""
@@ -73,6 +81,23 @@ class TestRootSystemPrompt:
         prompt = get_root_system_prompt()
         assert isinstance(prompt, str)
         assert len(prompt) > 0
+
+    def test_prompt_includes_evolution_parameters(self):
+        """Test that evolution parameters are included in prompt."""
+        prompt = get_root_system_prompt(
+            max_children_per_generation=5,
+            max_generations=3,
+            current_generation=1,
+        )
+        assert "5" in prompt  # max_children_per_generation
+        assert "3" in prompt  # max_generations
+        assert "Current generation" in prompt
+
+    def test_prompt_explains_automatic_generation_advance(self):
+        """Test that automatic generation advancement is explained."""
+        prompt = get_root_system_prompt()
+        assert "automatically" in prompt.lower()
+        assert "generation" in prompt.lower()
 
 
 class TestFormatChildMutationPrompt:
@@ -110,13 +135,30 @@ class TestFormatChildMutationPrompt:
         assert "run_packing" in prompt
 
 
-class TestRootLLMSystemPromptConstant:
-    """Tests for the ROOT_LLM_SYSTEM_PROMPT constant."""
+class TestRootLLMSystemPromptTemplate:
+    """Tests for the ROOT_LLM_SYSTEM_PROMPT_TEMPLATE constant."""
 
-    def test_constant_equals_function_result(self):
-        """Test that constant matches function return."""
-        assert get_root_system_prompt() == ROOT_LLM_SYSTEM_PROMPT
+    def test_template_contains_placeholders(self):
+        """Test that template contains format placeholders."""
+        assert "{max_children_per_generation}" in ROOT_LLM_SYSTEM_PROMPT_TEMPLATE
+        assert "{max_generations}" in ROOT_LLM_SYSTEM_PROMPT_TEMPLATE
+        assert "{current_generation}" in ROOT_LLM_SYSTEM_PROMPT_TEMPLATE
 
-    def test_constant_is_not_empty(self):
-        """Test that constant is not empty."""
-        assert len(ROOT_LLM_SYSTEM_PROMPT) > 0
+    def test_template_is_not_empty(self):
+        """Test that template is not empty."""
+        assert len(ROOT_LLM_SYSTEM_PROMPT_TEMPLATE) > 0
+
+    def test_function_formats_template(self):
+        """Test that function properly formats the template."""
+        prompt = get_root_system_prompt(
+            max_children_per_generation=7,
+            max_generations=5,
+            current_generation=2,
+        )
+        # Placeholders should be replaced
+        assert "{max_children_per_generation}" not in prompt
+        assert "{max_generations}" not in prompt
+        assert "{current_generation}" not in prompt
+        # Values should appear
+        assert "7" in prompt
+        assert "5" in prompt

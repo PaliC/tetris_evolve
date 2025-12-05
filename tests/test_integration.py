@@ -152,11 +152,8 @@ class TestMultiGenerationFlow:
         assert evolution_api.current_generation == 0
         assert len(evolution_api.generations[0].trials) == 2
 
-        # Advance to generation 1
-        new_gen = evolution_api.advance_generation(
-            selected_trial_ids=[result1["trial_id"]],
-            reasoning="First trial had better score"
-        )
+        # Advance to generation 1 (using internal method)
+        new_gen = evolution_api._advance_generation()
         assert new_gen == 1
         assert evolution_api.current_generation == 1
 
@@ -172,11 +169,8 @@ class TestMultiGenerationFlow:
         assert len(evolution_api.generations[1].trials) == 2
         assert result3["parent_id"] == result1["trial_id"]
 
-        # Advance to generation 2
-        new_gen = evolution_api.advance_generation(
-            selected_trial_ids=[result3["trial_id"], result4["trial_id"]],
-            reasoning="Both look promising"
-        )
+        # Advance to generation 2 (using internal method)
+        new_gen = evolution_api._advance_generation()
         assert new_gen == 2
 
         # Verify generation history
@@ -443,14 +437,11 @@ class TestResumeExperiment:
         )
 
         # Run some trials
-        result1 = evolution_api.spawn_child_llm(prompt="Test 1")
+        _result1 = evolution_api.spawn_child_llm(prompt="Test 1")
         _result2 = evolution_api.spawn_child_llm(prompt="Test 2")
 
-        # Advance generation
-        evolution_api.advance_generation(
-            selected_trial_ids=[result1["trial_id"]],
-            reasoning="Testing save/load"
-        )
+        # Advance generation (using internal method)
+        evolution_api._advance_generation()
 
         # Save experiment
         logger.save_experiment(termination_reason="paused_for_resume_test")
@@ -485,7 +476,10 @@ class TestEndToEndWithMockLLM:
     def test_full_evolution_cycle(
         self, integration_config, temp_dir, sample_valid_packing_code
     ):
-        """Test a complete evolution cycle with spawning, evaluation, and termination."""
+        """Test a complete evolution cycle with spawning and automatic generation advance."""
+        # Set to 2 generations for this test
+        integration_config.evolution.max_generations = 2
+
         orchestrator = RootLLMOrchestrator(integration_config)
         cost_tracker = orchestrator.cost_tracker
 
@@ -506,31 +500,20 @@ class TestEndToEndWithMockLLM:
             f"Hex approach:\n```python\n{sample_valid_packing_code}\n```",
         ])
 
-        # Set up root responses with evolution flow
+        # Set up root responses - no advance_generation needed, it happens automatically
         mock_root.set_responses([
-            '''I'll start by trying different strategies.
+            '''Generation 0: I'll try a grid-based approach.
 
 ```repl
-# Try first approach
-result1 = spawn_child_llm("Try a grid-based packing approach")
-print(f"Trial 1: valid={result1['metrics'].get('valid')}, sum={result1['metrics'].get('sum_radii', 0):.4f}")
+result = spawn_child_llm("Try a grid-based packing approach")
+print(f"Trial: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
 ```
 ''',
-            '''Good start. Let me try another approach.
+            '''Generation 1: Building on previous results with hexagonal approach.
 
 ```repl
-result2 = spawn_child_llm("Try a hexagonal packing approach")
-print(f"Trial 2: valid={result2['metrics'].get('valid')}, sum={result2['metrics'].get('sum_radii', 0):.4f}")
-
-# Advance generation with the better result
-best_id = result1['trial_id'] if result1['metrics'].get('sum_radii', 0) > result2['metrics'].get('sum_radii', 0) else result2['trial_id']
-advance_generation([best_id], "Selected the trial with higher sum_radii")
-```
-''',
-            '''We have explored enough. Time to terminate.
-
-```repl
-terminate_evolution("Explored initial strategies, found valid solutions")
+result = spawn_child_llm("Try a hexagonal packing approach")
+print(f"Trial: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
 ```
 ''',
         ])
@@ -548,11 +531,60 @@ terminate_evolution("Explored initial strategies, found valid solutions")
         assert result.best_score > 0
         assert result.cost_summary is not None
         assert result.cost_summary.get("total_cost", 0) > 0
+        assert result.num_generations == 2
+        assert "max_generations" in result.reason
+
+    def test_evolution_with_early_termination(
+        self, integration_config, temp_dir, sample_valid_packing_code
+    ):
+        """Test that Root LLM can terminate early."""
+        orchestrator = RootLLMOrchestrator(integration_config)
+        cost_tracker = orchestrator.cost_tracker
+
+        mock_root = MockLLMClient(
+            model=integration_config.root_llm.model,
+            cost_tracker=cost_tracker,
+            llm_type="root",
+        )
+        mock_child = MockLLMClient(
+            model=integration_config.child_llm.model,
+            cost_tracker=cost_tracker,
+            llm_type="child",
+        )
+
+        mock_child.set_responses([
+            f"Valid:\n```python\n{sample_valid_packing_code}\n```",
+        ])
+
+        mock_root.set_responses([
+            '''Testing and terminating early.
+
+```repl
+result = spawn_child_llm("Try approach")
+print(f"Result: valid={result['success']}")
+terminate_evolution("Found good solution, terminating early")
+```
+''',
+        ])
+
+        orchestrator.root_llm = mock_root
+        orchestrator.child_llm = mock_child
+        orchestrator.evolution_api.child_llm = mock_child
+
+        result = orchestrator.run()
+
+        assert result.terminated is True
+        assert result.total_trials == 1
+        assert result.successful_trials == 1
+        assert "terminating early" in result.reason.lower() or "evolution_terminated" in result.reason
 
     def test_evolution_with_mixed_success(
         self, integration_config, temp_dir, sample_valid_packing_code, sample_invalid_packing_code
     ):
         """Test evolution with some successful and some failed trials."""
+        # Set to 1 generation for this test
+        integration_config.evolution.max_generations = 1
+
         orchestrator = RootLLMOrchestrator(integration_config)
         cost_tracker = orchestrator.cost_tracker
 
@@ -581,12 +613,6 @@ result1 = spawn_child_llm("Try valid approach")
 result2 = spawn_child_llm("Try risky approach")
 print(f"Result 1: valid={result1['success']}")
 print(f"Result 2: valid={result2['success']}")
-```
-''',
-            '''One worked, one failed. Terminating.
-
-```repl
-terminate_evolution("Mixed results - one valid, one invalid")
 ```
 ''',
         ])
