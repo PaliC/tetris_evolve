@@ -1,0 +1,302 @@
+{
+  "total_cost": 1.9617240000000002,
+  "max_budget": 20.0,
+  "usage_log": [
+    {
+      "input_tokens": 1300,
+      "output_tokens": 2624,
+      "cost": 0.04326,
+      "timestamp": "2025-12-04T14:35:24.534730",
+      "llm_type": "root",
+      "call_id": "e4875e59-0d3a-42c0-ac83-5c5b9dce1a87"
+    },
+    {
+      "input_tokens": 190,
+      "output_tokens": 1871,
+      "cost": 0.028635,
+      "timestamp": "2025-12-04T14:35:51.950871",
+      "llm_type": "child",
+      "call_id": "f201e695-0bd4-413e-8f83-a26aaf75683a"
+    },
+    {
+      "input_tokens": 224,
+      "output_tokens": 1501,
+      "cost": 0.023187,
+      "timestamp": "2025-12-04T14:36:12.338021",
+      "llm_type": "child",
+      "call_id": "1aaa2ee4-0987-48b9-8f9d-a0a18c5de82a"
+    },
+    {
+      "input_tokens": 245,
+      "output_tokens": 2107,
+      "cost": 0.03234,
+      "timestamp": "2025-12-04T14:36:40.770801",
+      "llm_type": "child",
+      "call_id": "15ef8446-b196-4a50-ac65-28c66085e7d5"
+    },
+    {
+      "input_tokens": 260,
+      "output_tokens": 2341,
+      "cost": 0.035895,
+      "timestamp": "2025-12-04T14:37:28.643326",
+      "llm_type": "child",
+      "call_id": "b7b52b45-bb20-4533-b07c-862a600434bb"
+    },
+    {
+      "input_tokens": 232,
+      "output_tokens": 1594,
+      "cost": 0.024606,
+      "timestamp": "2025-12-04T14:38:06.824233",
+      "llm_type": "child",
+      "call_id": "fa3a9d2d-c91f-4e03-9768-15ddded96f8a"
+    },
+    {
+      "input_tokens": 7087,
+      "output_tokens": 2800,
+      "cost": 0.06326100000000001,
+      "timestamp": "2025-12-04T14:38:44.984292",
+      "llm_type": "root",
+      "call_id": "7779d917-832a-432c-8c97-dfc1c4c16199"
+    },
+    {
+      "input_tokens": 249,
+      "output_tokens": 2557,
+      "cost": 0.039102,
+      "timestamp": "2025-12-04T14:39:20.441232",
+      "llm_type": "child",
+      "call_id": "6dda0652-3240-418f-ae40-999a142185ca"
+    },
+    {
+      "input_tokens": 249,
+      "output_tokens": 2708,
+      "cost": 0.041367,
+      "timestamp": "2025-12-04T14:39:59.537291",
+      "llm_type": "child",
+      "call_id": "8173f7f1-a948-4e2f-9a33-684261ef051d"
+    },
+    {
+      "input_tokens": 246,
+      "output_tokens": 2493,
+      "cost": 0.038133,
+      "timestamp": "2025-12-04T14:40:38.980573",
+      "llm_type": "child",
+      "call_id": "083fcedb-a84a-4f35-9051-8029f871fdc7"
+    },
+    {
+      "input_tokens": 258,
+      "output_tokens": 1929,
+      "cost": 0.029709000000000003,
+      "timestamp": "2025-12-04T14:46:06.756946",
+      "llm_type": "child",
+      "call_id": "56384438-167b-441f-8971-d156ef0aed25"
+    },
+    {
+      "input_tokens": 293,
+      "output_tokens": 1738,
+      "cost": 0.026949,
+      "timestamp": "2025-12-04T14:51:28.124168",
+      "llm_type": "child",
+      "call_id": "a7c9fefb-4a32-427f-8784-7db626488261"
+    },
+    {
+      "input_tokens": 13201,
+      "output_tokens": 2947,
+      "cost": 0.083808,
+      "timestamp": "2025-12-04T14:52:14.361558",
+      "llm_type": "root",
+      "call_id": "f214a8ce-3cd6-4ad1-accd-b44f5e1ad442"
+    },
+    {
+      "input_tokens": 1939,
+      "output_tokens": 3078,
+      "cost": 0.051987000000000005,
+      "timestamp": "2025-12-04T14:52:45.793731",
+      "llm_type": "child",
+      "call_id": "eb57fb4f-e2fd-483e-9079-61204ff63835"
+    },
+    {
+      "input_tokens": 232,
+      "output_tokens": 2745,
+      "cost": 0.041871000000000005,
+      "timestamp": "2025-12-04T14:54:00.104094",
+      "llm_type": "child",
+      "call_id": "9e275a56-d804-4dc7-8cb2-3a63a2f69152"
+    },
+    {
+      "input_tokens": 642,
+      "output_tokens": 2692,
+      "cost": 0.042305999999999996,
+      "timestamp": "2025-12-04T14:56:57.054634",
+      "llm_type": "child",
+      "call_id": "6f20dea0-9274-4752-831e-74688802c457"
+    },
+    {
+      "input_tokens": 244,
+      "output_tokens": 2369,
+      "cost": 0.03626700000000001,
+      "timestamp": "2025-12-04T14:57:47.767235",
+      "llm_type": "child",
+      "call_id": "9666724b-8430-476b-85c2-9a0fe38bd9fc"
+    },
+    {
+      "input_tokens": 241,
+      "output_tokens": 2598,
+      "cost": 0.039693,
+      "timestamp": "2025-12-04T15:03:17.905470",
+      "llm_type": "child",
+      "call_id": "4a4581a6-c1c1-4fcf-ac5d-96ef167328c5"
+    },
+    {
+      "input_tokens": 19675,
+      "output_tokens": 2807,
+      "cost": 0.10113,
+      "timestamp": "2025-12-04T15:07:52.107326",
+      "llm_type": "root",
+      "call_id": "5e896c5f-3f45-41e6-a974-53396f16a457"
+    },
+    {
+      "input_tokens": 3294,
+      "output_tokens": 4096,
+      "cost": 0.071322,
+      "timestamp": "2025-12-04T15:08:31.483200",
+      "llm_type": "child",
+      "call_id": "d9f26e15-8c2a-4358-897d-db9dbe2c171d"
+    },
+    {
+      "input_tokens": 250,
+      "output_tokens": 3260,
+      "cost": 0.04965,
+      "timestamp": "2025-12-04T15:09:13.030559",
+      "llm_type": "child",
+      "call_id": "1b16fa5c-865f-4319-9578-de3e61d38702"
+    },
+    {
+      "input_tokens": 240,
+      "output_tokens": 2549,
+      "cost": 0.038955,
+      "timestamp": "2025-12-04T15:14:48.048425",
+      "llm_type": "child",
+      "call_id": "53c3defa-2c99-47ae-90e7-8b01a11247fe"
+    },
+    {
+      "input_tokens": 229,
+      "output_tokens": 2887,
+      "cost": 0.043992,
+      "timestamp": "2025-12-04T15:15:30.131035",
+      "llm_type": "child",
+      "call_id": "36224e62-feed-4703-aa0b-bef4f8bb8b76"
+    },
+    {
+      "input_tokens": 207,
+      "output_tokens": 2547,
+      "cost": 0.038826,
+      "timestamp": "2025-12-04T15:16:16.108116",
+      "llm_type": "child",
+      "call_id": "2b3c168a-6f4f-4fa2-9a8b-a7b5060d2e8f"
+    },
+    {
+      "input_tokens": 25853,
+      "output_tokens": 2916,
+      "cost": 0.121299,
+      "timestamp": "2025-12-04T15:17:09.153718",
+      "llm_type": "root",
+      "call_id": "0c972f35-83fd-4c6d-91d9-98c968b30fd9"
+    },
+    {
+      "input_tokens": 3395,
+      "output_tokens": 4096,
+      "cost": 0.071625,
+      "timestamp": "2025-12-04T15:17:50.633114",
+      "llm_type": "child",
+      "call_id": "114089d2-a0b5-461d-9c4c-18dc7c242c2d"
+    },
+    {
+      "input_tokens": 332,
+      "output_tokens": 2155,
+      "cost": 0.033320999999999996,
+      "timestamp": "2025-12-04T15:18:18.778635",
+      "llm_type": "child",
+      "call_id": "b066b46f-42ea-473e-baec-d1cf9a659309"
+    },
+    {
+      "input_tokens": 283,
+      "output_tokens": 2768,
+      "cost": 0.042369000000000004,
+      "timestamp": "2025-12-04T15:19:22.676677",
+      "llm_type": "child",
+      "call_id": "79651fa3-1fe0-467e-815e-c5eb05f74b33"
+    },
+    {
+      "input_tokens": 280,
+      "output_tokens": 2875,
+      "cost": 0.043965000000000004,
+      "timestamp": "2025-12-04T15:20:45.310609",
+      "llm_type": "child",
+      "call_id": "86216455-b3df-4841-9ec8-092bd55af2d8"
+    },
+    {
+      "input_tokens": 32202,
+      "output_tokens": 2913,
+      "cost": 0.140301,
+      "timestamp": "2025-12-04T15:21:37.268002",
+      "llm_type": "root",
+      "call_id": "455ab405-7f22-45f2-a460-37023f8b15f7"
+    },
+    {
+      "input_tokens": 3022,
+      "output_tokens": 3674,
+      "cost": 0.064176,
+      "timestamp": "2025-12-04T15:22:14.086615",
+      "llm_type": "child",
+      "call_id": "aa06cc28-857c-470a-a007-9cf47cfa4d3b"
+    },
+    {
+      "input_tokens": 335,
+      "output_tokens": 2686,
+      "cost": 0.041295,
+      "timestamp": "2025-12-04T15:27:46.980389",
+      "llm_type": "child",
+      "call_id": "27507c5f-1cb7-4868-8cf4-da8288f633cc"
+    },
+    {
+      "input_tokens": 2393,
+      "output_tokens": 2942,
+      "cost": 0.051309,
+      "timestamp": "2025-12-04T15:32:43.435727",
+      "llm_type": "child",
+      "call_id": "0a79c2df-0565-4d8f-a415-8b98c0020a3b"
+    },
+    {
+      "input_tokens": 325,
+      "output_tokens": 2465,
+      "cost": 0.03795,
+      "timestamp": "2025-12-04T15:35:29.220035",
+      "llm_type": "child",
+      "call_id": "1b4baf09-c20f-4220-b544-9536aebd9328"
+    },
+    {
+      "input_tokens": 38542,
+      "output_tokens": 2348,
+      "cost": 0.150846,
+      "timestamp": "2025-12-04T15:36:18.957547",
+      "llm_type": "root",
+      "call_id": "15d0c8a9-ad5b-4325-b96d-441b448226b8"
+    },
+    {
+      "input_tokens": 3315,
+      "output_tokens": 3252,
+      "cost": 0.058725000000000006,
+      "timestamp": "2025-12-04T15:36:50.358809",
+      "llm_type": "child",
+      "call_id": "9f8d81a1-6a5b-42d9-815d-ed7937e648d5"
+    },
+    {
+      "input_tokens": 369,
+      "output_tokens": 2479,
+      "cost": 0.038292,
+      "timestamp": "2025-12-04T15:42:23.864746",
+      "llm_type": "child",
+      "call_id": "e0e2a177-63b9-46ea-bc12-e5238b499cd3"
+    }
+  ]
+}

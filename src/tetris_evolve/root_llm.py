@@ -226,28 +226,10 @@ class RootLLMOrchestrator:
         )
 
         for trial in sorted_trials:
-            score = trial.metrics.get("sum_radii", 0) if trial.success else 0
-            status = "valid" if trial.success else f"invalid: {trial.error or 'unknown'}"
-            lines.append(f"  - {trial.trial_id}: {status}, sum_radii={score:.4f}")
-
-        # Include best code for mutation
-        if gen_summary.best_trial_id and gen_summary.best_score > 0:
-            best_trial = self.evolution_api.all_trials.get(gen_summary.best_trial_id)
-            if best_trial and best_trial.code:
-                lines.extend([
-                    "",
-                    f"Best trial: {gen_summary.best_trial_id} (score: {gen_summary.best_score:.4f})",
-                    "Best code for reference/mutation:",
-                    "```python",
-                    best_trial.code,
-                    "```",
-                ])
-
-        lines.extend([
-            "",
-            f"Now starting generation {self.evolution_api.current_generation}. "
-            f"Spawn up to {self.max_children_per_generation} children.",
-        ])
+            lines.append(f"  - {trial.trial_id}:")
+            lines.append(f"    Code: {trial.code}")
+            lines.append(f"    Metrics: {trial.metrics}")
+            lines.append(f"    Reasoning: {trial.reasoning}")
 
         return "\n".join(lines)
 

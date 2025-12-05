@@ -90,7 +90,7 @@ def main(args=None):
         print("EVOLUTION COMPLETE")
         print("=" * 50)
         print(f"Termination reason: {result.reason}")
-        print(f"Iterations: {result.num_iterations}")
+        print(f"Iterations: {result.num_generations}")
         print(f"Total trials: {result.total_trials}")
         print(f"Successful trials: {result.successful_trials}")
         print(f"Best score: {result.best_score:.4f}")

@@ -372,7 +372,9 @@ class EvolutionAPI:
 
         # Determine number of workers
         if num_workers is None:
-            num_workers = len(children)
+            # get num cores
+            num_cores = multiprocessing.cpu_count()
+            num_workers = min(len(children), num_cores)
 
         # Run workers in parallel
         results = []

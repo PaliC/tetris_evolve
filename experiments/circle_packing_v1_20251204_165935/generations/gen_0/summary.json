@@ -1,0 +1,14 @@
+{
+  "generation_num": 0,
+  "num_trials": 5,
+  "num_successful_trials": 4,
+  "best_trial_id": "trial_0_2",
+  "best_sum_radii": 2.5709269303755304,
+  "selected_trial_ids": [
+    "trial_0_2",
+    "trial_0_4",
+    "trial_0_3"
+  ],
+  "selection_reasoning": "Selected top 3 performing trials from generation 0",
+  "timestamp": "2025-12-04T17:01:44.848037"
+}

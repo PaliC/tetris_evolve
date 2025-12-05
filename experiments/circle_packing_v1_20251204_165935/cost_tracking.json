@@ -1,0 +1,142 @@
+{
+  "total_cost": 0.7582979999999999,
+  "max_budget": 20.0,
+  "usage_log": [
+    {
+      "input_tokens": 1748,
+      "output_tokens": 1942,
+      "cost": 0.034374,
+      "timestamp": "2025-12-04T17:00:02.971225",
+      "llm_type": "root",
+      "call_id": "e2dedff0-6330-4664-a70a-f17601e1f143"
+    },
+    {
+      "input_tokens": 270,
+      "output_tokens": 1735,
+      "cost": 0.026835,
+      "timestamp": "2025-12-04T17:01:07.559973",
+      "llm_type": "child",
+      "call_id": "6cf69aad-96b7-409b-b60d-a16c99eab040"
+    },
+    {
+      "input_tokens": 270,
+      "output_tokens": 1685,
+      "cost": 0.026085000000000004,
+      "timestamp": "2025-12-04T17:01:07.560573",
+      "llm_type": "child",
+      "call_id": "2b5cda34-9e0a-46c2-8daf-56952f948061"
+    },
+    {
+      "input_tokens": 272,
+      "output_tokens": 2031,
+      "cost": 0.031281,
+      "timestamp": "2025-12-04T17:01:07.560780",
+      "llm_type": "child",
+      "call_id": "5c746936-47eb-4ba6-b47d-5322e21642af"
+    },
+    {
+      "input_tokens": 265,
+      "output_tokens": 1279,
+      "cost": 0.01998,
+      "timestamp": "2025-12-04T17:01:07.560947",
+      "llm_type": "child",
+      "call_id": "fa5cea58-4463-47ce-a466-83402d8763b9"
+    },
+    {
+      "input_tokens": 240,
+      "output_tokens": 1454,
+      "cost": 0.022529999999999998,
+      "timestamp": "2025-12-04T17:01:07.561087",
+      "llm_type": "child",
+      "call_id": "755c0854-24cb-4a03-9446-6933f56dde2d"
+    },
+    {
+      "input_tokens": 6029,
+      "output_tokens": 1775,
+      "cost": 0.044712,
+      "timestamp": "2025-12-04T17:01:38.185015",
+      "llm_type": "root",
+      "call_id": "cd79f836-3436-463a-a757-e4f2f71a4b43"
+    },
+    {
+      "input_tokens": 9892,
+      "output_tokens": 259,
+      "cost": 0.033561,
+      "timestamp": "2025-12-04T17:01:44.846226",
+      "llm_type": "root",
+      "call_id": "0f02e389-beb6-4ebc-a0eb-07a6bb96c00a"
+    },
+    {
+      "input_tokens": 10516,
+      "output_tokens": 1612,
+      "cost": 0.055728,
+      "timestamp": "2025-12-04T17:02:00.232740",
+      "llm_type": "root",
+      "call_id": "ec601235-f1ef-4acb-a908-c44beb0cfa4c"
+    },
+    {
+      "input_tokens": 2001,
+      "output_tokens": 3404,
+      "cost": 0.057063,
+      "timestamp": "2025-12-04T17:07:55.338427",
+      "llm_type": "child",
+      "call_id": "4fb74539-4586-487a-aff0-959f3f6993b8"
+    },
+    {
+      "input_tokens": 2013,
+      "output_tokens": 2912,
+      "cost": 0.049719000000000006,
+      "timestamp": "2025-12-04T17:07:55.339308",
+      "llm_type": "child",
+      "call_id": "365245ed-a03a-4e3b-903e-4d1709b02fbb"
+    },
+    {
+      "input_tokens": 1990,
+      "output_tokens": 3790,
+      "cost": 0.06282,
+      "timestamp": "2025-12-04T17:07:55.339663",
+      "llm_type": "child",
+      "call_id": "cc24af74-100e-4f20-a404-9a2042988d44"
+    },
+    {
+      "input_tokens": 140,
+      "output_tokens": 4096,
+      "cost": 0.06186,
+      "timestamp": "2025-12-04T17:07:55.339953",
+      "llm_type": "child",
+      "call_id": "071b63a9-a8d2-41e8-81fc-4d9c4bd991f8"
+    },
+    {
+      "input_tokens": 125,
+      "output_tokens": 3451,
+      "cost": 0.05214,
+      "timestamp": "2025-12-04T17:07:55.340192",
+      "llm_type": "child",
+      "call_id": "b0f35aac-85cd-4e84-b129-b2276e762f24"
+    },
+    {
+      "input_tokens": 119,
+      "output_tokens": 3086,
+      "cost": 0.046647,
+      "timestamp": "2025-12-04T17:07:55.340417",
+      "llm_type": "child",
+      "call_id": "d19d23b1-d779-4df1-98bb-ac0537772aa3"
+    },
+    {
+      "input_tokens": 14229,
+      "output_tokens": 1989,
+      "cost": 0.072522,
+      "timestamp": "2025-12-04T17:08:25.224318",
+      "llm_type": "root",
+      "call_id": "bcb8d17f-ad93-4682-a603-3a487394129d"
+    },
+    {
+      "input_tokens": 18537,
+      "output_tokens": 322,
+      "cost": 0.060441,
+      "timestamp": "2025-12-04T17:08:33.209533",
+      "llm_type": "root",
+      "call_id": "b79275cd-f40e-4777-ad3b-754dc615733a"
+    }
+  ]
+}
