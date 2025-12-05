@@ -309,12 +309,17 @@ class TestLoggingComplete:
         mock_child.set_responses([
             f"```python\n{sample_valid_packing_code}\n```"
         ])
+        # Root responses: spawn, selection, terminate
         mock_root.set_responses([
             '''Let me spawn a child.
 
 ```repl
 result = spawn_child_llm("Test prompt")
 print(f"Valid: {result['metrics'].get('valid')}")
+```
+''',
+            '''```selection
+{"selections": [{"trial_id": "trial_0_0", "reasoning": "Only trial", "category": "performance"}], "summary": "Selected"}
 ```
 ''',
             '''Good. Let me terminate.
@@ -500,7 +505,7 @@ class TestEndToEndWithMockLLM:
             f"Hex approach:\n```python\n{sample_valid_packing_code}\n```",
         ])
 
-        # Set up root responses - no advance_generation needed, it happens automatically
+        # Set up root responses: spawn, selection, spawn, selection
         mock_root.set_responses([
             '''Generation 0: I'll try a grid-based approach.
 
@@ -509,11 +514,19 @@ result = spawn_child_llm("Try a grid-based packing approach")
 print(f"Trial: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
 ```
 ''',
+            '''```selection
+{"selections": [{"trial_id": "trial_0_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected"}
+```
+''',
             '''Generation 1: Building on previous results with hexagonal approach.
 
 ```repl
 result = spawn_child_llm("Try a hexagonal packing approach")
 print(f"Trial: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
+```
+''',
+            '''```selection
+{"selections": [{"trial_id": "trial_1_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected"}
 ```
 ''',
         ])
@@ -605,6 +618,7 @@ terminate_evolution("Found good solution, terminating early")
             f"Invalid:\n```python\n{sample_invalid_packing_code}\n```",
         ])
 
+        # Root responses: spawn, selection (at max gen so this triggers termination)
         mock_root.set_responses([
             '''Testing strategies.
 
@@ -613,6 +627,10 @@ result1 = spawn_child_llm("Try valid approach")
 result2 = spawn_child_llm("Try risky approach")
 print(f"Result 1: valid={result1['success']}")
 print(f"Result 2: valid={result2['success']}")
+```
+''',
+            '''```selection
+{"selections": [{"trial_id": "trial_0_0", "reasoning": "Only valid trial", "category": "performance"}], "summary": "Selected valid trial"}
 ```
 ''',
         ])

@@ -72,6 +72,32 @@ class TrialResult:
 
 
 @dataclass
+class TrialSelection:
+    """Selection of a trial for advancement to next generation with reasoning."""
+
+    trial_id: str
+    reasoning: str
+    category: str  # "performance" | "diversity" | "potential"
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "trial_id": self.trial_id,
+            "reasoning": self.reasoning,
+            "category": self.category,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TrialSelection":
+        """Create TrialSelection from dictionary."""
+        return cls(
+            trial_id=data["trial_id"],
+            reasoning=data.get("reasoning", ""),
+            category=data.get("category", "performance"),
+        )
+
+
+@dataclass
 class GenerationSummary:
     """Summary of a generation."""
 
@@ -81,6 +107,7 @@ class GenerationSummary:
     selection_reasoning: str = ""
     best_trial_id: str | None = None
     best_score: float = 0.0
+    trial_selections: list[TrialSelection] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -91,6 +118,7 @@ class GenerationSummary:
             "selection_reasoning": self.selection_reasoning,
             "best_trial_id": self.best_trial_id,
             "best_score": self.best_score,
+            "trial_selections": [s.to_dict() for s in self.trial_selections],
         }
 
 
@@ -436,12 +464,24 @@ class EvolutionAPI:
                 "error": f"Evaluation error: {str(e)}",
             }
 
-    def _advance_generation(self) -> int:
+    def _advance_generation(
+        self,
+        selections: list[dict[str, str]] | None = None,
+        selection_summary: str | None = None,
+    ) -> int:
         """
-        Advance to the next generation automatically.
+        Advance to the next generation.
 
         This is an internal method called by the orchestrator after children
         are spawned for a generation. It is not exposed to the Root LLM.
+
+        Args:
+            selections: Optional list of LLM-selected trials. Each dict should have:
+                - trial_id: The trial ID to carry forward
+                - reasoning: Why this trial was selected
+                - category: "performance" | "diversity" | "potential"
+                If None or empty, falls back to auto-selection.
+            selection_summary: Optional overall summary of selection reasoning.
 
         Returns:
             The new generation number
@@ -460,22 +500,41 @@ class EvolutionAPI:
         # Update current generation summary
         gen = self.generations[self.current_generation]
 
-        # Auto-select best trials as parents
-        best_trials = self._get_best_trials(n=min(3, len(gen.trials)))
-        selected_trial_ids = [t["trial_id"] for t in best_trials]
-        reasoning = "Auto-selected top performing trials"
+        # Process selections: use LLM selections if provided, else auto-select
+        if selections:
+            # Validate and filter selections to only include existing trials
+            valid_selections: list[TrialSelection] = []
+            valid_trial_ids: list[str] = []
+            current_gen_trial_ids = {t.trial_id for t in gen.trials}
 
-        gen.selected_trial_ids = selected_trial_ids
-        gen.selection_reasoning = reasoning
+            for sel in selections:
+                trial_id = sel.get("trial_id", "")
+                # Allow selection of trials from current generation
+                if trial_id in current_gen_trial_ids:
+                    valid_selections.append(TrialSelection.from_dict(sel))
+                    valid_trial_ids.append(trial_id)
+
+            if valid_selections:
+                # Use LLM selections
+                gen.trial_selections = valid_selections
+                gen.selected_trial_ids = valid_trial_ids
+                gen.selection_reasoning = selection_summary or "LLM-selected trials"
+            else:
+                # No valid selections, fall back to auto-select
+                self._auto_select_trials(gen)
+        else:
+            # No selections provided, auto-select
+            self._auto_select_trials(gen)
 
         # Log generation
         self.logger.log_generation(
             generation=self.current_generation,
             trials=[t.to_dict() for t in gen.trials],
-            selected_trial_ids=selected_trial_ids,
-            selection_reasoning=reasoning,
+            selected_trial_ids=gen.selected_trial_ids,
+            selection_reasoning=gen.selection_reasoning,
             best_trial_id=gen.best_trial_id,
             best_sum_radii=gen.best_score,
+            trial_selections=[s.to_dict() for s in gen.trial_selections],
         )
 
         # Show generation progress
@@ -485,6 +544,8 @@ class EvolutionAPI:
             f"\n  ═══ Generation {self.current_generation} complete: "
             f"{num_success}/{num_trials} successful, best={gen.best_score:.4f} ═══"
         )
+        if gen.trial_selections:
+            tqdm.write(f"  Selected trials: {', '.join(gen.selected_trial_ids)}")
         tqdm.write(f"  → Advancing to generation {self.current_generation + 1}/{self.max_generations}\n")
 
         # Move to next generation
@@ -494,6 +555,13 @@ class EvolutionAPI:
         )
 
         return self.current_generation
+
+    def _auto_select_trials(self, gen: GenerationSummary) -> None:
+        """Auto-select best trials when no LLM selection provided."""
+        best_trials = self._get_best_trials(n=min(3, len(gen.trials)))
+        gen.selected_trial_ids = [t["trial_id"] for t in best_trials]
+        gen.selection_reasoning = "Auto-selected top performing trials"
+        gen.trial_selections = []
 
     def can_advance_generation(self) -> bool:
         """Check if we can advance to the next generation."""

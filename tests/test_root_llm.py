@@ -242,6 +242,7 @@ class TestMaxGenerationsStop:
             f"```python\n{sample_valid_packing_code}\n```",
         ])
 
+        # Mock root responses: spawn, selection, spawn, selection
         mock_root.set_responses([
             '''Generation 0:
 ```repl
@@ -249,10 +250,18 @@ result = spawn_child_llm("Test gen 0")
 print(f"Gen 0 result: {result['success']}")
 ```
 ''',
+            '''```selection
+{"selections": [{"trial_id": "trial_0_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected best"}
+```
+''',
             '''Generation 1:
 ```repl
 result = spawn_child_llm("Test gen 1")
 print(f"Gen 1 result: {result['success']}")
+```
+''',
+            '''```selection
+{"selections": [{"trial_id": "trial_1_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected best"}
 ```
 ''',
         ])
@@ -364,7 +373,7 @@ class TestFullOrchestration:
             f"Here's my solution:\n\n```python\n{sample_valid_packing_code}\n```"
         ])
 
-        # Root spawns a child then terminates
+        # Root spawns a child, provides selection, then terminates in next generation
         mock_root.set_responses([
             '''Let me spawn a child to try a solution.
 
@@ -373,6 +382,10 @@ prompt = "Write a circle packing algorithm."
 result = spawn_child_llm(prompt)
 print(f"Result: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
 best_code = result['code']
+```
+''',
+            '''```selection
+{"selections": [{"trial_id": "trial_0_0", "reasoning": "Only trial", "category": "performance"}], "summary": "Selected only trial"}
 ```
 ''',
             '''Good result! Let me terminate.

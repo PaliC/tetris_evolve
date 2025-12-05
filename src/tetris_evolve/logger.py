@@ -152,6 +152,7 @@ class ExperimentLogger:
         selection_reasoning: str,
         best_trial_id: str | None = None,
         best_sum_radii: float = 0.0,
+        trial_selections: list[dict[str, Any]] | None = None,
     ) -> Path:
         """
         Log generation summary.
@@ -163,6 +164,7 @@ class ExperimentLogger:
             selection_reasoning: Reasoning for selection
             best_trial_id: ID of best trial this generation
             best_sum_radii: Best sum_radii achieved
+            trial_selections: List of detailed trial selection data with reasoning
 
         Returns:
             Path to the generation summary file
@@ -177,6 +179,7 @@ class ExperimentLogger:
             "best_sum_radii": best_sum_radii,
             "selected_trial_ids": selected_trial_ids,
             "selection_reasoning": selection_reasoning,
+            "trial_selections": trial_selections or [],
             "timestamp": datetime.now().isoformat(),
         }
 
