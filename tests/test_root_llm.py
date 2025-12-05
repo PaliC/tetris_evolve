@@ -52,7 +52,8 @@ class TestOrchestratorInitialization:
         orchestrator = RootLLMOrchestrator(mock_config)
 
         assert orchestrator.config == mock_config
-        assert orchestrator.max_iterations == 5
+        assert orchestrator.max_generations == mock_config.evolution.max_generations
+        assert orchestrator.max_children_per_generation == mock_config.evolution.max_children_per_generation
         assert orchestrator.cost_tracker is not None
         assert orchestrator.logger is not None
         assert orchestrator.root_llm is not None
@@ -60,7 +61,6 @@ class TestOrchestratorInitialization:
         assert orchestrator.evaluator is not None
         assert orchestrator.evolution_api is not None
         assert orchestrator.repl is not None
-        assert orchestrator.system_prompt is not None
         assert len(orchestrator.messages) == 0
 
     def test_initialization_with_mock_llms(self, mock_config, mock_root_llm, mock_child_llm):
@@ -85,7 +85,8 @@ class TestBuildInitialMessages:
 
         assert len(messages) == 1
         assert messages[0]["role"] == "user"
-        assert "evolution" in messages[0]["content"].lower()
+        assert "generation 0" in messages[0]["content"].lower()
+        assert "spawn" in messages[0]["content"].lower()
 
 
 class TestCodeBlockExtraction:
@@ -212,36 +213,59 @@ class TestTerminationDetection:
         assert orchestrator.check_termination("") is True
 
 
-class TestMaxIterationsStop:
-    """Tests for stopping at max iterations."""
+class TestMaxGenerationsStop:
+    """Tests for stopping at max generations."""
 
-    def test_max_iterations_stop(self, mock_config, temp_dir):
-        """Test that orchestrator stops at max iterations."""
-        # Set very low max iterations
-        mock_config.root_llm.max_iterations = 2
+    def test_max_generations_stop(self, mock_config, temp_dir, sample_valid_packing_code):
+        """Test that orchestrator stops at max generations."""
+        # Set very low max generations
+        mock_config.evolution.max_generations = 2
 
         orchestrator = RootLLMOrchestrator(mock_config)
 
-        # Set up mock responses that don't terminate
+        # Set up mock responses that spawn children (to trigger generation advance)
         cost_tracker = orchestrator.cost_tracker
         mock_root = MockLLMClient(
             model=mock_config.root_llm.model,
             cost_tracker=cost_tracker,
             llm_type="root",
         )
+        mock_child = MockLLMClient(
+            model=mock_config.child_llm.model,
+            cost_tracker=cost_tracker,
+            llm_type="child",
+        )
+
+        # Child returns valid packing code
+        mock_child.set_responses([
+            f"```python\n{sample_valid_packing_code}\n```",
+            f"```python\n{sample_valid_packing_code}\n```",
+        ])
+
         mock_root.set_responses([
-            "Let me think...\n\n```repl\nprint('iteration 1')\n```",
-            "Continuing...\n\n```repl\nprint('iteration 2')\n```",
-            "More work...\n\n```repl\nprint('iteration 3')\n```",
+            '''Generation 0:
+```repl
+result = spawn_child_llm("Test gen 0")
+print(f"Gen 0 result: {result['success']}")
+```
+''',
+            '''Generation 1:
+```repl
+result = spawn_child_llm("Test gen 1")
+print(f"Gen 1 result: {result['success']}")
+```
+''',
         ])
         orchestrator.root_llm = mock_root
-        orchestrator.max_iterations = 2
+        orchestrator.child_llm = mock_child
+        orchestrator.evolution_api.child_llm = mock_child
+        orchestrator.max_generations = 2
 
         result = orchestrator.run()
 
         assert result.terminated is True
-        assert "max_iterations" in result.reason
-        assert result.num_iterations == 2
+        assert "max_generations" in result.reason
+        assert result.num_generations == 2
 
 
 class TestBudgetExceededStop:
@@ -377,7 +401,7 @@ terminate_evolution("Found a valid solution", best_program=best_code)
         result = OrchestratorResult(
             terminated=True,
             reason="test",
-            num_iterations=5,
+            num_generations=5,
             best_program="code",
             best_score=2.0,
             total_trials=10,
@@ -387,7 +411,7 @@ terminate_evolution("Found a valid solution", best_program=best_code)
 
         assert result.terminated is True
         assert result.reason == "test"
-        assert result.num_iterations == 5
+        assert result.num_generations == 5
         assert result.best_program == "code"
         assert result.best_score == 2.0
         assert result.total_trials == 10
