@@ -18,7 +18,7 @@ from .llm.client import LLMClient, MockLLMClient
 from .llm.prompts import get_root_system_prompt
 from .logger import ExperimentLogger
 from .repl import REPLEnvironment
-from .utils.code_extraction import extract_repl_blocks
+from .utils.code_extraction import extract_repl_blocks, extract_selection_block
 
 
 @dataclass
@@ -233,6 +233,83 @@ class RootLLMOrchestrator:
 
         return "\n".join(lines)
 
+    def _build_selection_request_message(self) -> str:
+        """Build a message asking Root LLM to select trials for next generation."""
+        current_gen = self.evolution_api.current_generation
+        gen_summary = self.evolution_api.generations[current_gen]
+        trials = gen_summary.trials
+
+        lines = [
+            f"Generation {current_gen} spawning complete. {len(trials)} trials evaluated.",
+            "",
+            "## Trial Results",
+            "",
+        ]
+
+        # Sort by score but show all
+        sorted_trials = sorted(
+            trials,
+            key=lambda t: t.metrics.get("sum_radii", 0) if t.success else 0,
+            reverse=True,
+        )
+
+        for i, trial in enumerate(sorted_trials, 1):
+            score = trial.metrics.get("sum_radii", 0) if trial.success else 0
+            valid_str = "valid" if trial.success else "INVALID"
+            lines.append(f"{i}. **{trial.trial_id}** [{valid_str}]")
+            lines.append(f"   Score: {score:.4f}")
+            reasoning_short = (trial.reasoning or "No reasoning")[:200]
+            lines.append(f"   Reasoning: {reasoning_short}...")
+            if not trial.success:
+                lines.append(f"   Error: {trial.error}")
+            lines.append("")
+
+        lines.extend([
+            "## Your Task",
+            "",
+            "Select 2-5 trials to carry forward to the next generation. Consider:",
+            "- **Performance**: Which trials achieved the best scores?",
+            "- **Diversity**: Which trials use different approaches worth exploring?",
+            "- **Potential**: Which trials might improve with refinement, even if current scores are lower?",
+            "",
+            "Respond with a ```selection``` block containing JSON:",
+            "```selection",
+            "{",
+            '  "selections": [',
+            '    {"trial_id": "trial_X_Y", "reasoning": "Why selected", "category": "performance|diversity|potential"},',
+            "    ...",
+            "  ],",
+            '  "summary": "Overall selection reasoning"',
+            "}",
+            "```",
+        ])
+
+        return "\n".join(lines)
+
+    def _parse_selection_response(
+        self, response: str
+    ) -> tuple[list[dict[str, str]] | None, str | None]:
+        """
+        Parse selection JSON from LLM response.
+
+        Args:
+            response: The LLM response text
+
+        Returns:
+            Tuple of (selections list, summary string) or (None, None) if no valid selection
+        """
+        data = extract_selection_block(response)
+        if data is None:
+            return None, None
+
+        selections = data.get("selections", [])
+        summary = data.get("summary", "")
+
+        if not selections:
+            return None, None
+
+        return selections, summary
+
     def run(self) -> OrchestratorResult:
         """
         Run the Root LLM evolution loop.
@@ -361,8 +438,53 @@ class RootLLMOrchestrator:
 
                 # Automatically advance generation if children were spawned
                 if self.evolution_api.has_children_in_current_generation():
+                    # Request selection from Root LLM
+                    selection_request = self._build_selection_request_message()
+                    self.messages.append({"role": "user", "content": selection_request})
+
+                    # Log the selection request
+                    self.logger.log_root_turn(
+                        turn_number=self.turn_number,
+                        role="user",
+                        content=selection_request,
+                    )
+                    self.turn_number += 1
+
+                    # Get selection response from Root LLM
+                    tqdm.write("  └─ Requesting trial selection from Root LLM...")
+                    selection_response = self.root_llm.generate(
+                        messages=self.messages,
+                        system=system_prompt,
+                        max_tokens=2048,
+                        temperature=0.5,  # Lower temp for more deterministic selection
+                    )
+
+                    selection_message = selection_response.content
+                    self.messages.append({"role": "assistant", "content": selection_message})
+
+                    # Log the selection response
+                    self.logger.log_root_turn(
+                        turn_number=self.turn_number,
+                        role="assistant",
+                        content=selection_message,
+                    )
+                    self.turn_number += 1
+
+                    # Parse selections from response
+                    selections, selection_summary = self._parse_selection_response(
+                        selection_message
+                    )
+
+                    if selections:
+                        tqdm.write(f"  └─ LLM selected {len(selections)} trials")
+                    else:
+                        tqdm.write("  └─ No valid selection, using auto-selection")
+
                     try:
-                        self.evolution_api._advance_generation()
+                        self.evolution_api._advance_generation(
+                            selections=selections,
+                            selection_summary=selection_summary,
+                        )
                         gen_pbar.update(1)
                         generations_completed = generation + 1
                     except GenerationLimitError:

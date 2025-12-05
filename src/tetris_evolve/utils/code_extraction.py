@@ -5,8 +5,10 @@ Extracts REPL code blocks from LLM responses. The Root LLM uses ```repl```
 code blocks to indicate Python code that should be executed in the REPL.
 """
 
+import json
 import re
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -239,3 +241,46 @@ def extract_python_code(text: str) -> str | None:
         return matches[0].strip()
 
     return None
+
+
+def extract_selection_block(text: str) -> dict[str, Any] | None:
+    """
+    Extract selection JSON from LLM response.
+
+    The Root LLM uses ```selection``` blocks to indicate which trials
+    to carry forward to the next generation.
+
+    Expected format:
+    ```selection
+    {
+      "selections": [
+        {"trial_id": "trial_0_0", "reasoning": "...", "category": "performance"},
+        ...
+      ],
+      "summary": "Overall selection reasoning"
+    }
+    ```
+
+    Args:
+        text: LLM response text
+
+    Returns:
+        Parsed selection dict with 'selections' list and optional 'summary',
+        or None if no valid selection block found
+    """
+    # Extract selection blocks
+    blocks = extract_code_blocks(text, language="selection")
+    if not blocks:
+        return None
+
+    # Try to parse the JSON
+    try:
+        data = json.loads(blocks[0].code)
+        # Validate structure
+        if "selections" not in data:
+            return None
+        if not isinstance(data["selections"], list):
+            return None
+        return data
+    except json.JSONDecodeError:
+        return None

@@ -108,9 +108,27 @@ End evolution early and return final results.
 
 1. **You are called once per generation** to spawn children for that generation.
 2. **You should spawn {max_children_per_generation} children** in your response to maximize exploration.
-3. **After your children are spawned, the generation automatically advances.**
-4. **You will be called again** with the results from the previous generation to guide the next generation.
-5. **Evolution ends** when max_generations is reached OR you call terminate_evolution().
+3. **After children spawn, you will be asked to SELECT which trials to carry forward.**
+4. **Selection criteria**: Choose 2-5 trials based on:
+   - **Performance**: High-scoring trials with proven results
+   - **Diversity**: Trials using different approaches worth exploring
+   - **Potential**: Trials that might improve with refinement, even if current scores are lower
+5. **You will be called again** with the results from the previous generation to guide the next generation.
+6. **Evolution ends** when max_generations is reached OR you call terminate_evolution().
+
+## Trial Selection Format
+
+When asked to select trials, respond with a ```selection``` block:
+```selection
+{{
+  "selections": [
+    {{"trial_id": "trial_0_2", "reasoning": "Highest score of 2.45", "category": "performance"}},
+    {{"trial_id": "trial_0_5", "reasoning": "Novel hexagonal approach", "category": "diversity"}},
+    {{"trial_id": "trial_0_1", "reasoning": "Optimization approach has room for improvement", "category": "potential"}}
+  ],
+  "summary": "Selected top performer plus two diverse approaches for exploration"
+}}
+```
 
 ## How to Use the REPL
 
@@ -153,20 +171,23 @@ print(f"Best this generation: {{best_score:.4f}}")
 2. **Craft effective prompts**: You are responsible for creating detailed prompts for child LLMs.
    Include problem specifications, constraints, strategy guidance, and examples.
 
-3. **Mutate successful programs**: After generation 0, use the best code from previous generations
-   in your prompts to improve upon it.
+3. **Select promising trials**: When asked for selection, balance performance with diversity.
+   Don't just pick the top scorers - also select diverse approaches that might lead to breakthroughs.
 
-4. **Explore diverse strategies**: Try different algorithmic approaches:
+4. **Mutate successful programs**: After generation 0, use selected trials' code in your prompts
+   to improve upon them. Reference their strengths and weaknesses.
+
+5. **Explore diverse strategies**: Try different algorithmic approaches:
    - Hexagonal/grid patterns
    - Greedy placement
    - Optimization-based (scipy)
    - Genetic algorithms
    - Simulated annealing
 
-5. **Track progress across generations**: The results from each generation are provided to you.
+6. **Track progress across generations**: The results from each generation are provided to you.
    Use this information to guide your strategy for the next generation.
 
-6. **Early termination**: Only call `terminate_evolution()` if you've found an excellent solution
+7. **Early termination**: Only call `terminate_evolution()` if you've found an excellent solution
    or have a specific reason to stop early. Otherwise, let evolution run its course.
 '''
 

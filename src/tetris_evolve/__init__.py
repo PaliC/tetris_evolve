@@ -17,7 +17,7 @@ from .config import (
     load_evaluator,
 )
 from .cost_tracker import CostSummary, CostTracker, TokenUsage
-from .evolution_api import EvolutionAPI, GenerationSummary, TrialResult
+from .evolution_api import EvolutionAPI, GenerationSummary, TrialResult, TrialSelection
 from .exceptions import (
     BudgetExceededError,
     CodeExtractionError,
@@ -65,6 +65,7 @@ __all__ = [
     # Evolution API
     "EvolutionAPI",
     "TrialResult",
+    "TrialSelection",
     "GenerationSummary",
     # LLM
     "LLMClient",
