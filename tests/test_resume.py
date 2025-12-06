@@ -157,8 +157,7 @@ class TestAnalyzeExperiment:
         assert info.trials_in_current_gen == 0
         assert info.generation_complete is False
         assert info.total_cost_spent == 0.0
-        assert info.can_complete is False  # No trials to complete
-        assert info.can_redo is False  # Nothing to redo
+        assert info.can_resume is False  # Nothing to resume
 
     def test_analyze_experiment_with_incomplete_gen(self, setup_experiment_with_trials):
         """Test analyzing an experiment with incomplete generation."""
@@ -169,8 +168,7 @@ class TestAnalyzeExperiment:
         assert info.max_children_per_gen == 3
         assert info.generation_complete is False
         assert info.total_cost_spent == 0.05
-        assert info.can_complete is True  # Can add more trials
-        assert info.can_redo is True  # Can redo current gen
+        assert info.can_resume is True  # Can resume
 
     def test_analyze_experiment_with_complete_gen(self, setup_experiment_with_complete_gen):
         """Test analyzing an experiment with a complete generation."""
@@ -179,9 +177,7 @@ class TestAnalyzeExperiment:
         assert info.current_generation == 1  # Moved to next generation
         assert info.trials_in_current_gen == 0
         assert 0 in info.completed_generation_nums
-        assert info.can_complete is False  # No trials in current gen to complete
-        # can_redo should be False since gen 1 hasn't started
-        # (current_generation > 0 but generation_complete is False, no trials)
+        assert info.can_resume is True  # Can still resume (gen 1 from scratch)
 
     def test_analyze_nonexistent_experiment(self, temp_dir):
         """Test analyzing a non-existent experiment directory."""
@@ -277,29 +273,16 @@ class TestPrepareRedo:
 class TestBuildResumePrompt:
     """Tests for build_resume_prompt function."""
 
-    def test_build_resume_prompt_complete_mode(self, setup_experiment_with_trials):
-        """Test building resume prompt for complete mode."""
+    def test_build_resume_prompt(self, setup_experiment_with_trials):
+        """Test building resume prompt."""
         info = analyze_experiment(setup_experiment_with_trials)
         trials = load_trials_from_disk(setup_experiment_with_trials)
 
-        prompt = build_resume_prompt(info, "complete", trials)
+        prompt = build_resume_prompt(info, trials)
 
         assert "RESUMING EXPERIMENT" in prompt
-        assert "COMPLETE" in prompt
-        assert "trial_0_0" in prompt
-        assert "trial_0_1" in prompt
-        assert "1 more" in prompt or "remaining" in prompt.lower()
-
-    def test_build_resume_prompt_redo_mode(self, setup_experiment_with_trials):
-        """Test building resume prompt for redo mode."""
-        info = analyze_experiment(setup_experiment_with_trials)
-        trials = load_trials_from_disk(setup_experiment_with_trials)
-
-        prompt = build_resume_prompt(info, "redo", trials)
-
-        assert "RESUMING EXPERIMENT" in prompt
-        assert "REDO" in prompt
-        assert "restart" in prompt.lower()
+        assert "restarted" in prompt.lower()
+        assert "Spawn up to" in prompt
 
 
 class TestResumeInfo:
@@ -312,17 +295,12 @@ class TestResumeInfo:
 
         assert "Current generation: 0" in info_str
         assert "Trials in current gen: 2/3" in info_str
-        assert "Can complete: True" in info_str
+        assert "Can resume: True" in info_str
 
     def test_remaining_budget(self, setup_experiment_with_trials):
         """Test remaining_budget property."""
         info = analyze_experiment(setup_experiment_with_trials)
         assert info.remaining_budget == pytest.approx(10.0 - 0.05)
-
-    def test_remaining_trials_in_gen(self, setup_experiment_with_trials):
-        """Test remaining_trials_in_gen property."""
-        info = analyze_experiment(setup_experiment_with_trials)
-        assert info.remaining_trials_in_gen == 1  # 3 max - 2 existing
 
 
 class TestCostTrackerFromDict:
@@ -348,52 +326,31 @@ class TestCostTrackerFromDict:
 class TestOrchestratorFromResume:
     """Tests for RootLLMOrchestrator.from_resume class method."""
 
-    def test_from_resume_complete_mode(
-        self, setup_experiment_with_trials, sample_valid_packing_code
-    ):
-        """Test creating orchestrator from resume in complete mode."""
+    def test_from_resume(self, setup_experiment_with_trials):
+        """Test creating orchestrator from resume."""
         orchestrator = RootLLMOrchestrator.from_resume(
             experiment_dir=setup_experiment_with_trials,
-            mode="complete",
         )
 
-        assert orchestrator._resume_mode == "complete"
         assert orchestrator._resume_prompt is not None
-        assert "COMPLETE" in orchestrator._resume_prompt
-        assert orchestrator.evolution_api.current_generation == 0
-        assert len(orchestrator.evolution_api.all_trials) == 2
-
-    def test_from_resume_redo_mode(self, setup_experiment_with_trials):
-        """Test creating orchestrator from resume in redo mode."""
-        orchestrator = RootLLMOrchestrator.from_resume(
-            experiment_dir=setup_experiment_with_trials,
-            mode="redo",
-        )
-
-        assert orchestrator._resume_mode == "redo"
-        assert orchestrator._resume_prompt is not None
-        assert "REDO" in orchestrator._resume_prompt
-        # Redo should have cleared trials
+        assert "RESUMING EXPERIMENT" in orchestrator._resume_prompt
+        # Resume clears current generation trials (redo mode)
         assert len(orchestrator.evolution_api.all_trials) == 0
 
-    def test_from_resume_complete_already_complete(self, setup_experiment_with_complete_gen):
-        """Test that complete mode fails when generation is already complete.
+    def test_from_resume_with_complete_gen(self, setup_experiment_with_complete_gen):
+        """Test resume with a complete generation preserves it."""
+        orchestrator = RootLLMOrchestrator.from_resume(
+            experiment_dir=setup_experiment_with_complete_gen,
+        )
 
-        When a generation is complete (has summary.json), current_generation advances
-        to the next one, which has no trials yet - so complete mode fails because
-        there are no trials to complete.
-        """
-        with pytest.raises(ValueError, match="no trials have been started"):
-            RootLLMOrchestrator.from_resume(
-                experiment_dir=setup_experiment_with_complete_gen,
-                mode="complete",
-            )
+        # Current generation is 1 (gen 0 is complete), so gen 1 trials would be cleared
+        # But since gen 1 had no trials, all_trials should contain gen 0 trials
+        assert len(orchestrator.evolution_api.all_trials) == 3  # Gen 0 trials preserved
 
     def test_from_resume_preserves_cost(self, setup_experiment_with_trials):
         """Test that resume preserves spent cost."""
         orchestrator = RootLLMOrchestrator.from_resume(
             experiment_dir=setup_experiment_with_trials,
-            mode="complete",
         )
 
         assert orchestrator.cost_tracker.total_cost == pytest.approx(0.05)
@@ -404,7 +361,13 @@ class TestOrchestratorFromResume:
         with pytest.raises(FileNotFoundError):
             RootLLMOrchestrator.from_resume(
                 experiment_dir=temp_dir / "nonexistent",
-                mode="complete",
+            )
+
+    def test_from_resume_empty_experiment(self, setup_experiment_dir):
+        """Test from_resume with empty experiment raises error."""
+        with pytest.raises(ValueError, match="no generations have been started"):
+            RootLLMOrchestrator.from_resume(
+                experiment_dir=setup_experiment_dir,
             )
 
 
@@ -415,7 +378,6 @@ class TestResumedOrchestrationRun:
         """Test that resumed orchestrator uses resume prompt."""
         orchestrator = RootLLMOrchestrator.from_resume(
             experiment_dir=setup_experiment_with_trials,
-            mode="complete",
         )
 
         messages = orchestrator.build_initial_messages()
@@ -429,7 +391,6 @@ class TestResumedOrchestrationRun:
         """Test that a resumed orchestrator can run to completion."""
         orchestrator = RootLLMOrchestrator.from_resume(
             experiment_dir=setup_experiment_with_trials,
-            mode="complete",
         )
 
         # Set up mock LLMs
@@ -450,17 +411,17 @@ class TestResumedOrchestrationRun:
             f"```python\n{sample_valid_packing_code}\n```",
         ])
 
-        # Root spawns one more child to complete generation, then terminates
+        # Root spawns a child, then terminates
         mock_root.set_responses([
-            '''Completing the generation.
+            '''Restarting the generation.
 
 ```repl
-result = spawn_child_llm("Complete generation 0")
+result = spawn_child_llm("Restart generation 0")
 print(f"Result: {result['success']}")
 ```
 ''',
             '''```selection
-{"selections": [{"trial_id": "trial_0_2", "reasoning": "Best", "category": "performance"}], "summary": "Selected best"}
+{"selections": [{"trial_id": "trial_0_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected best"}
 ```
 ''',
             '''Done. Terminating.
@@ -478,5 +439,5 @@ terminate_evolution("Completed via resume")
         result = orchestrator.run()
 
         assert result.terminated is True
-        # Should have original 2 trials + 1 new trial
-        assert result.total_trials == 3
+        # Resume clears current gen, so we start fresh - should have 1 new trial
+        assert result.total_trials == 1

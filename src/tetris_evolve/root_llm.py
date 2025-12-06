@@ -7,7 +7,7 @@ code blocks and managing the conversation with the Root LLM.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 from tqdm import tqdm
 
@@ -129,25 +129,23 @@ class RootLLMOrchestrator:
         self.turn_number = 0
 
         # Resume state (set by from_resume)
-        self._resume_mode: Literal["complete", "redo"] | None = None
         self._resume_prompt: str | None = None
 
     @classmethod
     def from_resume(
         cls,
         experiment_dir: Path | str,
-        mode: Literal["complete", "redo"],
         root_llm: LLMClient | MockLLMClient | None = None,
         child_llm: LLMClient | MockLLMClient | None = None,
     ) -> "RootLLMOrchestrator":
         """
         Create an orchestrator to resume an interrupted experiment.
 
+        This restarts the current generation from scratch (redo mode),
+        preserving all previous generations and their trials.
+
         Args:
             experiment_dir: Path to the experiment directory to resume
-            mode: Resume mode:
-                - "complete": Finish remaining trials in current generation
-                - "redo": Restart the current generation from scratch
             root_llm: Optional pre-configured root LLM client (for testing)
             child_llm: Optional pre-configured child LLM client (for testing)
 
@@ -156,36 +154,23 @@ class RootLLMOrchestrator:
 
         Raises:
             FileNotFoundError: If experiment directory doesn't exist
-            ValueError: If experiment cannot be resumed in the requested mode
+            ValueError: If experiment cannot be resumed
         """
         experiment_dir = Path(experiment_dir)
 
         # Analyze experiment state
         info = analyze_experiment(experiment_dir)
 
-        # Validate resume mode
-        if mode == "complete" and not info.can_complete:
-            if info.generation_complete:
-                raise ValueError(
-                    f"Cannot complete generation {info.current_generation} - "
-                    "it is already complete. Use 'redo' mode instead."
-                )
-            elif info.trials_in_current_gen == 0:
-                raise ValueError(
-                    f"Cannot complete generation {info.current_generation} - "
-                    "no trials have been started. Use 'redo' mode instead."
-                )
-            else:
-                raise ValueError(
-                    f"Cannot complete generation {info.current_generation} - "
-                    f"already at max trials ({info.max_children_per_gen})."
-                )
+        # Validate we can resume
+        if not info.can_resume:
+            raise ValueError(
+                f"Cannot resume experiment - no generations have been started."
+            )
 
-        # Prepare for redo mode by cleaning up current generation
-        if mode == "redo":
-            prepare_redo(experiment_dir)
-            # Re-analyze after cleanup
-            info = analyze_experiment(experiment_dir)
+        # Prepare by cleaning up current generation (redo mode)
+        prepare_redo(experiment_dir)
+        # Re-analyze after cleanup
+        info = analyze_experiment(experiment_dir)
 
         # Load state
         all_trials = load_trials_from_disk(experiment_dir)
@@ -266,9 +251,8 @@ class RootLLMOrchestrator:
         orchestrator.messages = []
         orchestrator.turn_number = 0
 
-        # Set resume mode and prompt
-        orchestrator._resume_mode = mode
-        orchestrator._resume_prompt = build_resume_prompt(info, mode, all_trials)
+        # Set resume prompt
+        orchestrator._resume_prompt = build_resume_prompt(info, all_trials)
 
         return orchestrator
 

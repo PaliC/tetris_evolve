@@ -41,7 +41,7 @@ def parse_args(args=None):
         "-r",
         type=str,
         metavar="EXPERIMENT_DIR",
-        help="Path to experiment directory to resume",
+        help="Path to experiment directory to resume (restarts current generation)",
     )
 
     action_group.add_argument(
@@ -49,17 +49,7 @@ def parse_args(args=None):
         "-a",
         type=str,
         metavar="EXPERIMENT_DIR",
-        help="Analyze experiment directory and show resumption options",
-    )
-
-    # Resume mode (only used with --resume)
-    parser.add_argument(
-        "--mode",
-        "-m",
-        type=str,
-        choices=["complete", "redo"],
-        default="complete",
-        help="Resume mode: 'complete' to finish current generation, 'redo' to restart it (default: complete)",
+        help="Analyze experiment directory and show resumption info",
     )
 
     parser.add_argument(
@@ -106,14 +96,10 @@ def run_analyze(experiment_dir: str, verbose: bool = False) -> int:
 
     # Provide actionable suggestions
     print("\nResume Options:")
-    if info.can_complete:
-        print(f"  --resume {experiment_path} --mode complete")
-        print(f"      Spawn {info.remaining_trials_in_gen} more trials to complete generation {info.current_generation}")
-    if info.can_redo:
-        print(f"  --resume {experiment_path} --mode redo")
+    if info.can_resume:
+        print(f"  --resume {experiment_path}")
         print(f"      Restart generation {info.current_generation} from scratch")
-
-    if not info.can_complete and not info.can_redo:
+    else:
         if info.current_generation >= info.total_generations_configured:
             print("  Experiment is complete (all generations finished)")
         else:
@@ -122,13 +108,12 @@ def run_analyze(experiment_dir: str, verbose: bool = False) -> int:
     return 0
 
 
-def run_resume(experiment_dir: str, mode: str, verbose: bool = False) -> int:
+def run_resume(experiment_dir: str, verbose: bool = False) -> int:
     """
-    Resume an interrupted experiment.
+    Resume an interrupted experiment by restarting the current generation.
 
     Args:
         experiment_dir: Path to experiment directory
-        mode: Resume mode ('complete' or 'redo')
         verbose: Enable verbose output
 
     Returns:
@@ -149,13 +134,11 @@ def run_resume(experiment_dir: str, mode: str, verbose: bool = False) -> int:
             print("RESUMING EXPERIMENT")
             print("=" * 50)
             print(info)
-            print(f"\nResume mode: {mode}")
             print("-" * 50)
 
         # Create orchestrator from resume
         orchestrator = RootLLMOrchestrator.from_resume(
             experiment_dir=experiment_path,
-            mode=mode,
         )
 
         if verbose:
@@ -276,7 +259,7 @@ def main(args=None):
     if parsed_args.analyze:
         return run_analyze(parsed_args.analyze, parsed_args.verbose)
     elif parsed_args.resume:
-        return run_resume(parsed_args.resume, parsed_args.mode, parsed_args.verbose)
+        return run_resume(parsed_args.resume, parsed_args.verbose)
     else:
         return run_new_experiment(parsed_args.config, parsed_args.verbose)
 

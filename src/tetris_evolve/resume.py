@@ -8,7 +8,7 @@ import json
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 from .config import Config, config_from_dict
 from .evolution_api import GenerationSummary, TrialResult, TrialSelection
@@ -31,32 +31,16 @@ class ResumeInfo:
     completed_generation_nums: list[int] = field(default_factory=list)
 
     @property
-    def can_complete(self) -> bool:
-        """Check if we can add more trials to current generation."""
-        return (
-            not self.generation_complete
-            and self.trials_in_current_gen < self.max_children_per_gen
-            and self.trials_in_current_gen > 0  # Must have at least some trials
-        )
-
-    @property
-    def can_redo(self) -> bool:
-        """Check if we can redo the current generation."""
-        # Can redo if there are trials in current gen (complete or not)
-        # OR if we're at a generation that hasn't started yet
-        return self.trials_in_current_gen > 0 or (
-            self.current_generation > 0 and not self.generation_complete
-        )
+    def can_resume(self) -> bool:
+        """Check if we can resume (redo) the experiment."""
+        # Can resume if there are trials in current gen (complete or not)
+        # OR if we're at a generation that hasn't started yet but previous ones exist
+        return self.trials_in_current_gen > 0 or self.current_generation > 0
 
     @property
     def remaining_budget(self) -> float:
         """Get remaining budget."""
         return self.max_budget - self.total_cost_spent
-
-    @property
-    def remaining_trials_in_gen(self) -> int:
-        """Get number of trials that can still be spawned in current gen."""
-        return self.max_children_per_gen - self.trials_in_current_gen
 
     def __str__(self) -> str:
         """Human-readable summary."""
@@ -68,8 +52,7 @@ class ResumeInfo:
             f"Total trials: {len(self.all_trial_ids)}",
             f"Completed generations: {self.completed_generation_nums}",
             f"Cost spent: ${self.total_cost_spent:.4f} / ${self.max_budget:.2f}",
-            f"Can complete: {self.can_complete}",
-            f"Can redo: {self.can_redo}",
+            f"Can resume: {self.can_resume}",
         ]
         return "\n".join(lines)
 
@@ -330,7 +313,6 @@ def prepare_redo(experiment_dir: Path) -> None:
 
 def build_resume_prompt(
     info: ResumeInfo,
-    mode: Literal["complete", "redo"],
     all_trials: dict[str, TrialResult],
 ) -> str:
     """
@@ -338,71 +320,41 @@ def build_resume_prompt(
 
     Args:
         info: ResumeInfo from analyze_experiment
-        mode: Resume mode ("complete" or "redo")
         all_trials: All loaded trials
 
     Returns:
         Initial user message for the resumed conversation
     """
     lines = [
-        f"RESUMING EXPERIMENT - Mode: {mode.upper()}",
+        "RESUMING EXPERIMENT",
+        "",
+        f"Generation {info.current_generation} is being restarted.",
         "",
     ]
 
-    if mode == "complete":
-        lines.extend([
-            f"The experiment was interrupted during generation {info.current_generation}.",
-            f"Trials completed in this generation: {info.trials_in_current_gen}/{info.max_children_per_gen}",
-            f"Remaining trials to spawn: {info.remaining_trials_in_gen}",
-            "",
-            "Existing trials in current generation:",
-        ])
-
-        # List existing trials
-        current_gen_trials = [
+    # Show previous generation results if any
+    if info.current_generation > 0:
+        prev_gen_trials = [
             t for t in all_trials.values()
-            if t.generation == info.current_generation
+            if t.generation == info.current_generation - 1
         ]
-        for trial in sorted(current_gen_trials, key=lambda t: t.trial_id):
-            score = trial.metrics.get("sum_radii", 0) if trial.success else 0
-            status = "valid" if trial.success else "INVALID"
-            lines.append(f"  - {trial.trial_id}: score={score:.4f} [{status}]")
+        if prev_gen_trials:
+            lines.append(f"Previous generation {info.current_generation - 1} results:")
+            sorted_trials = sorted(
+                prev_gen_trials,
+                key=lambda t: t.metrics.get("sum_radii", 0) if t.success else 0,
+                reverse=True,
+            )
+            for trial in sorted_trials[:5]:  # Show top 5
+                score = trial.metrics.get("sum_radii", 0) if trial.success else 0
+                status = "valid" if trial.success else "INVALID"
+                lines.append(f"  - {trial.trial_id}: score={score:.4f} [{status}]")
+            lines.append("")
 
-        lines.extend([
-            "",
-            f"Please spawn {info.remaining_trials_in_gen} more children to complete this generation.",
-            "Consider what strategies have worked and what to explore next.",
-        ])
-
-    else:  # redo mode
-        lines.extend([
-            f"Generation {info.current_generation} is being restarted.",
-            "",
-        ])
-
-        # Show previous generation results if any
-        if info.current_generation > 0:
-            prev_gen_trials = [
-                t for t in all_trials.values()
-                if t.generation == info.current_generation - 1
-            ]
-            if prev_gen_trials:
-                lines.append(f"Previous generation {info.current_generation - 1} results:")
-                sorted_trials = sorted(
-                    prev_gen_trials,
-                    key=lambda t: t.metrics.get("sum_radii", 0) if t.success else 0,
-                    reverse=True,
-                )
-                for trial in sorted_trials[:5]:  # Show top 5
-                    score = trial.metrics.get("sum_radii", 0) if trial.success else 0
-                    status = "valid" if trial.success else "INVALID"
-                    lines.append(f"  - {trial.trial_id}: score={score:.4f} [{status}]")
-                lines.append("")
-
-        lines.extend([
-            f"Spawn up to {info.max_children_per_gen} children for generation {info.current_generation}.",
-            "Use insights from previous generations to guide your strategy.",
-        ])
+    lines.extend([
+        f"Spawn up to {info.max_children_per_gen} children for generation {info.current_generation}.",
+        "Use insights from previous generations to guide your strategy.",
+    ])
 
     # Add overall best score context
     if all_trials:
