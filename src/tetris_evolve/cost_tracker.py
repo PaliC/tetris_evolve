@@ -181,3 +181,34 @@ class CostTracker:
                 for u in self.usage_log
             ],
         }
+
+    @classmethod
+    def from_dict(cls, data: dict, config: "Config") -> "CostTracker":
+        """
+        Restore cost tracker state from a dictionary.
+
+        Args:
+            data: Dictionary from to_dict() or cost_tracking.json
+            config: Config object for pricing information
+
+        Returns:
+            CostTracker with restored state
+        """
+        tracker = cls(config)
+
+        # Restore usage log
+        for entry in data.get("usage_log", []):
+            usage = TokenUsage(
+                input_tokens=entry["input_tokens"],
+                output_tokens=entry["output_tokens"],
+                cost=entry["cost"],
+                timestamp=datetime.fromisoformat(entry["timestamp"]),
+                llm_type=entry["llm_type"],
+                call_id=entry["call_id"],
+            )
+            tracker.usage_log.append(usage)
+
+        # Restore total cost
+        tracker.total_cost = data.get("total_cost", 0.0)
+
+        return tracker

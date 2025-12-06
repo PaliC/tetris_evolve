@@ -6,7 +6,8 @@ code blocks and managing the conversation with the Root LLM.
 """
 
 from dataclasses import dataclass
-from typing import Any
+from pathlib import Path
+from typing import Any, Literal
 
 from tqdm import tqdm
 
@@ -18,6 +19,14 @@ from .llm.client import LLMClient, MockLLMClient
 from .llm.prompts import get_root_system_prompt
 from .logger import ExperimentLogger
 from .repl import REPLEnvironment
+from .resume import (
+    analyze_experiment,
+    build_resume_prompt,
+    load_cost_data,
+    load_generation_summaries,
+    load_trials_from_disk,
+    prepare_redo,
+)
 from .utils.code_extraction import extract_repl_blocks, extract_selection_block
 
 
@@ -119,6 +128,150 @@ class RootLLMOrchestrator:
         self.messages: list[dict[str, str]] = []
         self.turn_number = 0
 
+        # Resume state (set by from_resume)
+        self._resume_mode: Literal["complete", "redo"] | None = None
+        self._resume_prompt: str | None = None
+
+    @classmethod
+    def from_resume(
+        cls,
+        experiment_dir: Path | str,
+        mode: Literal["complete", "redo"],
+        root_llm: LLMClient | MockLLMClient | None = None,
+        child_llm: LLMClient | MockLLMClient | None = None,
+    ) -> "RootLLMOrchestrator":
+        """
+        Create an orchestrator to resume an interrupted experiment.
+
+        Args:
+            experiment_dir: Path to the experiment directory to resume
+            mode: Resume mode:
+                - "complete": Finish remaining trials in current generation
+                - "redo": Restart the current generation from scratch
+            root_llm: Optional pre-configured root LLM client (for testing)
+            child_llm: Optional pre-configured child LLM client (for testing)
+
+        Returns:
+            RootLLMOrchestrator configured for resumption
+
+        Raises:
+            FileNotFoundError: If experiment directory doesn't exist
+            ValueError: If experiment cannot be resumed in the requested mode
+        """
+        experiment_dir = Path(experiment_dir)
+
+        # Analyze experiment state
+        info = analyze_experiment(experiment_dir)
+
+        # Validate resume mode
+        if mode == "complete" and not info.can_complete:
+            if info.generation_complete:
+                raise ValueError(
+                    f"Cannot complete generation {info.current_generation} - "
+                    "it is already complete. Use 'redo' mode instead."
+                )
+            elif info.trials_in_current_gen == 0:
+                raise ValueError(
+                    f"Cannot complete generation {info.current_generation} - "
+                    "no trials have been started. Use 'redo' mode instead."
+                )
+            else:
+                raise ValueError(
+                    f"Cannot complete generation {info.current_generation} - "
+                    f"already at max trials ({info.max_children_per_gen})."
+                )
+
+        # Prepare for redo mode by cleaning up current generation
+        if mode == "redo":
+            prepare_redo(experiment_dir)
+            # Re-analyze after cleanup
+            info = analyze_experiment(experiment_dir)
+
+        # Load state
+        all_trials = load_trials_from_disk(experiment_dir)
+        generations = load_generation_summaries(experiment_dir)
+        cost_data = load_cost_data(experiment_dir)
+
+        # Create orchestrator with existing logger directory
+        # We reuse the existing experiment directory
+        orchestrator = cls.__new__(cls)
+
+        # Initialize attributes manually (bypassing __init__)
+        orchestrator.config = info.config
+        orchestrator.max_generations = info.config.evolution.max_generations
+        orchestrator.max_children_per_generation = info.config.evolution.max_children_per_generation
+
+        # Restore cost tracker
+        if cost_data:
+            orchestrator.cost_tracker = CostTracker.from_dict(cost_data, info.config)
+        else:
+            orchestrator.cost_tracker = CostTracker(info.config)
+
+        # Create logger pointing to existing directory
+        orchestrator.logger = ExperimentLogger(info.config, run_id="resumed")
+        orchestrator.logger.base_dir = experiment_dir
+        orchestrator.logger.generations_dir = experiment_dir / "generations"
+        orchestrator.logger._initialized = True
+
+        # Initialize LLM clients
+        if root_llm is not None:
+            orchestrator.root_llm = root_llm
+        else:
+            orchestrator.root_llm = LLMClient(
+                model=info.config.root_llm.model,
+                cost_tracker=orchestrator.cost_tracker,
+                llm_type="root",
+            )
+
+        if child_llm is not None:
+            orchestrator.child_llm = child_llm
+        else:
+            orchestrator.child_llm = LLMClient(
+                model=info.config.child_llm.model,
+                cost_tracker=orchestrator.cost_tracker,
+                llm_type="child",
+            )
+
+        # Load evaluator
+        orchestrator.evaluator = load_evaluator(info.config.evaluation)
+
+        # Get evaluator kwargs for parallel workers
+        evaluator_kwargs = info.config.evaluation.evaluator_kwargs or {}
+
+        # Initialize Evolution API
+        orchestrator.evolution_api = EvolutionAPI(
+            evaluator=orchestrator.evaluator,
+            child_llm=orchestrator.child_llm,
+            cost_tracker=orchestrator.cost_tracker,
+            logger=orchestrator.logger,
+            max_generations=info.config.evolution.max_generations,
+            max_children_per_generation=info.config.evolution.max_children_per_generation,
+            child_llm_model=info.config.child_llm.model,
+            evaluator_kwargs=evaluator_kwargs,
+        )
+
+        # Restore evolution state
+        orchestrator.evolution_api.restore_state(
+            all_trials=all_trials,
+            generations=generations,
+            current_generation=info.current_generation,
+        )
+
+        # Initialize REPL with Evolution API functions
+        orchestrator.repl = REPLEnvironment(
+            api_functions=orchestrator.evolution_api.get_api_functions()
+        )
+
+        # Initialize conversation state
+        orchestrator.messages = []
+        orchestrator.turn_number = 0
+
+        # Set resume mode and prompt
+        orchestrator._resume_mode = mode
+        orchestrator._resume_prompt = build_resume_prompt(info, mode, all_trials)
+
+        return orchestrator
+
     def _get_system_prompt(self) -> str:
         """Get the system prompt with current generation info."""
         return get_root_system_prompt(
@@ -134,16 +287,25 @@ class RootLLMOrchestrator:
         Returns:
             List of message dicts to start the conversation
         """
-        # Start with a user message prompting the LLM to begin
-        self.messages = [
-            {
-                "role": "user",
-                "content": (
-                    f"Begin generation 0. Spawn up to {self.max_children_per_generation} children "
-                    "exploring different circle packing strategies."
-                ),
-            }
-        ]
+        # Use resume prompt if this is a resumed experiment
+        if self._resume_prompt is not None:
+            self.messages = [
+                {
+                    "role": "user",
+                    "content": self._resume_prompt,
+                }
+            ]
+        else:
+            # Start with a user message prompting the LLM to begin
+            self.messages = [
+                {
+                    "role": "user",
+                    "content": (
+                        f"Begin generation 0. Spawn up to {self.max_children_per_generation} children "
+                        "exploring different circle packing strategies."
+                    ),
+                }
+            ]
         return self.messages
 
     def extract_code_blocks(self, response: str) -> list[str]:

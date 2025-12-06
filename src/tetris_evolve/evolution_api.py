@@ -758,3 +758,46 @@ class EvolutionAPI:
             "evaluate_program": self.evaluate_program,
             "terminate_evolution": self.terminate_evolution,
         }
+
+    def restore_state(
+        self,
+        all_trials: dict[str, "TrialResult"],
+        generations: list["GenerationSummary"],
+        current_generation: int,
+    ) -> None:
+        """
+        Restore evolution state from loaded data.
+
+        Used when resuming an interrupted experiment.
+
+        Args:
+            all_trials: Dictionary of all trials loaded from disk
+            generations: List of GenerationSummary objects
+            current_generation: The generation to resume from
+        """
+        self.all_trials = all_trials
+        self.current_generation = current_generation
+
+        # Ensure generations list has correct structure
+        self.generations = []
+        for i in range(current_generation + 1):
+            # Find matching generation or create empty one
+            matching = [g for g in generations if g.generation_num == i]
+            if matching:
+                self.generations.append(matching[0])
+            else:
+                # Create generation from trials
+                gen_trials = [t for t in all_trials.values() if t.generation == i]
+                best_trial = max(
+                    (t for t in gen_trials if t.success),
+                    key=lambda t: t.metrics.get("sum_radii", 0),
+                    default=None,
+                )
+                self.generations.append(
+                    GenerationSummary(
+                        generation_num=i,
+                        trials=gen_trials,
+                        best_trial_id=best_trial.trial_id if best_trial else None,
+                        best_score=best_trial.metrics.get("sum_radii", 0) if best_trial else 0.0,
+                    )
+                )
