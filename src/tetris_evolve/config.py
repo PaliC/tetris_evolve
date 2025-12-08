@@ -25,12 +25,18 @@ class ExperimentConfig:
 
 @dataclass
 class LLMConfig:
-    """Configuration for an LLM (root or child)."""
+    """Configuration for an LLM (root or child).
+
+    Supports multiple providers:
+        - "anthropic" (default): Direct Anthropic API
+        - "openrouter": OpenRouter API for accessing various models including OpenAI
+    """
 
     model: str
     cost_per_million_input_tokens: float
     cost_per_million_output_tokens: float
     max_iterations: int | None = None  # Only used for root LLM
+    provider: str = "anthropic"  # "anthropic" or "openrouter"
 
 
 @dataclass
@@ -135,14 +141,26 @@ def _parse_llm_config(data: dict[str, Any], section: str) -> LLMConfig:
             "cost_per_million_input_tokens": float,
             "cost_per_million_output_tokens": float,
             "max_iterations": int,
+            "provider": str,
         },
         section,
     )
+
+    # Validate provider value
+    provider = data.get("provider", "anthropic")
+    valid_providers = ("anthropic", "openrouter")
+    if provider not in valid_providers:
+        raise ConfigValidationError(
+            f"Invalid provider '{provider}' in section '{section}'. "
+            f"Must be one of: {', '.join(valid_providers)}"
+        )
+
     return LLMConfig(
         model=data["model"],
         cost_per_million_input_tokens=float(data["cost_per_million_input_tokens"]),
         cost_per_million_output_tokens=float(data["cost_per_million_output_tokens"]),
         max_iterations=data.get("max_iterations"),
+        provider=provider,
     )
 
 
