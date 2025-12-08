@@ -20,11 +20,11 @@ evaluation:
   evaluator_kwargs:
     n_circles: 26
     target: 2.635
-    timeout_seconds: 30
+    timeout_seconds: 300
 
 evolution:
-  max_generations: 3
-  max_children_per_generation: 3
+  max_generations: 20
+  max_children_per_generation: 20
 
 budget:
   max_total_cost: 20.0

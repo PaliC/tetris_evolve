@@ -50,7 +50,7 @@ export ANTHROPIC_API_KEY=your_api_key_here
 
 ```bash
 # Run the evolution with the example config
-uv run python -m tetris_evolve --config configs/example_config_haiku.yaml
+uv run python -m tetris_evolve --config configs/example_config_sonnet.yaml
 
 # Run with verbose output
 uv run python -m tetris_evolve --config configs/example_config_haiku.yaml --verbose

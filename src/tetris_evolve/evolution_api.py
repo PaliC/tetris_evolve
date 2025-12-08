@@ -60,8 +60,8 @@ class TrialResult:
         """Convert to dictionary."""
         return {
             "trial_id": self.trial_id,
-            "code": self.code,
             "metrics": self.metrics,
+            "code": self.code,
             "prompt": self.prompt,
             "response": self.response,
             "reasoning": self.reasoning,
