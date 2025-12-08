@@ -168,7 +168,7 @@ class RootLLMOrchestrator:
             )
 
         # Prepare by cleaning up current generation (redo mode)
-        prepare_redo(experiment_dir)
+        prepare_redo(experiment_dir, info.current_generation)
         # Re-analyze after cleanup
         info = analyze_experiment(experiment_dir)
 

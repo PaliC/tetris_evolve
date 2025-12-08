@@ -3,13 +3,11 @@ Tests for experiment resume functionality.
 """
 
 import json
-from pathlib import Path
 
 import pytest
 
 from tetris_evolve import CostTracker, MockLLMClient, config_from_dict
 from tetris_evolve.resume import (
-    ResumeInfo,
     analyze_experiment,
     build_resume_prompt,
     load_cost_data,
@@ -155,9 +153,8 @@ class TestAnalyzeExperiment:
 
         assert info.current_generation == 0
         assert info.trials_in_current_gen == 0
-        assert info.generation_complete is False
         assert info.total_cost_spent == 0.0
-        assert info.can_resume is False  # Nothing to resume
+        assert info.can_resume is False
 
     def test_analyze_experiment_with_incomplete_gen(self, setup_experiment_with_trials):
         """Test analyzing an experiment with incomplete generation."""
@@ -166,18 +163,16 @@ class TestAnalyzeExperiment:
         assert info.current_generation == 0
         assert info.trials_in_current_gen == 2
         assert info.max_children_per_gen == 3
-        assert info.generation_complete is False
         assert info.total_cost_spent == 0.05
-        assert info.can_resume is True  # Can resume
+        assert info.can_resume is True
 
     def test_analyze_experiment_with_complete_gen(self, setup_experiment_with_complete_gen):
         """Test analyzing an experiment with a complete generation."""
         info = analyze_experiment(setup_experiment_with_complete_gen)
 
-        assert info.current_generation == 1  # Moved to next generation
+        assert info.current_generation == 1
         assert info.trials_in_current_gen == 0
-        assert 0 in info.completed_generation_nums
-        assert info.can_resume is True  # Can still resume (gen 1 from scratch)
+        assert info.can_resume is True
 
     def test_analyze_nonexistent_experiment(self, temp_dir):
         """Test analyzing a non-existent experiment directory."""
@@ -220,7 +215,6 @@ class TestLoadGenerationSummaries:
         """Test loading generation summaries when none exist."""
         generations = load_generation_summaries(setup_experiment_with_trials)
 
-        # Should still create generation from trials
         assert len(generations) == 1
         assert generations[0].generation_num == 0
         assert len(generations[0].trials) == 2
@@ -260,14 +254,13 @@ class TestPrepareRedo:
         gen0_dir = setup_experiment_with_trials / "generations" / "gen_0"
         assert gen0_dir.exists()
 
-        prepare_redo(setup_experiment_with_trials)
+        prepare_redo(setup_experiment_with_trials, current_generation=0)
 
         assert not gen0_dir.exists()
 
-    def test_prepare_redo_empty_experiment(self, setup_experiment_dir):
-        """Test prepare_redo on empty experiment (no-op)."""
-        # Should not raise
-        prepare_redo(setup_experiment_dir)
+    def test_prepare_redo_nonexistent_gen(self, setup_experiment_dir):
+        """Test prepare_redo on nonexistent generation (no-op)."""
+        prepare_redo(setup_experiment_dir, current_generation=0)
 
 
 class TestBuildResumePrompt:
@@ -288,19 +281,20 @@ class TestBuildResumePrompt:
 class TestResumeInfo:
     """Tests for ResumeInfo dataclass."""
 
-    def test_resume_info_str(self, setup_experiment_with_trials):
-        """Test ResumeInfo string representation."""
-        info = analyze_experiment(setup_experiment_with_trials)
-        info_str = str(info)
-
-        assert "Current generation: 0" in info_str
-        assert "Trials in current gen: 2/3" in info_str
-        assert "Can resume: True" in info_str
-
     def test_remaining_budget(self, setup_experiment_with_trials):
         """Test remaining_budget property."""
         info = analyze_experiment(setup_experiment_with_trials)
         assert info.remaining_budget == pytest.approx(10.0 - 0.05)
+
+    def test_can_resume_with_trials(self, setup_experiment_with_trials):
+        """Test can_resume when trials exist."""
+        info = analyze_experiment(setup_experiment_with_trials)
+        assert info.can_resume is True
+
+    def test_can_resume_empty(self, setup_experiment_dir):
+        """Test can_resume when no trials exist."""
+        info = analyze_experiment(setup_experiment_dir)
+        assert info.can_resume is False
 
 
 class TestCostTrackerFromDict:
@@ -334,7 +328,6 @@ class TestOrchestratorFromResume:
 
         assert orchestrator._resume_prompt is not None
         assert "RESUMING EXPERIMENT" in orchestrator._resume_prompt
-        # Resume clears current generation trials (redo mode)
         assert len(orchestrator.evolution_api.all_trials) == 0
 
     def test_from_resume_with_complete_gen(self, setup_experiment_with_complete_gen):
@@ -343,9 +336,7 @@ class TestOrchestratorFromResume:
             experiment_dir=setup_experiment_with_complete_gen,
         )
 
-        # Current generation is 1 (gen 0 is complete), so gen 1 trials would be cleared
-        # But since gen 1 had no trials, all_trials should contain gen 0 trials
-        assert len(orchestrator.evolution_api.all_trials) == 3  # Gen 0 trials preserved
+        assert len(orchestrator.evolution_api.all_trials) == 3
 
     def test_from_resume_preserves_cost(self, setup_experiment_with_trials):
         """Test that resume preserves spent cost."""
@@ -393,7 +384,6 @@ class TestResumedOrchestrationRun:
             experiment_dir=setup_experiment_with_trials,
         )
 
-        # Set up mock LLMs
         cost_tracker = orchestrator.cost_tracker
         mock_root = MockLLMClient(
             model=orchestrator.config.root_llm.model,
@@ -406,12 +396,10 @@ class TestResumedOrchestrationRun:
             llm_type="child",
         )
 
-        # Child returns valid packing code
         mock_child.set_responses([
             f"```python\n{sample_valid_packing_code}\n```",
         ])
 
-        # Root spawns a child, then terminates
         mock_root.set_responses([
             '''Restarting the generation.
 
@@ -439,5 +427,4 @@ terminate_evolution("Completed via resume")
         result = orchestrator.run()
 
         assert result.terminated is True
-        # Resume clears current gen, so we start fresh - should have 1 new trial
         assert result.total_trials == 1

@@ -15,7 +15,6 @@ load_dotenv()
 
 from .config import load_config
 from .exceptions import BudgetExceededError, ConfigValidationError
-from .resume import analyze_experiment
 from .root_llm import RootLLMOrchestrator
 
 
@@ -44,14 +43,6 @@ def parse_args(args=None):
         help="Path to experiment directory to resume (restarts current generation)",
     )
 
-    action_group.add_argument(
-        "--analyze",
-        "-a",
-        type=str,
-        metavar="EXPERIMENT_DIR",
-        help="Analyze experiment directory and show resumption info",
-    )
-
     parser.add_argument(
         "--verbose",
         "-v",
@@ -60,52 +51,6 @@ def parse_args(args=None):
     )
 
     return parser.parse_args(args)
-
-
-def run_analyze(experiment_dir: str, verbose: bool = False) -> int:
-    """
-    Analyze an experiment directory and display resumption info.
-
-    Args:
-        experiment_dir: Path to experiment directory
-        verbose: Enable verbose output
-
-    Returns:
-        Exit code (0 for success, 1 for error)
-    """
-    experiment_path = Path(experiment_dir)
-
-    if not experiment_path.exists():
-        print(f"Error: Experiment directory not found: {experiment_path}", file=sys.stderr)
-        return 1
-
-    try:
-        info = analyze_experiment(experiment_path)
-    except FileNotFoundError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        return 1
-    except ValueError as e:
-        print(f"Error: Invalid experiment state: {e}", file=sys.stderr)
-        return 1
-
-    print("=" * 60)
-    print("EXPERIMENT ANALYSIS")
-    print("=" * 60)
-    print(info)
-    print("=" * 60)
-
-    # Provide actionable suggestions
-    print("\nResume Options:")
-    if info.can_resume:
-        print(f"  --resume {experiment_path}")
-        print(f"      Restart generation {info.current_generation} from scratch")
-    else:
-        if info.current_generation >= info.total_generations_configured:
-            print("  Experiment is complete (all generations finished)")
-        else:
-            print("  No resume options available")
-
-    return 0
 
 
 def run_resume(experiment_dir: str, verbose: bool = False) -> int:
@@ -126,29 +71,15 @@ def run_resume(experiment_dir: str, verbose: bool = False) -> int:
         return 1
 
     try:
-        # Analyze first to show info
-        info = analyze_experiment(experiment_path)
+        orchestrator = RootLLMOrchestrator.from_resume(experiment_dir=experiment_path)
 
         if verbose:
-            print("=" * 50)
-            print("RESUMING EXPERIMENT")
-            print("=" * 50)
-            print(info)
-            print("-" * 50)
-
-        # Create orchestrator from resume
-        orchestrator = RootLLMOrchestrator.from_resume(
-            experiment_dir=experiment_path,
-        )
-
-        if verbose:
-            print(f"Experiment directory: {orchestrator.logger.base_dir}")
-            print("Starting evolution...")
+            print(f"Resuming experiment: {orchestrator.logger.base_dir}")
+            print(f"Starting from generation {orchestrator.evolution_api.current_generation}")
             print("-" * 50)
 
         result = orchestrator.run()
 
-        # Print results
         print("\n" + "=" * 50)
         print("EVOLUTION COMPLETE")
         print("=" * 50)
@@ -208,7 +139,6 @@ def run_new_experiment(config_path: str, verbose: bool = False) -> int:
         print(f"Budget: ${config.budget.max_total_cost:.2f}")
         print(f"Max generations: {config.evolution.max_generations}")
 
-    # Run the orchestrator
     try:
         orchestrator = RootLLMOrchestrator(config)
 
@@ -219,7 +149,6 @@ def run_new_experiment(config_path: str, verbose: bool = False) -> int:
 
         result = orchestrator.run()
 
-        # Print results
         print("\n" + "=" * 50)
         print("EVOLUTION COMPLETE")
         print("=" * 50)
@@ -256,9 +185,7 @@ def main(args=None):
     """
     parsed_args = parse_args(args)
 
-    if parsed_args.analyze:
-        return run_analyze(parsed_args.analyze, parsed_args.verbose)
-    elif parsed_args.resume:
+    if parsed_args.resume:
         return run_resume(parsed_args.resume, parsed_args.verbose)
     else:
         return run_new_experiment(parsed_args.config, parsed_args.verbose)
