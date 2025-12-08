@@ -264,25 +264,27 @@ class RootLLMOrchestrator:
                 lines.append(f"   Error: {trial.error}")
             lines.append("")
 
-        lines.extend([
-            "## Your Task",
-            "",
-            "Select 2-5 trials to carry forward to the next generation. Consider:",
-            "- **Performance**: Which trials achieved the best scores?",
-            "- **Diversity**: Which trials use different approaches worth exploring?",
-            "- **Potential**: Which trials might improve with refinement, even if current scores are lower?",
-            "",
-            "Respond with a ```selection``` block containing JSON:",
-            "```selection",
-            "{",
-            '  "selections": [',
-            '    {"trial_id": "trial_X_Y", "reasoning": "Why selected", "category": "performance|diversity|potential"},',
-            "    ...",
-            "  ],",
-            '  "summary": "Overall selection reasoning"',
-            "}",
-            "```",
-        ])
+        lines.extend(
+            [
+                "## Your Task",
+                "",
+                "Select 2-5 trials to carry forward to the next generation. Consider:",
+                "- **Performance**: Which trials achieved the best scores?",
+                "- **Diversity**: Which trials use different approaches worth exploring?",
+                "- **Potential**: Which trials might improve with refinement, even if current scores are lower?",
+                "",
+                "Respond with a ```selection``` block containing JSON:",
+                "```selection",
+                "{",
+                '  "selections": [',
+                '    {"trial_id": "trial_X_Y", "reasoning": "Why selected", "category": "performance|diversity|potential"},',
+                "    ...",
+                "  ],",
+                '  "summary": "Overall selection reasoning"',
+                "}",
+                "```",
+            ]
+        )
 
         return "\n".join(lines)
 
@@ -354,7 +356,11 @@ class RootLLMOrchestrator:
             trials = len(self.evolution_api.all_trials)
             successes = sum(1 for t in self.evolution_api.all_trials.values() if t.success)
             best_score = max(
-                (t.metrics.get("sum_radii", 0) for t in self.evolution_api.all_trials.values() if t.success),
+                (
+                    t.metrics.get("sum_radii", 0)
+                    for t in self.evolution_api.all_trials.values()
+                    if t.success
+                ),
                 default=0,
             )
 
@@ -538,9 +544,7 @@ class RootLLMOrchestrator:
         # Get best trial info
         best_trials = self.evolution_api._get_best_trials(n=1)
         best_program = best_trials[0]["code"] if best_trials else None
-        best_score = (
-            best_trials[0]["metrics"].get("sum_radii", 0) if best_trials else 0
-        )
+        best_score = best_trials[0]["metrics"].get("sum_radii", 0) if best_trials else 0
 
         # Compute statistics
         all_trials = self.evolution_api.all_trials

@@ -48,7 +48,7 @@ def evolution_api(sample_config, temp_dir, mock_evaluator):
         cost_tracker=cost_tracker,
         llm_type="child",
         responses=[
-            '```python\nimport numpy as np\n\ndef construct_packing():\n    return np.zeros((26,2)), np.zeros(26), 0.0\n\ndef run_packing():\n    return construct_packing()\n```',
+            "```python\nimport numpy as np\n\ndef construct_packing():\n    return np.zeros((26,2)), np.zeros(26), 0.0\n\ndef run_packing():\n    return construct_packing()\n```",
         ],
     )
 
@@ -315,9 +315,9 @@ class TestInternalMethods:
             cost_tracker=cost_tracker,
             llm_type="child",
             responses=[
-                '```python\ndef run_packing(): pass\n```',
-                '```python\ndef run_packing(): pass\n```',
-                '```python\ndef run_packing(): pass\n```',
+                "```python\ndef run_packing(): pass\n```",
+                "```python\ndef run_packing(): pass\n```",
+                "```python\ndef run_packing(): pass\n```",
             ],
         )
 
@@ -447,7 +447,7 @@ class TestChildrenLimitEnforcement:
             model="test",
             cost_tracker=cost_tracker,
             llm_type="child",
-            responses=['```python\ndef run_packing(): pass\n```'] * 3,
+            responses=["```python\ndef run_packing(): pass\n```"] * 3,
         )
 
         api = EvolutionAPI(
@@ -477,7 +477,7 @@ class TestChildrenLimitEnforcement:
             model="test",
             cost_tracker=cost_tracker,
             llm_type="child",
-            responses=['```python\ndef run_packing(): pass\n```'] * 4,
+            responses=["```python\ndef run_packing(): pass\n```"] * 4,
         )
 
         api = EvolutionAPI(
@@ -510,7 +510,7 @@ class TestChildrenLimitEnforcement:
             model="test",
             cost_tracker=cost_tracker,
             llm_type="child",
-            responses=['```python\ndef run_packing(): pass\n```'] * 6,
+            responses=["```python\ndef run_packing(): pass\n```"] * 6,
         )
 
         api = EvolutionAPI(
@@ -551,7 +551,7 @@ class TestGenerationLimitEnforcement:
             model="test",
             cost_tracker=cost_tracker,
             llm_type="child",
-            responses=['```python\ndef run_packing(): pass\n```'] * 3,
+            responses=["```python\ndef run_packing(): pass\n```"] * 3,
         )
 
         api = EvolutionAPI(
@@ -587,7 +587,7 @@ class TestGenerationLimitEnforcement:
             model="test",
             cost_tracker=cost_tracker,
             llm_type="child",
-            responses=['```python\ndef run_packing(): pass\n```'] * 4,
+            responses=["```python\ndef run_packing(): pass\n```"] * 4,
         )
 
         api = EvolutionAPI(
@@ -623,7 +623,7 @@ class TestGenerationLimitEnforcement:
             model="test",
             cost_tracker=cost_tracker,
             llm_type="child",
-            responses=['```python\ndef run_packing(): pass\n```'] * 4,
+            responses=["```python\ndef run_packing(): pass\n```"] * 4,
         )
 
         api = EvolutionAPI(
@@ -699,7 +699,7 @@ class TestTrialCodeSubstitution:
         def mock_generate(messages, **kwargs):
             received_prompts.append(messages[0]["content"])
             response = MagicMock()
-            response.content = '```python\ndef run_packing(): pass\n```'
+            response.content = "```python\ndef run_packing(): pass\n```"
             return response
 
         child_llm = MagicMock()
@@ -736,7 +736,7 @@ class TestTrialCodeSubstitution:
         def mock_generate(messages, **kwargs):
             received_prompts.append(messages[0]["content"])
             response = MagicMock()
-            response.content = '```python\ndef run_packing(): pass\n```'
+            response.content = "```python\ndef run_packing(): pass\n```"
             return response
 
         child_llm = MagicMock()
@@ -768,7 +768,7 @@ class TestTrialCodeSubstitution:
             llm_type="child",
             responses=[
                 '```python\ndef construct_packing(): return "first"\ndef run_packing(): return construct_packing()\n```',
-                '```python\ndef run_packing(): pass\n```',
+                "```python\ndef run_packing(): pass\n```",
             ],
         )
 
@@ -805,7 +805,7 @@ class TestTrialCodeSubstitution:
             responses=[
                 '```python\ndef run_packing(): return "A"\n```',
                 '```python\ndef run_packing(): return "B"\n```',
-                '```python\ndef run_packing(): pass\n```',
+                "```python\ndef run_packing(): pass\n```",
             ],
         )
 

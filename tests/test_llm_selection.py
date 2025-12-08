@@ -2,7 +2,6 @@
 Tests for LLM-driven generation selection functionality.
 """
 
-import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,7 +10,6 @@ from tetris_evolve import (
     CostTracker,
     EvolutionAPI,
     ExperimentLogger,
-    TrialResult,
 )
 from tetris_evolve.evolution_api import GenerationSummary, TrialSelection
 from tetris_evolve.llm import MockLLMClient
@@ -113,7 +111,7 @@ class TestExtractSelectionBlock:
 
     def test_extract_valid_selection(self):
         """Test extracting a valid selection block."""
-        text = '''Looking at the results, I'll select these trials:
+        text = """Looking at the results, I'll select these trials:
 
 ```selection
 {
@@ -126,7 +124,7 @@ class TestExtractSelectionBlock:
 ```
 
 Now let me continue.
-'''
+"""
         result = extract_selection_block(text)
 
         assert result is not None
@@ -145,7 +143,7 @@ Now let me continue.
 
     def test_extract_invalid_json(self):
         """Test handling of invalid JSON in selection block."""
-        text = '''Here's my selection:
+        text = """Here's my selection:
 
 ```selection
 {
@@ -154,14 +152,14 @@ Now let me continue.
   ]
 }
 ```
-'''
+"""
         result = extract_selection_block(text)
 
         assert result is None
 
     def test_extract_selection_with_extra_content(self):
         """Test selection block with surrounding content."""
-        text = '''## Analysis
+        text = """## Analysis
 
 I've analyzed all the trials and here are my selections:
 
@@ -177,7 +175,7 @@ I've analyzed all the trials and here are my selections:
 ## Next Steps
 
 Let me spawn more children...
-'''
+"""
         result = extract_selection_block(text)
 
         assert result is not None
@@ -208,7 +206,7 @@ class TestAdvanceGenerationWithSelections:
             model=sample_config.child_llm.model,
             cost_tracker=cost_tracker,
             llm_type="child",
-            responses=['```python\ndef run_packing(): pass\n```'] * 10,
+            responses=["```python\ndef run_packing(): pass\n```"] * 10,
         )
 
         api = EvolutionAPI(
@@ -315,11 +313,13 @@ class TestOrchestratorSelectionFlow:
             cost_tracker=cost_tracker,
             llm_type="child",
         )
-        mock_child.set_responses([
-            f"```python\n{sample_valid_packing_code}\n```",
-            f"```python\n{sample_valid_packing_code}\n```",
-            f"```python\n{sample_valid_packing_code}\n```",
-        ])
+        mock_child.set_responses(
+            [
+                f"```python\n{sample_valid_packing_code}\n```",
+                f"```python\n{sample_valid_packing_code}\n```",
+                f"```python\n{sample_valid_packing_code}\n```",
+            ]
+        )
         orchestrator.evolution_api.child_llm = mock_child
 
         return orchestrator
@@ -340,7 +340,7 @@ class TestOrchestratorSelectionFlow:
 
     def test_parse_selection_response(self, orchestrator):
         """Test parsing a valid selection response."""
-        response = '''Based on the results, I select:
+        response = """Based on the results, I select:
 
 ```selection
 {
@@ -351,7 +351,7 @@ class TestOrchestratorSelectionFlow:
   "summary": "Balanced selection"
 }
 ```
-'''
+"""
         selections, summary = orchestrator._parse_selection_response(response)
 
         assert selections is not None
@@ -383,16 +383,17 @@ class TestOrchestratorSelectionFlow:
         # Second response: selection
         # Third response: spawn more children for gen 1
         # Fourth response: selection for gen 1
-        mock_root.set_responses([
-            '''Spawning children:
+        mock_root.set_responses(
+            [
+                """Spawning children:
 ```repl
 children = [{"prompt": "test1"}, {"prompt": "test2"}]
 results = spawn_children_parallel(children)
 for r in results:
     print(f"{r['trial_id']}: {r['metrics'].get('sum_radii', 0):.4f}")
 ```
-''',
-            '''Based on results:
+""",
+                """Based on results:
 ```selection
 {
   "selections": [
@@ -401,14 +402,14 @@ for r in results:
   "summary": "Selected top performer"
 }
 ```
-''',
-            '''Generation 1:
+""",
+                """Generation 1:
 ```repl
 children = [{"prompt": "improve"}]
 results = spawn_children_parallel(children)
 ```
-''',
-            '''Final selection:
+""",
+                """Final selection:
 ```selection
 {
   "selections": [
@@ -417,12 +418,13 @@ results = spawn_children_parallel(children)
   "summary": "Final selection"
 }
 ```
-''',
-        ])
+""",
+            ]
+        )
 
         orchestrator.root_llm = mock_root
 
-        result = orchestrator.run()
+        _result = orchestrator.run()
 
         # Check that selections were recorded
         gen0 = orchestrator.evolution_api.generations[0]
@@ -463,7 +465,7 @@ class TestSelectionValidation:
             model=sample_config.child_llm.model,
             cost_tracker=cost_tracker,
             llm_type="child",
-            responses=['```python\ndef run_packing(): pass\n```'] * 10,
+            responses=["```python\ndef run_packing(): pass\n```"] * 10,
         )
 
         api = EvolutionAPI(
@@ -492,7 +494,9 @@ class TestSelectionValidation:
         # Invalid selection should be filtered out, falling back to auto
         assert len(gen0.trial_selections) == 0 or gen0.trial_selections[0].trial_id != "trial_5_0"
 
-    def test_selection_allows_failed_trials_with_potential(self, evolution_api, sample_config, temp_dir):
+    def test_selection_allows_failed_trials_with_potential(
+        self, evolution_api, sample_config, temp_dir
+    ):
         """Test that failed trials can be selected for 'potential' category."""
         # Create API with failing evaluator for some trials
         sample_config.experiment.output_dir = str(temp_dir)
@@ -515,7 +519,7 @@ class TestSelectionValidation:
             model=sample_config.child_llm.model,
             cost_tracker=cost_tracker,
             llm_type="child",
-            responses=['```python\ndef run_packing(): pass\n```'] * 10,
+            responses=["```python\ndef run_packing(): pass\n```"] * 10,
         )
 
         api = EvolutionAPI(
@@ -530,7 +534,11 @@ class TestSelectionValidation:
 
         # Select the invalid trial for its potential
         selections = [
-            {"trial_id": "trial_0_1", "reasoning": "Interesting approach despite failure", "category": "potential"},
+            {
+                "trial_id": "trial_0_1",
+                "reasoning": "Interesting approach despite failure",
+                "category": "potential",
+            },
         ]
 
         api._advance_generation(selections=selections)

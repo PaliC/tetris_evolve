@@ -24,8 +24,7 @@ from tetris_evolve.root_llm import RootLLMOrchestrator
 
 # Skip all tests in this module if no API key is set
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("ANTHROPIC_API_KEY"),
-    reason="ANTHROPIC_API_KEY not set - skipping E2E tests"
+    not os.environ.get("ANTHROPIC_API_KEY"), reason="ANTHROPIC_API_KEY not set - skipping E2E tests"
 )
 
 

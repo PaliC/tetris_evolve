@@ -120,7 +120,7 @@ def run_packing():
 @pytest.fixture
 def sample_invalid_packing_code():
     """Invalid circle packing code (circles overlap)."""
-    return '''
+    return """
 import numpy as np
 
 def construct_packing():
@@ -132,22 +132,22 @@ def construct_packing():
 
 def run_packing():
     return construct_packing()
-'''
+"""
 
 
 @pytest.fixture
 def sample_broken_code():
     """Code with syntax/runtime error."""
-    return '''
+    return """
 def run_packing():
     return undefined_variable
-'''
+"""
 
 
 @pytest.fixture
 def sample_no_function_code():
     """Code without required function."""
-    return '''
+    return """
 x = 5
 y = 10
-'''
+"""

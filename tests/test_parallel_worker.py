@@ -3,9 +3,6 @@ Tests for tetris_evolve.parallel_worker module.
 """
 
 import json
-from pathlib import Path
-
-import pytest
 
 from tetris_evolve.parallel_worker import _write_trial_file
 
