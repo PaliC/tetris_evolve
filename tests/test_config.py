@@ -27,7 +27,10 @@ class TestConfigFromDict:
         assert config.root_llm.model == "claude-sonnet-4-20250514"
         assert config.child_llm.model == "claude-sonnet-4-20250514"
         assert config.budget.max_total_cost == 10.0
-        assert config.evaluation.evaluator_fn == "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+        assert (
+            config.evaluation.evaluator_fn
+            == "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+        )
 
     def test_load_with_defaults(self, sample_config_dict):
         """Load config with missing optional fields uses defaults."""

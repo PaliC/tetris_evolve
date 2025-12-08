@@ -146,10 +146,12 @@ class LLMClient:
         @retry(
             stop=stop_after_attempt(self.max_retries + 1),
             wait=wait_exponential(multiplier=1, min=1, max=10),
-            retry=retry_if_exception_type((
-                anthropic.RateLimitError,
-                anthropic.APIConnectionError,
-            )),
+            retry=retry_if_exception_type(
+                (
+                    anthropic.RateLimitError,
+                    anthropic.APIConnectionError,
+                )
+            ),
             reraise=True,
         )
         def _make_call():
@@ -224,12 +226,14 @@ class MockLLMClient:
         self.cost_tracker.raise_if_over_budget()
 
         # Record the call
-        self.call_history.append({
-            "messages": messages,
-            "system": system,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        })
+        self.call_history.append(
+            {
+                "messages": messages,
+                "system": system,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+        )
 
         # Get the response
         if self._call_count >= len(self._responses):

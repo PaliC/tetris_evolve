@@ -139,23 +139,27 @@ def substitute_trial_codes(
 
         if code:
             result = result.replace(token, code)
-            substitution_report.append({
-                "token": token,
-                "trial_id": trial_id,
-                "success": True,
-                "error": None,
-            })
+            substitution_report.append(
+                {
+                    "token": token,
+                    "trial_id": trial_id,
+                    "success": True,
+                    "error": None,
+                }
+            )
         else:
             # Leave token as-is if code not found (so it's visible in the prompt)
             # This helps with debugging
             error_marker = f"[CODE NOT FOUND: {trial_id}]"
             result = result.replace(token, error_marker)
-            substitution_report.append({
-                "token": token,
-                "trial_id": trial_id,
-                "success": False,
-                "error": f"Trial {trial_id} code not found in memory or on disk",
-            })
+            substitution_report.append(
+                {
+                    "token": token,
+                    "trial_id": trial_id,
+                    "success": False,
+                    "error": f"Trial {trial_id} code not found in memory or on disk",
+                }
+            )
 
     return result, substitution_report
 
@@ -176,7 +180,4 @@ def substitute_trial_codes_batch(
     Returns:
         List of (substituted_prompt, substitution_report) tuples
     """
-    return [
-        substitute_trial_codes(prompt, all_trials, experiment_dir)
-        for prompt in prompts
-    ]
+    return [substitute_trial_codes(prompt, all_trials, experiment_dir) for prompt in prompts]

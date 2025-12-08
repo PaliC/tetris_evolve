@@ -2,7 +2,6 @@
 Tests for the prompts module.
 """
 
-
 from tetris_evolve.llm.prompts import (
     ROOT_LLM_SYSTEM_PROMPT_TEMPLATE,
     format_child_mutation_prompt,

@@ -17,10 +17,12 @@ class TestValidatePacking:
     def test_valid_packing(self):
         """Valid packing passes validation."""
         # Simple non-overlapping circles
-        centers = np.array([
-            [0.2, 0.2],
-            [0.8, 0.8],
-        ])
+        centers = np.array(
+            [
+                [0.2, 0.2],
+                [0.8, 0.8],
+            ]
+        )
         radii = np.array([0.1, 0.1])
 
         valid, error = validate_packing(centers, radii, n_circles=2)
@@ -31,10 +33,12 @@ class TestValidatePacking:
     def test_validate_packing_overlap(self):
         """Detects overlapping circles."""
         # Two circles at same position
-        centers = np.array([
-            [0.5, 0.5],
-            [0.5, 0.5],
-        ])
+        centers = np.array(
+            [
+                [0.5, 0.5],
+                [0.5, 0.5],
+            ]
+        )
         radii = np.array([0.1, 0.1])
 
         valid, error = validate_packing(centers, radii, n_circles=2)
@@ -44,9 +48,11 @@ class TestValidatePacking:
 
     def test_validate_packing_bounds(self):
         """Detects circles outside unit square."""
-        centers = np.array([
-            [0.05, 0.5],  # Circle extends past x=0
-        ])
+        centers = np.array(
+            [
+                [0.05, 0.5],  # Circle extends past x=0
+            ]
+        )
         radii = np.array([0.1])  # Extends to x=-0.05
 
         valid, error = validate_packing(centers, radii, n_circles=1)

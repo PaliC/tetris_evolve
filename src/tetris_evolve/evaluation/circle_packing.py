@@ -118,9 +118,7 @@ def run_code_with_timeout(
     # Use custom Python executable if provided, otherwise use current interpreter
     python_cmd = python_executable if python_executable else sys.executable
     # Create temporary files
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".py", delete=False
-    ) as code_file:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as code_file:
         code_file.write(code)
         code_path = code_file.name
 
@@ -172,9 +170,7 @@ with open("{results_path}", "wb") as f:
     pickle.dump(results, f)
 '''
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".py", delete=False
-    ) as runner_file:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as runner_file:
         runner_file.write(runner_script)
         runner_path = runner_file.name
 
@@ -190,7 +186,9 @@ with open("{results_path}", "wb") as f:
             stdout, stderr = process.communicate(timeout=timeout_seconds)
 
             if process.returncode != 0:
-                error_msg = stderr.decode() if stderr else f"Process exited with code {process.returncode}"
+                error_msg = (
+                    stderr.decode() if stderr else f"Process exited with code {process.returncode}"
+                )
                 return None, None, None, error_msg
 
             # Load results
@@ -474,14 +472,14 @@ def run_packing():
     return construct_packing()
 '''
 
-BROKEN_PROGRAM = '''
+BROKEN_PROGRAM = """
 def run_packing():
     return undefined_variable
-'''
+"""
 
-NO_FUNCTION_PROGRAM = '''
+NO_FUNCTION_PROGRAM = """
 x = 5
-'''
+"""
 
 
 if __name__ == "__main__":

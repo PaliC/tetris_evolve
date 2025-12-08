@@ -34,9 +34,7 @@ def integration_config(sample_config_dict, temp_dir):
 class TestSpawnEvaluateCycle:
     """Tests for the full spawn -> evaluate cycle."""
 
-    def test_spawn_evaluate_cycle(
-        self, integration_config, temp_dir, sample_valid_packing_code
-    ):
+    def test_spawn_evaluate_cycle(self, integration_config, temp_dir, sample_valid_packing_code):
         """Test that spawn_child_llm correctly spawns, evaluates, and records a trial."""
         # Set up components
         evaluator = CirclePackingEvaluator(n_circles=26, target=2.635)
@@ -49,9 +47,9 @@ class TestSpawnEvaluateCycle:
             cost_tracker=cost_tracker,
             llm_type="child",
         )
-        mock_child.set_responses([
-            f"Here's a grid-based solution:\n\n```python\n{sample_valid_packing_code}\n```"
-        ])
+        mock_child.set_responses(
+            [f"Here's a grid-based solution:\n\n```python\n{sample_valid_packing_code}\n```"]
+        )
 
         evolution_api = EvolutionAPI(
             evaluator=evaluator,
@@ -63,9 +61,7 @@ class TestSpawnEvaluateCycle:
         )
 
         # Spawn a child
-        result = evolution_api.spawn_child_llm(
-            prompt="Write a circle packing algorithm."
-        )
+        result = evolution_api.spawn_child_llm(prompt="Write a circle packing algorithm.")
 
         # Verify result structure
         assert "trial_id" in result
@@ -94,9 +90,7 @@ class TestSpawnEvaluateCycle:
             cost_tracker=cost_tracker,
             llm_type="child",
         )
-        mock_child.set_responses([
-            f"```python\n{sample_invalid_packing_code}\n```"
-        ])
+        mock_child.set_responses([f"```python\n{sample_invalid_packing_code}\n```"])
 
         evolution_api = EvolutionAPI(
             evaluator=evaluator,
@@ -115,9 +109,7 @@ class TestSpawnEvaluateCycle:
 class TestMultiGenerationFlow:
     """Tests for multiple generation evolution flows."""
 
-    def test_multi_generation_flow(
-        self, integration_config, temp_dir, sample_valid_packing_code
-    ):
+    def test_multi_generation_flow(self, integration_config, temp_dir, sample_valid_packing_code):
         """Test that multiple generations can be advanced correctly."""
         evaluator = CirclePackingEvaluator(n_circles=26, target=2.635)
         cost_tracker = CostTracker(integration_config)
@@ -130,12 +122,14 @@ class TestMultiGenerationFlow:
             llm_type="child",
         )
         # Set up multiple valid responses
-        mock_child.set_responses([
-            f"Solution 1:\n```python\n{sample_valid_packing_code}\n```",
-            f"Solution 2:\n```python\n{sample_valid_packing_code}\n```",
-            f"Solution 3:\n```python\n{sample_valid_packing_code}\n```",
-            f"Solution 4:\n```python\n{sample_valid_packing_code}\n```",
-        ])
+        mock_child.set_responses(
+            [
+                f"Solution 1:\n```python\n{sample_valid_packing_code}\n```",
+                f"Solution 2:\n```python\n{sample_valid_packing_code}\n```",
+                f"Solution 3:\n```python\n{sample_valid_packing_code}\n```",
+                f"Solution 4:\n```python\n{sample_valid_packing_code}\n```",
+            ]
+        )
 
         evolution_api = EvolutionAPI(
             evaluator=evaluator,
@@ -159,8 +153,7 @@ class TestMultiGenerationFlow:
 
         # Generation 1: spawn 2 more children
         result3 = evolution_api.spawn_child_llm(
-            prompt="Mutate the best",
-            parent_id=result1["trial_id"]
+            prompt="Mutate the best", parent_id=result1["trial_id"]
         )
         _result4 = evolution_api.spawn_child_llm(
             prompt="Try new approach",
@@ -193,10 +186,12 @@ class TestMultiGenerationFlow:
             cost_tracker=cost_tracker,
             llm_type="child",
         )
-        mock_child.set_responses([
-            f"```python\n{sample_valid_packing_code}\n```",
-            f"```python\n{sample_valid_packing_code}\n```",
-        ])
+        mock_child.set_responses(
+            [
+                f"```python\n{sample_valid_packing_code}\n```",
+                f"```python\n{sample_valid_packing_code}\n```",
+            ]
+        )
 
         evolution_api = EvolutionAPI(
             evaluator=evaluator,
@@ -233,10 +228,12 @@ class TestBudgetStopsEvolution:
             cost_tracker=cost_tracker,
             llm_type="root",
         )
-        mock_root.set_responses([
-            "Starting...\n```repl\nprint('hello')\n```",
-            "Continuing...\n```repl\nprint('world')\n```",
-        ])
+        mock_root.set_responses(
+            [
+                "Starting...\n```repl\nprint('hello')\n```",
+                "Continuing...\n```repl\nprint('world')\n```",
+            ]
+        )
         orchestrator.root_llm = mock_root
 
         # Pre-spend most of budget
@@ -289,9 +286,7 @@ class TestBudgetStopsEvolution:
 class TestLoggingComplete:
     """Tests for complete logging of experiments."""
 
-    def test_logging_complete(
-        self, integration_config, temp_dir, sample_valid_packing_code
-    ):
+    def test_logging_complete(self, integration_config, temp_dir, sample_valid_packing_code):
         """Test that all expected log files are created."""
         orchestrator = RootLLMOrchestrator(integration_config)
         cost_tracker = orchestrator.cost_tracker
@@ -306,29 +301,29 @@ class TestLoggingComplete:
             cost_tracker=cost_tracker,
             llm_type="child",
         )
-        mock_child.set_responses([
-            f"```python\n{sample_valid_packing_code}\n```"
-        ])
+        mock_child.set_responses([f"```python\n{sample_valid_packing_code}\n```"])
         # Root responses: spawn, selection, terminate
-        mock_root.set_responses([
-            '''Let me spawn a child.
+        mock_root.set_responses(
+            [
+                """Let me spawn a child.
 
 ```repl
 result = spawn_child_llm("Test prompt")
 print(f"Valid: {result['metrics'].get('valid')}")
 ```
-''',
-            '''```selection
+""",
+                """```selection
 {"selections": [{"trial_id": "trial_0_0", "reasoning": "Only trial", "category": "performance"}], "summary": "Selected"}
 ```
-''',
-            '''Good. Let me terminate.
+""",
+                """Good. Let me terminate.
 
 ```repl
 terminate_evolution("test complete")
 ```
-''',
-        ])
+""",
+            ]
+        )
 
         orchestrator.root_llm = mock_root
         orchestrator.child_llm = mock_child
@@ -373,9 +368,7 @@ terminate_evolution("test complete")
         gen_dir = base_dir / "generations"
         assert gen_dir.exists()
 
-    def test_trial_files_created(
-        self, integration_config, temp_dir, sample_valid_packing_code
-    ):
+    def test_trial_files_created(self, integration_config, temp_dir, sample_valid_packing_code):
         """Test that individual trial files are created correctly."""
         evaluator = CirclePackingEvaluator()
         cost_tracker = CostTracker(integration_config)
@@ -387,9 +380,7 @@ terminate_evolution("test complete")
             cost_tracker=cost_tracker,
             llm_type="child",
         )
-        mock_child.set_responses([
-            f"```python\n{sample_valid_packing_code}\n```"
-        ])
+        mock_child.set_responses([f"```python\n{sample_valid_packing_code}\n```"])
 
         evolution_api = EvolutionAPI(
             evaluator=evaluator,
@@ -414,9 +405,7 @@ terminate_evolution("test complete")
 class TestResumeExperiment:
     """Tests for resuming experiments from saved state."""
 
-    def test_resume_experiment(
-        self, integration_config, temp_dir, sample_valid_packing_code
-    ):
+    def test_resume_experiment(self, integration_config, temp_dir, sample_valid_packing_code):
         """Test that experiment state can be saved and loaded."""
         # First, run a partial experiment
         evaluator = CirclePackingEvaluator()
@@ -429,10 +418,12 @@ class TestResumeExperiment:
             cost_tracker=cost_tracker,
             llm_type="child",
         )
-        mock_child.set_responses([
-            f"```python\n{sample_valid_packing_code}\n```",
-            f"```python\n{sample_valid_packing_code}\n```",
-        ])
+        mock_child.set_responses(
+            [
+                f"```python\n{sample_valid_packing_code}\n```",
+                f"```python\n{sample_valid_packing_code}\n```",
+            ]
+        )
 
         evolution_api = EvolutionAPI(
             evaluator=evaluator,
@@ -472,15 +463,15 @@ class TestResumeExperiment:
 
         # Config should match
         assert loaded_logger.config.experiment.name == integration_config.experiment.name
-        assert loaded_logger.config.budget.max_total_cost == integration_config.budget.max_total_cost
+        assert (
+            loaded_logger.config.budget.max_total_cost == integration_config.budget.max_total_cost
+        )
 
 
 class TestEndToEndWithMockLLM:
     """End-to-end tests using mock LLMs."""
 
-    def test_full_evolution_cycle(
-        self, integration_config, temp_dir, sample_valid_packing_code
-    ):
+    def test_full_evolution_cycle(self, integration_config, temp_dir, sample_valid_packing_code):
         """Test a complete evolution cycle with spawning and automatic generation advance."""
         # Set to 2 generations for this test
         integration_config.evolution.max_generations = 2
@@ -500,36 +491,40 @@ class TestEndToEndWithMockLLM:
         )
 
         # Set up child responses
-        mock_child.set_responses([
-            f"Grid approach:\n```python\n{sample_valid_packing_code}\n```",
-            f"Hex approach:\n```python\n{sample_valid_packing_code}\n```",
-        ])
+        mock_child.set_responses(
+            [
+                f"Grid approach:\n```python\n{sample_valid_packing_code}\n```",
+                f"Hex approach:\n```python\n{sample_valid_packing_code}\n```",
+            ]
+        )
 
         # Set up root responses: spawn, selection, spawn, selection
-        mock_root.set_responses([
-            '''Generation 0: I'll try a grid-based approach.
+        mock_root.set_responses(
+            [
+                """Generation 0: I'll try a grid-based approach.
 
 ```repl
 result = spawn_child_llm("Try a grid-based packing approach")
 print(f"Trial: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
 ```
-''',
-            '''```selection
+""",
+                """```selection
 {"selections": [{"trial_id": "trial_0_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected"}
 ```
-''',
-            '''Generation 1: Building on previous results with hexagonal approach.
+""",
+                """Generation 1: Building on previous results with hexagonal approach.
 
 ```repl
 result = spawn_child_llm("Try a hexagonal packing approach")
 print(f"Trial: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
 ```
-''',
-            '''```selection
+""",
+                """```selection
 {"selections": [{"trial_id": "trial_1_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected"}
 ```
-''',
-        ])
+""",
+            ]
+        )
 
         orchestrator.root_llm = mock_root
         orchestrator.child_llm = mock_child
@@ -565,20 +560,24 @@ print(f"Trial: valid={result['metrics'].get('valid')}, sum={result['metrics'].ge
             llm_type="child",
         )
 
-        mock_child.set_responses([
-            f"Valid:\n```python\n{sample_valid_packing_code}\n```",
-        ])
+        mock_child.set_responses(
+            [
+                f"Valid:\n```python\n{sample_valid_packing_code}\n```",
+            ]
+        )
 
-        mock_root.set_responses([
-            '''Testing and terminating early.
+        mock_root.set_responses(
+            [
+                """Testing and terminating early.
 
 ```repl
 result = spawn_child_llm("Try approach")
 print(f"Result: valid={result['success']}")
 terminate_evolution("Found good solution, terminating early")
 ```
-''',
-        ])
+""",
+            ]
+        )
 
         orchestrator.root_llm = mock_root
         orchestrator.child_llm = mock_child
@@ -589,7 +588,9 @@ terminate_evolution("Found good solution, terminating early")
         assert result.terminated is True
         assert result.total_trials == 1
         assert result.successful_trials == 1
-        assert "terminating early" in result.reason.lower() or "evolution_terminated" in result.reason
+        assert (
+            "terminating early" in result.reason.lower() or "evolution_terminated" in result.reason
+        )
 
     def test_evolution_with_mixed_success(
         self, integration_config, temp_dir, sample_valid_packing_code, sample_invalid_packing_code
@@ -613,14 +614,17 @@ terminate_evolution("Found good solution, terminating early")
         )
 
         # Mix of valid and invalid responses
-        mock_child.set_responses([
-            f"Valid:\n```python\n{sample_valid_packing_code}\n```",
-            f"Invalid:\n```python\n{sample_invalid_packing_code}\n```",
-        ])
+        mock_child.set_responses(
+            [
+                f"Valid:\n```python\n{sample_valid_packing_code}\n```",
+                f"Invalid:\n```python\n{sample_invalid_packing_code}\n```",
+            ]
+        )
 
         # Root responses: spawn, selection (at max gen so this triggers termination)
-        mock_root.set_responses([
-            '''Testing strategies.
+        mock_root.set_responses(
+            [
+                """Testing strategies.
 
 ```repl
 result1 = spawn_child_llm("Try valid approach")
@@ -628,12 +632,13 @@ result2 = spawn_child_llm("Try risky approach")
 print(f"Result 1: valid={result1['success']}")
 print(f"Result 2: valid={result2['success']}")
 ```
-''',
-            '''```selection
+""",
+                """```selection
 {"selections": [{"trial_id": "trial_0_0", "reasoning": "Only valid trial", "category": "performance"}], "summary": "Selected valid trial"}
 ```
-''',
-        ])
+""",
+            ]
+        )
 
         orchestrator.root_llm = mock_root
         orchestrator.child_llm = mock_child

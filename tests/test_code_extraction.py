@@ -2,7 +2,6 @@
 Tests for tetris_evolve.utils.code_extraction module.
 """
 
-
 from tetris_evolve.utils import (
     extract_code_blocks,
     extract_python_code,

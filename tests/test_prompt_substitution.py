@@ -250,7 +250,9 @@ class TestSubstituteTrialCodes:
         prompt = "Improve this code:\n{{CODE_TRIAL_0_3}}\nMake it better."
         result, report = substitute_trial_codes(prompt, all_trials)
 
-        expected = "Improve this code:\ndef construct_packing():\n    return solution\nMake it better."
+        expected = (
+            "Improve this code:\ndef construct_packing():\n    return solution\nMake it better."
+        )
         assert result == expected
         assert len(report) == 1
         assert report[0]["success"] is True

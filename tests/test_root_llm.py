@@ -2,7 +2,6 @@
 Tests for the Root LLM Orchestrator.
 """
 
-
 import pytest
 
 from tetris_evolve import (
@@ -53,7 +52,10 @@ class TestOrchestratorInitialization:
 
         assert orchestrator.config == mock_config
         assert orchestrator.max_generations == mock_config.evolution.max_generations
-        assert orchestrator.max_children_per_generation == mock_config.evolution.max_children_per_generation
+        assert (
+            orchestrator.max_children_per_generation
+            == mock_config.evolution.max_children_per_generation
+        )
         assert orchestrator.cost_tracker is not None
         assert orchestrator.logger is not None
         assert orchestrator.root_llm is not None
@@ -96,7 +98,7 @@ class TestCodeBlockExtraction:
         """Test extracting a single REPL block."""
         orchestrator = RootLLMOrchestrator(mock_config)
 
-        response = '''Let me try a simple approach.
+        response = """Let me try a simple approach.
 
 ```repl
 x = 1 + 2
@@ -104,7 +106,7 @@ print(x)
 ```
 
 That should work.
-'''
+"""
         blocks = orchestrator.extract_code_blocks(response)
         assert len(blocks) == 1
         assert "x = 1 + 2" in blocks[0]
@@ -113,7 +115,7 @@ That should work.
         """Test extracting multiple REPL blocks."""
         orchestrator = RootLLMOrchestrator(mock_config)
 
-        response = '''First block:
+        response = """First block:
 
 ```repl
 a = 1
@@ -124,7 +126,7 @@ Second block:
 ```repl
 b = 2
 ```
-'''
+"""
         blocks = orchestrator.extract_code_blocks(response)
         assert len(blocks) == 2
         assert "a = 1" in blocks[0]
@@ -134,7 +136,7 @@ b = 2
         """Test that Python blocks are ignored (only repl blocks extracted)."""
         orchestrator = RootLLMOrchestrator(mock_config)
 
-        response = '''This is Python:
+        response = """This is Python:
 
 ```python
 def foo():
@@ -146,7 +148,7 @@ This is REPL:
 ```repl
 x = 1
 ```
-'''
+"""
         blocks = orchestrator.extract_code_blocks(response)
         assert len(blocks) == 1
         assert "x = 1" in blocks[0]
@@ -237,34 +239,38 @@ class TestMaxGenerationsStop:
         )
 
         # Child returns valid packing code
-        mock_child.set_responses([
-            f"```python\n{sample_valid_packing_code}\n```",
-            f"```python\n{sample_valid_packing_code}\n```",
-        ])
+        mock_child.set_responses(
+            [
+                f"```python\n{sample_valid_packing_code}\n```",
+                f"```python\n{sample_valid_packing_code}\n```",
+            ]
+        )
 
         # Mock root responses: spawn, selection, spawn, selection
-        mock_root.set_responses([
-            '''Generation 0:
+        mock_root.set_responses(
+            [
+                """Generation 0:
 ```repl
 result = spawn_child_llm("Test gen 0")
 print(f"Gen 0 result: {result['success']}")
 ```
-''',
-            '''```selection
+""",
+                """```selection
 {"selections": [{"trial_id": "trial_0_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected best"}
 ```
-''',
-            '''Generation 1:
+""",
+                """Generation 1:
 ```repl
 result = spawn_child_llm("Test gen 1")
 print(f"Gen 1 result: {result['success']}")
 ```
-''',
-            '''```selection
+""",
+                """```selection
 {"selections": [{"trial_id": "trial_1_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected best"}
 ```
-''',
-        ])
+""",
+            ]
+        )
         orchestrator.root_llm = mock_root
         orchestrator.child_llm = mock_child
         orchestrator.evolution_api.child_llm = mock_child
@@ -294,9 +300,11 @@ class TestBudgetExceededStop:
             cost_tracker=cost_tracker,
             llm_type="root",
         )
-        mock_root.set_responses([
-            "Starting...\n\n```repl\nprint('hello')\n```",
-        ])
+        mock_root.set_responses(
+            [
+                "Starting...\n\n```repl\nprint('hello')\n```",
+            ]
+        )
         orchestrator.root_llm = mock_root
 
         # Pre-spend most of the budget
@@ -332,10 +340,12 @@ class TestConversationHistory:
             cost_tracker=cost_tracker,
             llm_type="root",
         )
-        mock_root.set_responses([
-            "I'll start.\n\n```repl\nx = 1\nprint(x)\n```",
-            "Done.\n\n```repl\nterminate_evolution('test complete')\n```",
-        ])
+        mock_root.set_responses(
+            [
+                "I'll start.\n\n```repl\nx = 1\nprint(x)\n```",
+                "Done.\n\n```repl\nterminate_evolution('test complete')\n```",
+            ]
+        )
         orchestrator.root_llm = mock_root
 
         _result = orchestrator.run()
@@ -369,13 +379,14 @@ class TestFullOrchestration:
         )
 
         # Child returns valid packing code
-        mock_child.set_responses([
-            f"Here's my solution:\n\n```python\n{sample_valid_packing_code}\n```"
-        ])
+        mock_child.set_responses(
+            [f"Here's my solution:\n\n```python\n{sample_valid_packing_code}\n```"]
+        )
 
         # Root spawns a child, provides selection, then terminates in next generation
-        mock_root.set_responses([
-            '''Let me spawn a child to try a solution.
+        mock_root.set_responses(
+            [
+                """Let me spawn a child to try a solution.
 
 ```repl
 prompt = "Write a circle packing algorithm."
@@ -383,18 +394,19 @@ result = spawn_child_llm(prompt)
 print(f"Result: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
 best_code = result['code']
 ```
-''',
-            '''```selection
+""",
+                """```selection
 {"selections": [{"trial_id": "trial_0_0", "reasoning": "Only trial", "category": "performance"}], "summary": "Selected only trial"}
 ```
-''',
-            '''Good result! Let me terminate.
+""",
+                """Good result! Let me terminate.
 
 ```repl
 terminate_evolution("Found a valid solution", best_program=best_code)
 ```
-''',
-        ])
+""",
+            ]
+        )
 
         orchestrator.root_llm = mock_root
         orchestrator.child_llm = mock_child

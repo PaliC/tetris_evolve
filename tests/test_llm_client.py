@@ -262,8 +262,8 @@ class TestLLMClient:
 
         # Verify cost calculation
         expected_cost = (
-            1000 * sample_config.child_llm.cost_per_million_input_tokens / 1_000_000 +
-            500 * sample_config.child_llm.cost_per_million_output_tokens / 1_000_000
+            1000 * sample_config.child_llm.cost_per_million_input_tokens / 1_000_000
+            + 500 * sample_config.child_llm.cost_per_million_output_tokens / 1_000_000
         )
         assert abs(cost_tracker.total_cost - expected_cost) < 1e-10
 

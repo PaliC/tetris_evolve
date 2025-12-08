@@ -174,7 +174,9 @@ class ExperimentLogger:
         gen_data = {
             "generation_num": generation,
             "num_trials": len(trials),
-            "num_successful_trials": sum(1 for t in trials if t.get("metrics", {}).get("valid", False)),
+            "num_successful_trials": sum(
+                1 for t in trials if t.get("metrics", {}).get("valid", False)
+            ),
             "best_trial_id": best_trial_id,
             "best_sum_radii": best_sum_radii,
             "selected_trial_ids": selected_trial_ids,
@@ -187,10 +189,9 @@ class ExperimentLogger:
         self._experiment_data["num_generations"] = generation + 1
 
         # Update best trial if this is the best overall
-        if (
-            self._experiment_data["best_trial"] is None
-            or best_sum_radii > self._experiment_data["best_trial"].get("sum_radii", 0)
-        ):
+        if self._experiment_data["best_trial"] is None or best_sum_radii > self._experiment_data[
+            "best_trial"
+        ].get("sum_radii", 0):
             self._experiment_data["best_trial"] = {
                 "trial_id": best_trial_id,
                 "sum_radii": best_sum_radii,
@@ -320,13 +321,14 @@ class ExperimentLogger:
             config_data = json.load(f)
 
         from .config import config_from_dict
+
         config = config_from_dict(config_data)
 
         # Extract run_id from directory name
         dir_name = directory.name
         exp_name = config.experiment.name
         if dir_name.startswith(exp_name + "_"):
-            run_id = dir_name[len(exp_name) + 1:]
+            run_id = dir_name[len(exp_name) + 1 :]
         else:
             run_id = dir_name
 

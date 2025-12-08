@@ -165,9 +165,7 @@ class EvolutionAPI:
         self.evaluator_kwargs = evaluator_kwargs or {}
 
         self.current_generation = 0
-        self.generations: list[GenerationSummary] = [
-            GenerationSummary(generation_num=0, trials=[])
-        ]
+        self.generations: list[GenerationSummary] = [GenerationSummary(generation_num=0, trials=[])]
         self.all_trials: dict[str, TrialResult] = {}
         self._terminated = False
         self._termination_reason: str | None = None
@@ -237,7 +235,9 @@ class EvolutionAPI:
         if substitution_report:
             for sub in substitution_report:
                 if sub["success"]:
-                    tqdm.write(f"       → Substituted {sub['token']} with code from {sub['trial_id']}")
+                    tqdm.write(
+                        f"       → Substituted {sub['token']} with code from {sub['trial_id']}"
+                    )
                 else:
                     tqdm.write(f"       ⚠ Failed to substitute {sub['token']}: {sub['error']}")
 
@@ -337,9 +337,7 @@ class EvolutionAPI:
 
         # Show trial result
         if trial.success:
-            tqdm.write(
-                f"       ✓ {trial.trial_id}: score={score:.4f}"
-            )
+            tqdm.write(f"       ✓ {trial.trial_id}: score={score:.4f}")
         else:
             error_short = (trial.error or "unknown error")[:50]
             tqdm.write(f"       ✗ {trial.trial_id}: {error_short}")
@@ -400,8 +398,7 @@ class EvolutionAPI:
 
         # Show progress
         tqdm.write(
-            f"  └─ Spawning {len(children)} child LLMs in parallel: "
-            f"gen {self.current_generation}"
+            f"  └─ Spawning {len(children)} child LLMs in parallel: gen {self.current_generation}"
         )
 
         # Pre-assign trial IDs for each child
@@ -428,7 +425,9 @@ class EvolutionAPI:
             if substitution_report:
                 for sub in substitution_report:
                     if sub["success"]:
-                        tqdm.write(f"       → Substituted {sub['token']} with code from {sub['trial_id']}")
+                        tqdm.write(
+                            f"       → Substituted {sub['token']} with code from {sub['trial_id']}"
+                        )
                     else:
                         tqdm.write(f"       ⚠ Failed to substitute {sub['token']}: {sub['error']}")
 
@@ -438,17 +437,19 @@ class EvolutionAPI:
         worker_args = []
         for i, child in enumerate(children):
             parent_id = child.get("parent_id")
-            worker_args.append((
-                substituted_prompts[i],  # Use substituted prompt
-                parent_id,
-                self.child_llm_model,
-                self.evaluator_kwargs,
-                4096,  # max_tokens
-                0.7,   # temperature
-                trial_ids[i],
-                self.current_generation,
-                experiment_dir,
-            ))
+            worker_args.append(
+                (
+                    substituted_prompts[i],  # Use substituted prompt
+                    parent_id,
+                    self.child_llm_model,
+                    self.evaluator_kwargs,
+                    4096,  # max_tokens
+                    0.7,  # temperature
+                    trial_ids[i],
+                    self.current_generation,
+                    experiment_dir,
+                )
+            )
 
         # Determine number of workers
         if num_workers is None:
@@ -602,7 +603,9 @@ class EvolutionAPI:
                 f"Maximum of {self.max_generations} generations reached."
             )
 
-        tqdm.write(f"  → Advancing to generation {self.current_generation + 1}/{self.max_generations}\n")
+        tqdm.write(
+            f"  → Advancing to generation {self.current_generation + 1}/{self.max_generations}\n"
+        )
 
         # Move to next generation
         self.current_generation += 1
@@ -655,14 +658,14 @@ class EvolutionAPI:
         best_score = best_trials[0].get("metrics", {}).get("sum_radii", 0) if best_trials else 0
 
         # Show termination message
-        tqdm.write(f"\n{'='*60}")
+        tqdm.write(f"\n{'=' * 60}")
         tqdm.write(f"  EVOLUTION TERMINATED: {reason}")
         tqdm.write(f"  Total trials: {total_trials} ({successful_trials} successful)")
         tqdm.write(f"  Generations: {self.current_generation + 1}")
         tqdm.write(f"  Best score: {best_score:.4f}")
         cost_summary = self.cost_tracker.get_summary()
         tqdm.write(f"  Total cost: ${cost_summary.total_cost:.4f}")
-        tqdm.write(f"{'='*60}\n")
+        tqdm.write(f"{'=' * 60}\n")
 
         # Save experiment
         self.logger.log_cost_tracking(self.cost_tracker.to_dict())
@@ -690,8 +693,7 @@ class EvolutionAPI:
         """
         # Sort by sum_radii (only valid trials)
         valid_trials = [
-            t for t in self.all_trials.values()
-            if t.success and t.metrics.get("sum_radii", 0) > 0
+            t for t in self.all_trials.values() if t.success and t.metrics.get("sum_radii", 0) > 0
         ]
 
         sorted_trials = sorted(

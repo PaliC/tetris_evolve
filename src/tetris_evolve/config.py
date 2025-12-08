@@ -78,9 +78,7 @@ class Config:
         return asdict(self)
 
 
-def _validate_required_fields(
-    data: dict[str, Any], required: list[str], section: str
-) -> None:
+def _validate_required_fields(data: dict[str, Any], required: list[str], section: str) -> None:
     """Validate that required fields are present."""
     for field_name in required:
         if field_name not in data:
@@ -89,9 +87,7 @@ def _validate_required_fields(
             )
 
 
-def _validate_types(
-    data: dict[str, Any], type_map: dict[str, type], section: str
-) -> None:
+def _validate_types(data: dict[str, Any], type_map: dict[str, type], section: str) -> None:
     """Validate field types."""
     for field_name, expected_type in type_map.items():
         if field_name in data and data[field_name] is not None:

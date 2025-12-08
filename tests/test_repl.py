@@ -2,7 +2,6 @@
 Tests for tetris_evolve.repl module.
 """
 
-
 from tetris_evolve import REPLEnvironment
 
 
