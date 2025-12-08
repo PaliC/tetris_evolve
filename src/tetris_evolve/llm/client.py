@@ -2,6 +2,7 @@
 LLM Client for tetris_evolve.
 
 Wraps the Anthropic API with cost tracking and budget enforcement.
+Supports prompt caching for reduced costs on repeated prefixes.
 """
 
 import uuid
@@ -29,6 +30,8 @@ class LLMResponse:
     model: str
     call_id: str
     stop_reason: str | None = None
+    cache_creation_input_tokens: int = 0
+    cache_read_input_tokens: int = 0
 
 
 class LLMClient:
@@ -62,22 +65,28 @@ class LLMClient:
 
     def generate(
         self,
-        messages: list[dict[str, str]],
-        system: str | None = None,
+        messages: list[dict[str, Any]],
+        system: str | list[dict[str, Any]] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.7,
+        enable_caching: bool = True,
     ) -> LLMResponse:
         """
         Generate a response from the LLM.
 
         Args:
-            messages: List of message dicts with "role" and "content"
-            system: Optional system prompt
+            messages: List of message dicts with "role" and "content".
+                      Content can be a string or list of content blocks.
+                      For caching, use content blocks with cache_control.
+            system: Optional system prompt. Can be:
+                    - A plain string (will be converted to cacheable block if enable_caching=True)
+                    - A list of content blocks for fine-grained cache control
             max_tokens: Maximum tokens to generate
             temperature: Sampling temperature
+            enable_caching: Whether to enable prompt caching (default True)
 
         Returns:
-            LLMResponse with content and token usage
+            LLMResponse with content and token usage (including cache stats)
 
         Raises:
             BudgetExceededError: If budget is exceeded before the call
@@ -96,7 +105,17 @@ class LLMClient:
         }
 
         if system:
-            kwargs["system"] = system
+            if isinstance(system, str) and enable_caching:
+                # Convert plain string to cacheable content block
+                kwargs["system"] = [
+                    {
+                        "type": "text",
+                        "text": system,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ]
+            else:
+                kwargs["system"] = system
 
         if temperature is not None:
             kwargs["temperature"] = temperature
@@ -109,15 +128,25 @@ class LLMClient:
         if response.content:
             content = response.content[0].text
 
-        # Record usage
+        # Record usage (including cache tokens)
         input_tokens = response.usage.input_tokens
         output_tokens = response.usage.output_tokens
+
+        # Extract cache statistics from response
+        cache_creation_input_tokens = getattr(
+            response.usage, "cache_creation_input_tokens", 0
+        ) or 0
+        cache_read_input_tokens = getattr(
+            response.usage, "cache_read_input_tokens", 0
+        ) or 0
 
         self.cost_tracker.record_usage(
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             llm_type=self.llm_type,
             call_id=call_id,
+            cache_creation_input_tokens=cache_creation_input_tokens,
+            cache_read_input_tokens=cache_read_input_tokens,
         )
 
         return LLMResponse(
@@ -127,6 +156,8 @@ class LLMClient:
             model=self.model,
             call_id=call_id,
             stop_reason=response.stop_reason,
+            cache_creation_input_tokens=cache_creation_input_tokens,
+            cache_read_input_tokens=cache_read_input_tokens,
         )
 
     def _call_with_retry(self, **kwargs) -> anthropic.types.Message:
