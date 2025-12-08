@@ -162,7 +162,7 @@ class TestMultiGenerationFlow:
             prompt="Mutate the best",
             parent_id=result1["trial_id"]
         )
-        result4 = evolution_api.spawn_child_llm(
+        _result4 = evolution_api.spawn_child_llm(
             prompt="Try new approach",
         )
 

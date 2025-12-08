@@ -45,11 +45,11 @@ def _write_trial_file(
     trial_id: str,
     generation: int,
     experiment_dir: str,
-    code: str,
+    code: str | None,
     metrics: dict[str, Any],
     prompt: str,
     response: str,
-    reasoning: str,
+    reasoning: str | None,
     parent_id: str | None,
 ) -> None:
     """Write trial JSON file to disk for real-time progress tracking."""

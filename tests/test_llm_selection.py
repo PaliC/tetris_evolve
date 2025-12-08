@@ -2,7 +2,6 @@
 Tests for LLM-driven generation selection functionality.
 """
 
-import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,7 +10,6 @@ from tetris_evolve import (
     CostTracker,
     EvolutionAPI,
     ExperimentLogger,
-    TrialResult,
 )
 from tetris_evolve.evolution_api import GenerationSummary, TrialSelection
 from tetris_evolve.llm import MockLLMClient
@@ -422,7 +420,7 @@ results = spawn_children_parallel(children)
 
         orchestrator.root_llm = mock_root
 
-        result = orchestrator.run()
+        _result = orchestrator.run()
 
         # Check that selections were recorded
         gen0 = orchestrator.evolution_api.generations[0]
