@@ -2,6 +2,7 @@
 Tests for the LLM Client module.
 """
 
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,7 +11,7 @@ from tetris_evolve import (
     BudgetExceededError,
     CostTracker,
 )
-from tetris_evolve.llm import LLMClient, LLMResponse, MockLLMClient
+from tetris_evolve.llm import LLMClient, LLMResponse, MockLLMClient, OpenRouterClient
 
 
 class TestMockLLMClient:
@@ -300,3 +301,302 @@ class TestLLMResponse:
         )
 
         assert response.stop_reason is None
+
+
+class TestOpenRouterClient:
+    """Tests for the OpenRouter LLM Client."""
+
+    def test_requires_api_key(self, sample_config):
+        """Test that OpenRouterClient raises if no API key is provided."""
+        cost_tracker = CostTracker(sample_config)
+
+        # Ensure env var is not set
+        with patch.dict(os.environ, {}, clear=True):
+            # Remove OPENROUTER_API_KEY if it exists
+            os.environ.pop("OPENROUTER_API_KEY", None)
+
+            with pytest.raises(ValueError, match="OpenRouter API key is required"):
+                OpenRouterClient(
+                    model="openai/gpt-4o",
+                    cost_tracker=cost_tracker,
+                    llm_type="child",
+                )
+
+    def test_accepts_api_key_parameter(self, sample_config):
+        """Test that OpenRouterClient accepts API key as parameter."""
+        cost_tracker = CostTracker(sample_config)
+
+        with patch("tetris_evolve.llm.client.openai.OpenAI"):
+            client = OpenRouterClient(
+                model="openai/gpt-4o",
+                cost_tracker=cost_tracker,
+                llm_type="child",
+                api_key="test-api-key",
+            )
+
+            assert client._api_key == "test-api-key"
+
+    def test_accepts_api_key_from_env(self, sample_config):
+        """Test that OpenRouterClient reads API key from environment."""
+        cost_tracker = CostTracker(sample_config)
+
+        with (
+            patch.dict(os.environ, {"OPENROUTER_API_KEY": "env-api-key"}),
+            patch("tetris_evolve.llm.client.openai.OpenAI"),
+        ):
+            client = OpenRouterClient(
+                model="openai/gpt-4o",
+                cost_tracker=cost_tracker,
+                llm_type="child",
+            )
+
+            assert client._api_key == "env-api-key"
+
+    def test_budget_check_before_call(self, sample_config):
+        """Test that budget is checked before making API call."""
+        cost_tracker = CostTracker(sample_config)
+
+        with patch("tetris_evolve.llm.client.openai.OpenAI"):
+            client = OpenRouterClient(
+                model="openai/gpt-4o",
+                cost_tracker=cost_tracker,
+                llm_type="child",
+                api_key="test-api-key",
+            )
+
+        # Exceed budget
+        cost_tracker.total_cost = sample_config.budget.max_total_cost + 1
+
+        with pytest.raises(BudgetExceededError):
+            client.generate(
+                messages=[{"role": "user", "content": "Test"}],
+            )
+
+    @patch("tetris_evolve.llm.client.openai.OpenAI")
+    def test_generate_with_mock(self, mock_openai_class, sample_config):
+        """Test generate with mocked OpenAI API."""
+        # Set up mock
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Test response from OpenRouter"
+        mock_response.choices[0].finish_reason = "stop"
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+
+        mock_client.chat.completions.create.return_value = mock_response
+
+        cost_tracker = CostTracker(sample_config)
+        client = OpenRouterClient(
+            model="openai/gpt-4o",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            api_key="test-api-key",
+        )
+
+        response = client.generate(
+            messages=[{"role": "user", "content": "Test"}],
+        )
+
+        assert response.content == "Test response from OpenRouter"
+        assert response.input_tokens == 10
+        assert response.output_tokens == 5
+        assert response.model == "openai/gpt-4o"
+        assert response.stop_reason == "end_turn"  # Mapped from "stop"
+        assert len(cost_tracker.usage_log) == 1
+
+    @patch("tetris_evolve.llm.client.openai.OpenAI")
+    def test_generate_with_system_prompt(self, mock_openai_class, sample_config):
+        """Test that system prompt is prepended to messages."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Response"
+        mock_response.choices[0].finish_reason = "stop"
+        mock_response.usage.prompt_tokens = 20
+        mock_response.usage.completion_tokens = 10
+
+        mock_client.chat.completions.create.return_value = mock_response
+
+        cost_tracker = CostTracker(sample_config)
+        client = OpenRouterClient(
+            model="openai/gpt-4o",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            api_key="test-api-key",
+        )
+
+        client.generate(
+            messages=[{"role": "user", "content": "Hello"}],
+            system="You are a helpful assistant.",
+        )
+
+        # Verify system message was prepended
+        call_args = mock_client.chat.completions.create.call_args
+        messages = call_args.kwargs["messages"]
+        assert messages[0] == {"role": "system", "content": "You are a helpful assistant."}
+        assert messages[1] == {"role": "user", "content": "Hello"}
+
+    @patch("tetris_evolve.llm.client.openai.OpenAI")
+    def test_cost_recorded_correctly(self, mock_openai_class, sample_config):
+        """Test that cost is computed correctly."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Response"
+        mock_response.choices[0].finish_reason = "stop"
+        mock_response.usage.prompt_tokens = 1000
+        mock_response.usage.completion_tokens = 500
+
+        mock_client.chat.completions.create.return_value = mock_response
+
+        cost_tracker = CostTracker(sample_config)
+        client = OpenRouterClient(
+            model="openai/gpt-4o",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            api_key="test-api-key",
+        )
+
+        client.generate(messages=[{"role": "user", "content": "Test"}])
+
+        # Verify cost calculation
+        expected_cost = (
+            1000 * sample_config.child_llm.cost_per_million_input_tokens / 1_000_000
+            + 500 * sample_config.child_llm.cost_per_million_output_tokens / 1_000_000
+        )
+        assert abs(cost_tracker.total_cost - expected_cost) < 1e-10
+
+    @patch("tetris_evolve.llm.client.openai.OpenAI")
+    def test_stop_reason_mapping(self, mock_openai_class, sample_config):
+        """Test that OpenAI finish_reason is mapped to stop_reason."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        cost_tracker = CostTracker(sample_config)
+        client = OpenRouterClient(
+            model="openai/gpt-4o",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            api_key="test-api-key",
+        )
+
+        # Test "stop" -> "end_turn"
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Response"
+        mock_response.choices[0].finish_reason = "stop"
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+        mock_client.chat.completions.create.return_value = mock_response
+
+        response = client.generate(messages=[{"role": "user", "content": "Test"}])
+        assert response.stop_reason == "end_turn"
+
+        # Test "length" -> "max_tokens"
+        mock_response.choices[0].finish_reason = "length"
+        response = client.generate(messages=[{"role": "user", "content": "Test"}])
+        assert response.stop_reason == "max_tokens"
+
+        # Test other reasons passed through
+        mock_response.choices[0].finish_reason = "content_filter"
+        response = client.generate(messages=[{"role": "user", "content": "Test"}])
+        assert response.stop_reason == "content_filter"
+
+    @patch("tetris_evolve.llm.client.openai.OpenAI")
+    def test_openrouter_headers(self, mock_openai_class, sample_config):
+        """Test that OpenRouter headers are set correctly."""
+        cost_tracker = CostTracker(sample_config)
+
+        OpenRouterClient(
+            model="openai/gpt-4o",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            api_key="test-api-key",
+            site_url="https://example.com",
+            app_name="TestApp",
+        )
+
+        # Verify OpenAI client was created with correct headers
+        call_args = mock_openai_class.call_args
+        assert call_args.kwargs["base_url"] == "https://openrouter.ai/api/v1"
+        assert call_args.kwargs["api_key"] == "test-api-key"
+        assert call_args.kwargs["default_headers"]["HTTP-Referer"] == "https://example.com"
+        assert call_args.kwargs["default_headers"]["X-Title"] == "TestApp"
+
+    @patch("tetris_evolve.llm.client.openai.OpenAI")
+    def test_default_app_name(self, mock_openai_class, sample_config):
+        """Test that default app name is set."""
+        cost_tracker = CostTracker(sample_config)
+
+        OpenRouterClient(
+            model="openai/gpt-4o",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            api_key="test-api-key",
+        )
+
+        call_args = mock_openai_class.call_args
+        assert call_args.kwargs["default_headers"]["X-Title"] == "tetris_evolve"
+
+    @patch("tetris_evolve.llm.client.openai.OpenAI")
+    def test_empty_response_handling(self, mock_openai_class, sample_config):
+        """Test handling of empty response content."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = None
+        mock_response.choices[0].finish_reason = "stop"
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 0
+
+        mock_client.chat.completions.create.return_value = mock_response
+
+        cost_tracker = CostTracker(sample_config)
+        client = OpenRouterClient(
+            model="openai/gpt-4o",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            api_key="test-api-key",
+        )
+
+        response = client.generate(messages=[{"role": "user", "content": "Test"}])
+        assert response.content == ""
+
+    @patch("tetris_evolve.llm.client.openai.OpenAI")
+    def test_missing_usage_handling(self, mock_openai_class, sample_config):
+        """Test handling of missing usage data."""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Response"
+        mock_response.choices[0].finish_reason = "stop"
+        mock_response.usage = None
+
+        mock_client.chat.completions.create.return_value = mock_response
+
+        cost_tracker = CostTracker(sample_config)
+        client = OpenRouterClient(
+            model="openai/gpt-4o",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            api_key="test-api-key",
+        )
+
+        response = client.generate(messages=[{"role": "user", "content": "Test"}])
+        assert response.input_tokens == 0
+        assert response.output_tokens == 0
+
+    def test_is_subclass_of_llm_client(self):
+        """Test that OpenRouterClient is a subclass of LLMClient."""
+        assert issubclass(OpenRouterClient, LLMClient)

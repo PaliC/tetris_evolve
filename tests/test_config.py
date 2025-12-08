@@ -227,3 +227,86 @@ class TestLoadEvaluator:
         assert evaluator.n_circles == 10
         assert evaluator.target == 1.5
         assert evaluator.timeout_seconds == 5
+
+
+class TestProviderConfig:
+    """Tests for LLM provider configuration."""
+
+    def test_default_provider_is_anthropic(self, sample_config_dict):
+        """Default provider should be anthropic when not specified."""
+        config = config_from_dict(sample_config_dict)
+
+        assert config.root_llm.provider == "anthropic"
+        assert config.child_llm.provider == "anthropic"
+
+    def test_explicit_anthropic_provider(self, sample_config_dict):
+        """Explicit anthropic provider should be accepted."""
+        sample_config_dict["root_llm"]["provider"] = "anthropic"
+        sample_config_dict["child_llm"]["provider"] = "anthropic"
+
+        config = config_from_dict(sample_config_dict)
+
+        assert config.root_llm.provider == "anthropic"
+        assert config.child_llm.provider == "anthropic"
+
+    def test_openrouter_provider(self, sample_config_dict):
+        """OpenRouter provider should be accepted."""
+        sample_config_dict["root_llm"]["provider"] = "openrouter"
+        sample_config_dict["child_llm"]["provider"] = "openrouter"
+
+        config = config_from_dict(sample_config_dict)
+
+        assert config.root_llm.provider == "openrouter"
+        assert config.child_llm.provider == "openrouter"
+
+    def test_mixed_providers(self, sample_config_dict):
+        """Different providers for root and child should work."""
+        sample_config_dict["root_llm"]["provider"] = "anthropic"
+        sample_config_dict["child_llm"]["provider"] = "openrouter"
+
+        config = config_from_dict(sample_config_dict)
+
+        assert config.root_llm.provider == "anthropic"
+        assert config.child_llm.provider == "openrouter"
+
+    def test_invalid_provider_raises(self, sample_config_dict):
+        """Invalid provider should raise ConfigValidationError."""
+        sample_config_dict["root_llm"]["provider"] = "invalid_provider"
+
+        with pytest.raises(ConfigValidationError) as exc_info:
+            config_from_dict(sample_config_dict)
+
+        assert "Invalid provider" in str(exc_info.value)
+        assert "invalid_provider" in str(exc_info.value)
+        assert "anthropic" in str(exc_info.value)
+        assert "openrouter" in str(exc_info.value)
+
+    def test_provider_type_validation(self, sample_config_dict):
+        """Provider must be a string."""
+        sample_config_dict["root_llm"]["provider"] = 123
+
+        with pytest.raises(ConfigValidationError) as exc_info:
+            config_from_dict(sample_config_dict)
+
+        assert "provider" in str(exc_info.value)
+
+    def test_provider_preserved_in_to_dict(self, sample_config_dict):
+        """Provider should be preserved when serializing to dict."""
+        sample_config_dict["root_llm"]["provider"] = "openrouter"
+
+        config = config_from_dict(sample_config_dict)
+        result = config.to_dict()
+
+        assert result["root_llm"]["provider"] == "openrouter"
+
+    def test_provider_roundtrip(self, sample_config_dict):
+        """Provider should survive serialization and deserialization."""
+        sample_config_dict["root_llm"]["provider"] = "openrouter"
+        sample_config_dict["child_llm"]["provider"] = "anthropic"
+
+        config = config_from_dict(sample_config_dict)
+        result = config.to_dict()
+        config2 = config_from_dict(result)
+
+        assert config.root_llm.provider == config2.root_llm.provider
+        assert config.child_llm.provider == config2.child_llm.provider
