@@ -6,11 +6,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from .helpers import MockLLMClient
+
 from tetris_evolve import (
     BudgetExceededError,
     CostTracker,
 )
-from tetris_evolve.llm import LLMClient, LLMResponse, MockLLMClient
+from tetris_evolve.llm import LLMClient, LLMResponse
 
 
 class TestMockLLMClient:

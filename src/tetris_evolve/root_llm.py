@@ -6,6 +6,7 @@ code blocks and managing the conversation with the Root LLM.
 """
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from tqdm import tqdm
@@ -14,10 +15,15 @@ from .config import Config, load_evaluator
 from .cost_tracker import CostTracker
 from .evolution_api import EvolutionAPI
 from .exceptions import BudgetExceededError, GenerationLimitError
-from .llm.client import LLMClient, MockLLMClient
+from .llm.client import LLMClient
 from .llm.prompts import get_root_system_prompt
 from .logger import ExperimentLogger
 from .repl import REPLEnvironment
+from .resume import (
+    analyze_experiment,
+    load_trials_from_disk,
+    prepare_redo,
+)
 from .utils.code_extraction import extract_repl_blocks, extract_selection_block
 
 
@@ -51,8 +57,8 @@ class RootLLMOrchestrator:
     def __init__(
         self,
         config: Config,
-        root_llm: LLMClient | MockLLMClient | None = None,
-        child_llm: LLMClient | MockLLMClient | None = None,
+        root_llm: LLMClient | Any | None = None,
+        child_llm: LLMClient | Any | None = None,
         logger: ExperimentLogger | None = None,
     ):
         """
@@ -119,6 +125,122 @@ class RootLLMOrchestrator:
         self.messages: list[dict[str, str]] = []
         self.turn_number = 0
 
+    @classmethod
+    def from_resume(
+        cls,
+        experiment_dir: Path | str,
+        root_llm: LLMClient | Any | None = None,
+        child_llm: LLMClient | Any | None = None,
+    ) -> "RootLLMOrchestrator":
+        """
+        Create an orchestrator to resume an interrupted experiment.
+
+        This restarts the current generation from scratch (redo mode),
+        preserving all previous generations and their trials.
+
+        Args:
+            experiment_dir: Path to the experiment directory to resume
+            root_llm: Optional pre-configured root LLM client (for testing)
+            child_llm: Optional pre-configured child LLM client (for testing)
+
+        Returns:
+            RootLLMOrchestrator configured for resumption
+
+        Raises:
+            FileNotFoundError: If experiment directory doesn't exist
+            ValueError: If experiment cannot be resumed
+        """
+        experiment_dir = Path(experiment_dir)
+
+        # Analyze experiment state
+        info = analyze_experiment(experiment_dir)
+
+        # Validate we can resume
+        if not info.can_resume:
+            raise ValueError(
+                f"Cannot resume experiment - no generations have been started."
+            )
+
+        # Prepare by cleaning up current generation (redo mode)
+        prepare_redo(experiment_dir, info.current_generation)
+        # Re-analyze after cleanup
+        info = analyze_experiment(experiment_dir)
+
+        # Load trials from disk
+        all_trials = load_trials_from_disk(experiment_dir)
+
+        # Create orchestrator with existing logger directory
+        # We reuse the existing experiment directory
+        orchestrator = cls.__new__(cls)
+
+        # Initialize attributes manually (bypassing __init__)
+        orchestrator.config = info.config
+        orchestrator.max_generations = info.config.evolution.max_generations
+        orchestrator.max_children_per_generation = info.config.evolution.max_children_per_generation
+
+        # Create fresh cost tracker (cost history is not preserved on resume)
+        orchestrator.cost_tracker = CostTracker(info.config)
+
+        # Create logger pointing to existing directory
+        orchestrator.logger = ExperimentLogger(info.config, run_id="resumed")
+        orchestrator.logger.base_dir = experiment_dir
+        orchestrator.logger.generations_dir = experiment_dir / "generations"
+        orchestrator.logger._initialized = True
+
+        # Initialize LLM clients
+        if root_llm is not None:
+            orchestrator.root_llm = root_llm
+        else:
+            orchestrator.root_llm = LLMClient(
+                model=info.config.root_llm.model,
+                cost_tracker=orchestrator.cost_tracker,
+                llm_type="root",
+            )
+
+        if child_llm is not None:
+            orchestrator.child_llm = child_llm
+        else:
+            orchestrator.child_llm = LLMClient(
+                model=info.config.child_llm.model,
+                cost_tracker=orchestrator.cost_tracker,
+                llm_type="child",
+            )
+
+        # Load evaluator
+        orchestrator.evaluator = load_evaluator(info.config.evaluation)
+
+        # Get evaluator kwargs for parallel workers
+        evaluator_kwargs = info.config.evaluation.evaluator_kwargs or {}
+
+        # Initialize Evolution API
+        orchestrator.evolution_api = EvolutionAPI(
+            evaluator=orchestrator.evaluator,
+            child_llm=orchestrator.child_llm,
+            cost_tracker=orchestrator.cost_tracker,
+            logger=orchestrator.logger,
+            max_generations=info.config.evolution.max_generations,
+            max_children_per_generation=info.config.evolution.max_children_per_generation,
+            child_llm_model=info.config.child_llm.model,
+            evaluator_kwargs=evaluator_kwargs,
+        )
+
+        # Restore evolution state
+        orchestrator.evolution_api.restore_state(
+            all_trials=all_trials,
+            current_generation=info.current_generation,
+        )
+
+        # Initialize REPL with Evolution API functions
+        orchestrator.repl = REPLEnvironment(
+            api_functions=orchestrator.evolution_api.get_api_functions()
+        )
+
+        # Initialize conversation state
+        orchestrator.messages = []
+        orchestrator.turn_number = 0
+
+        return orchestrator
+
     def _get_system_prompt(self) -> str:
         """Get the system prompt with current generation info."""
         return get_root_system_prompt(
@@ -134,12 +256,12 @@ class RootLLMOrchestrator:
         Returns:
             List of message dicts to start the conversation
         """
-        # Start with a user message prompting the LLM to begin
+        gen = self.evolution_api.current_generation
         self.messages = [
             {
                 "role": "user",
                 "content": (
-                    f"Begin generation 0. Spawn up to {self.max_children_per_generation} children "
+                    f"Begin generation {gen}. Spawn up to {self.max_children_per_generation} children "
                     "exploring different circle packing strategies."
                 ),
             }

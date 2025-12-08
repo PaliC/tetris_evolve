@@ -7,6 +7,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from .helpers import MockLLMClient
+
 from tetris_evolve import (
     CostTracker,
     EvolutionAPI,
@@ -14,7 +16,6 @@ from tetris_evolve import (
     TrialResult,
 )
 from tetris_evolve.evolution_api import GenerationSummary, TrialSelection
-from tetris_evolve.llm import MockLLMClient
 from tetris_evolve.root_llm import RootLLMOrchestrator
 from tetris_evolve.utils.code_extraction import extract_selection_block
 

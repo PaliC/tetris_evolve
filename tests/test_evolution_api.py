@@ -6,6 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from .helpers import MockLLMClient
+
 from tetris_evolve import (
     BudgetExceededError,
     CostTracker,
@@ -15,7 +17,6 @@ from tetris_evolve import (
 )
 from tetris_evolve.evaluation.circle_packing import CirclePackingEvaluator
 from tetris_evolve.exceptions import ChildrenLimitError, GenerationLimitError
-from tetris_evolve.llm import MockLLMClient
 
 
 @pytest.fixture

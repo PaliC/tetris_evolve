@@ -29,7 +29,6 @@ from .llm import (
     ROOT_LLM_SYSTEM_PROMPT_TEMPLATE,
     LLMClient,
     LLMResponse,
-    MockLLMClient,
     get_root_system_prompt,
 )
 from .logger import ExperimentLogger
@@ -70,7 +69,6 @@ __all__ = [
     # LLM
     "LLMClient",
     "LLMResponse",
-    "MockLLMClient",
     "ROOT_LLM_SYSTEM_PROMPT_TEMPLATE",
     "get_root_system_prompt",
     # Root LLM Orchestrator

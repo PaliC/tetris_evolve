@@ -181,3 +181,4 @@ class CostTracker:
                 for u in self.usage_log
             ],
         }
+

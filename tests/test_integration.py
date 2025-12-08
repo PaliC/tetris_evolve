@@ -9,10 +9,11 @@ import json
 
 import pytest
 
+from .helpers import MockLLMClient
+
 from tetris_evolve import (
     CostTracker,
     ExperimentLogger,
-    MockLLMClient,
     config_from_dict,
 )
 from tetris_evolve.evaluation.circle_packing import CirclePackingEvaluator
