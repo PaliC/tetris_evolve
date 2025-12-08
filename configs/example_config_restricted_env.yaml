@@ -1,0 +1,38 @@
+experiment:
+  name: "circle_packing_restricted"
+  output_dir: "./experiments"
+
+root_llm:
+  model: "claude-sonnet-4-5-20250929"
+  cost_per_million_input_tokens: 3.0
+  cost_per_million_output_tokens: 15.0
+  max_iterations: 30
+
+child_llm:
+  model: "claude-sonnet-4-5-20250929"
+  cost_per_million_input_tokens: 3.0
+  cost_per_million_output_tokens: 15.0
+
+# Evaluation config with restricted Python environment
+# This ensures child LM code can only use numpy and scipy,
+# preventing access to matplotlib and other packages.
+#
+# Setup the restricted environment first:
+#   ./scripts/setup_restricted_env.sh
+#
+evaluation:
+  evaluator_fn: "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    target: 2.635
+    timeout_seconds: 300
+    # Path to restricted Python environment
+    # Child LM code will run in this environment without access to matplotlib, etc.
+    python_executable: ".venv-restricted/bin/python"
+
+evolution:
+  max_generations: 10
+  max_children_per_generation: 15
+
+budget:
+  max_total_cost: 20.0

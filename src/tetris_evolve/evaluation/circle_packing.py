@@ -96,7 +96,10 @@ def validate_packing(
 
 
 def run_code_with_timeout(
-    code: str, timeout_seconds: int = 30, n_circles: int = DEFAULT_N_CIRCLES  # noqa: ARG001
+    code: str,
+    timeout_seconds: int = 30,
+    n_circles: int = DEFAULT_N_CIRCLES,  # noqa: ARG001
+    python_executable: str | None = None,
 ) -> tuple[np.ndarray | None, np.ndarray | None, float | None, str | None]:
     """
     Run circle packing code in a separate process with timeout.
@@ -105,10 +108,15 @@ def run_code_with_timeout(
         code: Python code that defines construct_packing() or run_packing()
         timeout_seconds: Maximum execution time
         n_circles: Expected number of circles
+        python_executable: Path to Python executable to use. If None, uses sys.executable.
+                          Use this to run code in a custom uv environment with restricted packages.
+                          Example: ".venv-restricted/bin/python"
 
     Returns:
         Tuple of (centers, radii, sum_radii, error_message)
     """
+    # Use custom Python executable if provided, otherwise use current interpreter
+    python_cmd = python_executable if python_executable else sys.executable
     # Create temporary files
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".py", delete=False
@@ -171,9 +179,9 @@ with open("{results_path}", "wb") as f:
         runner_path = runner_file.name
 
     try:
-        # Run the script with timeout
+        # Run the script with timeout using specified Python executable
         process = subprocess.Popen(
-            [sys.executable, runner_path],
+            [python_cmd, runner_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
@@ -222,6 +230,7 @@ def evaluate_code(
     target: float = DEFAULT_TARGET,
     n_circles: int = DEFAULT_N_CIRCLES,
     timeout_seconds: int = 30,
+    python_executable: str | None = None,
 ) -> dict[str, Any]:
     """
     Evaluate circle packing code.
@@ -235,6 +244,8 @@ def evaluate_code(
         target: Target sum of radii (for computing ratio)
         n_circles: Expected number of circles
         timeout_seconds: Maximum execution time
+        python_executable: Path to Python executable to use. If None, uses sys.executable.
+                          Use this to run code in a custom uv environment with restricted packages.
 
     Returns:
         Dictionary with evaluation metrics:
@@ -249,7 +260,10 @@ def evaluate_code(
 
     # Run the code
     centers, radii, reported_sum, error = run_code_with_timeout(
-        code, timeout_seconds=timeout_seconds, n_circles=n_circles
+        code,
+        timeout_seconds=timeout_seconds,
+        n_circles=n_circles,
+        python_executable=python_executable,
     )
 
     if error or centers is None or radii is None or reported_sum is None:
@@ -307,6 +321,7 @@ class CirclePackingEvaluator:
         target: float = DEFAULT_TARGET,
         n_circles: int = DEFAULT_N_CIRCLES,
         timeout_seconds: int = 30,
+        python_executable: str | None = None,
     ):
         """
         Initialize the evaluator.
@@ -315,10 +330,21 @@ class CirclePackingEvaluator:
             target: Target sum of radii for computing ratio
             n_circles: Number of circles to pack
             timeout_seconds: Maximum time for evaluation
+            python_executable: Path to Python executable to use for running child code.
+                              If None, uses the current Python interpreter (sys.executable).
+                              Use this to run child LM code in a restricted uv environment.
+
+                              Example - create a restricted environment:
+                                  uv venv .venv-restricted
+                                  uv pip install numpy scipy --python .venv-restricted/bin/python
+
+                              Then set python_executable: ".venv-restricted/bin/python"
+                              This ensures child code cannot import matplotlib or other packages.
         """
         self.target = target
         self.n_circles = n_circles
         self.timeout_seconds = timeout_seconds
+        self.python_executable = python_executable
 
     def evaluate(self, code: str) -> dict[str, Any]:
         """
@@ -335,6 +361,7 @@ class CirclePackingEvaluator:
             target=self.target,
             n_circles=self.n_circles,
             timeout_seconds=self.timeout_seconds,
+            python_executable=self.python_executable,
         )
 
 
