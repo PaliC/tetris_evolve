@@ -11,7 +11,6 @@ from .helpers import MockLLMClient
 from tetris_evolve import config_from_dict
 from tetris_evolve.resume import (
     analyze_experiment,
-    build_resume_prompt,
     load_generation_summaries,
     load_trials_from_disk,
     prepare_redo,
@@ -219,21 +218,6 @@ class TestPrepareRedo:
         prepare_redo(setup_experiment_dir, current_generation=0)
 
 
-class TestBuildResumePrompt:
-    """Tests for build_resume_prompt function."""
-
-    def test_build_resume_prompt(self, setup_experiment_with_trials):
-        """Test building resume prompt."""
-        info = analyze_experiment(setup_experiment_with_trials)
-        trials = load_trials_from_disk(setup_experiment_with_trials)
-
-        prompt = build_resume_prompt(info, trials)
-
-        assert "RESUMING EXPERIMENT" in prompt
-        assert "restarted" in prompt.lower()
-        assert "Spawn up to" in prompt
-
-
 class TestResumeInfo:
     """Tests for ResumeInfo dataclass."""
 
@@ -257,9 +241,10 @@ class TestOrchestratorFromResume:
             experiment_dir=setup_experiment_with_trials,
         )
 
-        assert orchestrator._resume_prompt is not None
-        assert "RESUMING EXPERIMENT" in orchestrator._resume_prompt
+        # After redo, current gen is cleared so no trials
         assert len(orchestrator.evolution_api.all_trials) == 0
+        # Generation should be 0 since we're redoing it
+        assert orchestrator.evolution_api.current_generation == 0
 
     def test_from_resume_with_complete_gen(self, setup_experiment_with_complete_gen):
         """Test resume with a complete generation preserves it."""
@@ -297,8 +282,8 @@ class TestOrchestratorFromResume:
 class TestResumedOrchestrationRun:
     """Tests for running a resumed orchestration."""
 
-    def test_resumed_orchestrator_builds_resume_message(self, setup_experiment_with_trials):
-        """Test that resumed orchestrator uses resume prompt."""
+    def test_resumed_orchestrator_builds_initial_message(self, setup_experiment_with_trials):
+        """Test that resumed orchestrator builds correct initial message."""
         orchestrator = RootLLMOrchestrator.from_resume(
             experiment_dir=setup_experiment_with_trials,
         )
@@ -306,7 +291,8 @@ class TestResumedOrchestrationRun:
         messages = orchestrator.build_initial_messages()
 
         assert len(messages) == 1
-        assert "RESUMING EXPERIMENT" in messages[0]["content"]
+        # Should use the current generation number (0 after redo)
+        assert "Begin generation 0" in messages[0]["content"]
 
     def test_resumed_orchestrator_runs_to_completion(
         self, setup_experiment_with_trials, sample_valid_packing_code

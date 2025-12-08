@@ -21,7 +21,6 @@ from .logger import ExperimentLogger
 from .repl import REPLEnvironment
 from .resume import (
     analyze_experiment,
-    build_resume_prompt,
     load_generation_summaries,
     load_trials_from_disk,
     prepare_redo,
@@ -126,9 +125,6 @@ class RootLLMOrchestrator:
         # Conversation state
         self.messages: list[dict[str, str]] = []
         self.turn_number = 0
-
-        # Resume state (set by from_resume)
-        self._resume_prompt: str | None = None
 
     @classmethod
     def from_resume(
@@ -246,9 +242,6 @@ class RootLLMOrchestrator:
         orchestrator.messages = []
         orchestrator.turn_number = 0
 
-        # Set resume prompt
-        orchestrator._resume_prompt = build_resume_prompt(info, all_trials)
-
         return orchestrator
 
     def _get_system_prompt(self) -> str:
@@ -266,25 +259,16 @@ class RootLLMOrchestrator:
         Returns:
             List of message dicts to start the conversation
         """
-        # Use resume prompt if this is a resumed experiment
-        if self._resume_prompt is not None:
-            self.messages = [
-                {
-                    "role": "user",
-                    "content": self._resume_prompt,
-                }
-            ]
-        else:
-            # Start with a user message prompting the LLM to begin
-            self.messages = [
-                {
-                    "role": "user",
-                    "content": (
-                        f"Begin generation 0. Spawn up to {self.max_children_per_generation} children "
-                        "exploring different circle packing strategies."
-                    ),
-                }
-            ]
+        gen = self.evolution_api.current_generation
+        self.messages = [
+            {
+                "role": "user",
+                "content": (
+                    f"Begin generation {gen}. Spawn up to {self.max_children_per_generation} children "
+                    "exploring different circle packing strategies."
+                ),
+            }
+        ]
         return self.messages
 
     def extract_code_blocks(self, response: str) -> list[str]:
