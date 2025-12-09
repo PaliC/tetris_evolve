@@ -26,10 +26,16 @@ from .exceptions import (
     LLMEvolveError,
 )
 from .llm import (
-    ROOT_LLM_SYSTEM_PROMPT_TEMPLATE,
+    ROOT_LLM_SYSTEM_PROMPT_STATIC,
+    AnthropicLLMClient,
+    BaseLLMClient,
+    CacheHint,
     LLMClient,
     LLMResponse,
+    Message,
     MockLLMClient,
+    SystemPrompt,
+    create_llm_client,
     get_root_system_prompt,
 )
 from .logger import ExperimentLogger
@@ -68,10 +74,16 @@ __all__ = [
     "TrialSelection",
     "GenerationSummary",
     # LLM
+    "AnthropicLLMClient",
+    "BaseLLMClient",
+    "CacheHint",
     "LLMClient",
     "LLMResponse",
+    "Message",
     "MockLLMClient",
-    "ROOT_LLM_SYSTEM_PROMPT_TEMPLATE",
+    "ROOT_LLM_SYSTEM_PROMPT_STATIC",
+    "SystemPrompt",
+    "create_llm_client",
     "get_root_system_prompt",
     # Root LLM Orchestrator
     "RootLLMOrchestrator",

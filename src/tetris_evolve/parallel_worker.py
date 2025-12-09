@@ -3,6 +3,14 @@ Parallel worker for child LLM calls.
 
 This module contains the worker function that runs in a separate process
 to make LLM calls and evaluate the results.
+
+Note: This module uses Anthropic directly (not via LLMClient) because:
+1. Workers run in separate processes via multiprocessing
+2. LLMClient instances can't be pickled across processes
+3. Each worker needs its own API client
+
+The provider-specific caching logic is implemented here to match the
+provider-agnostic abstraction in the main LLM client.
 """
 
 import json
@@ -22,6 +30,9 @@ from tenacity import (
 
 from .evaluation.circle_packing import CirclePackingEvaluator
 from .utils.code_extraction import extract_python_code, extract_reasoning
+
+# Supported providers for parallel workers
+SUPPORTED_WORKER_PROVIDERS = {"anthropic"}
 
 
 @dataclass
@@ -139,8 +150,8 @@ def child_worker(args: tuple) -> dict[str, Any]:
     Worker function for parallel child LLM calls.
 
     This function runs in a separate process and:
-    1. Creates its own Anthropic client
-    2. Makes the LLM call with optional cached system prompt
+    1. Creates its own API client for the specified provider
+    2. Makes the LLM call with provider-appropriate caching
     3. Extracts code from the response
     4. Evaluates the code
     5. Writes trial JSON file for real-time progress tracking
@@ -148,13 +159,17 @@ def child_worker(args: tuple) -> dict[str, Any]:
 
     Args:
         args: Tuple of (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
-                        trial_id, generation, experiment_dir, system_prompt)
-              system_prompt is optional and defaults to None for backwards compatibility
+                        trial_id, generation, experiment_dir, system_prompt, provider)
+              - system_prompt is optional and defaults to None for backwards compatibility
+              - provider is optional and defaults to "anthropic" for backwards compatibility
 
     Returns:
         Dictionary with all results needed to record the trial
     """
-    # Handle both old (9 args) and new (10 args) format for backwards compatibility
+    # Handle various arg formats for backwards compatibility
+    # Old format (9 args): no system_prompt, no provider
+    # Medium format (10 args): with system_prompt, no provider
+    # New format (11 args): with system_prompt and provider
     if len(args) == 9:
         (
             prompt,
@@ -168,7 +183,8 @@ def child_worker(args: tuple) -> dict[str, Any]:
             experiment_dir,
         ) = args
         system_prompt = None
-    else:
+        provider = "anthropic"
+    elif len(args) == 10:
         (
             prompt,
             parent_id,
@@ -181,6 +197,29 @@ def child_worker(args: tuple) -> dict[str, Any]:
             experiment_dir,
             system_prompt,
         ) = args
+        provider = "anthropic"
+    else:
+        (
+            prompt,
+            parent_id,
+            model,
+            evaluator_kwargs,
+            max_tokens,
+            temperature,
+            trial_id,
+            generation,
+            experiment_dir,
+            system_prompt,
+            provider,
+        ) = args
+
+    # Validate provider
+    if provider not in SUPPORTED_WORKER_PROVIDERS:
+        supported = ", ".join(sorted(SUPPORTED_WORKER_PROVIDERS))
+        raise ValueError(
+            f"Unsupported provider for parallel worker: {provider}. "
+            f"Supported providers: {supported}"
+        )
 
     call_id = str(uuid.uuid4())
     response_text = ""

@@ -206,7 +206,7 @@ class TestLLMClient:
                 messages=[{"role": "user", "content": "Test"}],
             )
 
-    @patch("tetris_evolve.llm.client.anthropic.Anthropic")
+    @patch("tetris_evolve.llm.anthropic.anthropic.Anthropic")
     def test_generate_with_mock(self, mock_anthropic_class, sample_config):
         """Test generate with mocked Anthropic API."""
         # Set up mock
@@ -217,6 +217,8 @@ class TestLLMClient:
         mock_response.content = [MagicMock(text="Test response")]
         mock_response.usage.input_tokens = 10
         mock_response.usage.output_tokens = 5
+        mock_response.usage.cache_creation_input_tokens = 0
+        mock_response.usage.cache_read_input_tokens = 0
         mock_response.stop_reason = "end_turn"
 
         mock_client.messages.create.return_value = mock_response
@@ -237,7 +239,7 @@ class TestLLMClient:
         assert response.output_tokens == 5
         assert len(cost_tracker.usage_log) == 1
 
-    @patch("tetris_evolve.llm.client.anthropic.Anthropic")
+    @patch("tetris_evolve.llm.anthropic.anthropic.Anthropic")
     def test_cost_recorded_correctly(self, mock_anthropic_class, sample_config):
         """Test that cost is computed correctly."""
         mock_client = MagicMock()
@@ -247,6 +249,8 @@ class TestLLMClient:
         mock_response.content = [MagicMock(text="Response")]
         mock_response.usage.input_tokens = 1000
         mock_response.usage.output_tokens = 500
+        mock_response.usage.cache_creation_input_tokens = 0
+        mock_response.usage.cache_read_input_tokens = 0
         mock_response.stop_reason = "end_turn"
 
         mock_client.messages.create.return_value = mock_response

@@ -3,7 +3,13 @@ Prompt templates for tetris_evolve.
 
 Contains the Root LLM system prompt that documents available functions
 and guides the evolution process. Structured for optimal prompt caching.
+
+This module provides both:
+- Raw string constants for backwards compatibility
+- SystemPrompt objects for the new provider-agnostic API
 """
+
+from .base import CacheHint, Message, SystemPrompt
 
 # Root LLM System Prompt - Static Prefix (cacheable)
 # This contains all the stable content that doesn't change between calls.
@@ -394,3 +400,61 @@ Requirements:
 Provide your improved code in a ```python block.
 """
     return prompt
+
+
+# --- Provider-agnostic SystemPrompt helpers ---
+
+
+def get_root_system_prompt_obj(
+    max_children_per_generation: int = 10,
+    max_generations: int = 10,
+    current_generation: int = 0,
+) -> SystemPrompt:
+    """
+    Get the Root LLM system prompt as a SystemPrompt object.
+
+    This is the recommended way to get the system prompt for the new
+    provider-agnostic API. The static portion is marked for caching,
+    while the dynamic portion (with generation info) is not cached.
+
+    Args:
+        max_children_per_generation: Maximum children per generation
+        max_generations: Maximum number of generations
+        current_generation: Current generation number (0-indexed)
+
+    Returns:
+        SystemPrompt object with appropriate cache hints
+    """
+    dynamic_part = ROOT_LLM_SYSTEM_PROMPT_DYNAMIC.format(
+        max_children_per_generation=max_children_per_generation,
+        max_generations=max_generations,
+        current_generation=current_generation,
+    )
+
+    return SystemPrompt(
+        parts=[
+            Message(
+                role="system",
+                content=ROOT_LLM_SYSTEM_PROMPT_STATIC,
+                cache_hint=CacheHint.EPHEMERAL,
+            ),
+            Message(
+                role="system",
+                content=dynamic_part,
+                cache_hint=CacheHint.NONE,
+            ),
+        ]
+    )
+
+
+def get_child_system_prompt_obj() -> SystemPrompt:
+    """
+    Get the Child LLM system prompt as a SystemPrompt object.
+
+    The child system prompt is static and should be cached for all
+    parallel child LLM calls.
+
+    Returns:
+        SystemPrompt object with EPHEMERAL cache hint
+    """
+    return SystemPrompt.from_string(CHILD_LLM_SYSTEM_PROMPT, cache=True)

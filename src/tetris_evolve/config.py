@@ -25,11 +25,20 @@ class ExperimentConfig:
 
 @dataclass
 class LLMConfig:
-    """Configuration for an LLM (root or child)."""
+    """Configuration for an LLM (root or child).
+
+    Attributes:
+        model: Model identifier (e.g., "claude-sonnet-4-20250514")
+        cost_per_million_input_tokens: Cost per million input tokens
+        cost_per_million_output_tokens: Cost per million output tokens
+        provider: LLM provider ("anthropic", "openai", etc.). Defaults to "anthropic"
+        max_iterations: Maximum iterations (only used for root LLM)
+    """
 
     model: str
     cost_per_million_input_tokens: float
     cost_per_million_output_tokens: float
+    provider: str = "anthropic"  # Provider for the LLM client
     max_iterations: int | None = None  # Only used for root LLM
 
 
@@ -130,6 +139,7 @@ def _parse_llm_config(data: dict[str, Any], section: str) -> LLMConfig:
             "model": str,
             "cost_per_million_input_tokens": float,
             "cost_per_million_output_tokens": float,
+            "provider": str,
             "max_iterations": int,
         },
         section,
@@ -138,6 +148,7 @@ def _parse_llm_config(data: dict[str, Any], section: str) -> LLMConfig:
         model=data["model"],
         cost_per_million_input_tokens=float(data["cost_per_million_input_tokens"]),
         cost_per_million_output_tokens=float(data["cost_per_million_output_tokens"]),
+        provider=data.get("provider", "anthropic"),
         max_iterations=data.get("max_iterations"),
     )
 
