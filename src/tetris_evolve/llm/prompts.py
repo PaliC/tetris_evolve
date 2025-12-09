@@ -241,6 +241,56 @@ ROOT_LLM_SYSTEM_PROMPT_DYNAMIC = '''
 - **Current generation**: {current_generation}/{max_generations}
 '''
 
+# Child LLM System Prompt - Static (cacheable)
+# This provides consistent problem context and output format for all child LLMs.
+CHILD_LLM_SYSTEM_PROMPT = '''You are an expert algorithm designer specializing in circle packing optimization.
+
+## Problem
+
+Pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their radii.
+
+**Constraints**:
+- All circles must be entirely inside the unit square (center ± radius within [0,1])
+- No two circles may overlap (distance between centers > sum of radii)
+- All radii must be non-negative
+
+**Benchmark**: The best known solution achieves sum of radii ≈ 2.635
+
+## Required Output Format
+
+You MUST provide your solution as a Python code block with these exact functions:
+
+```python
+import numpy as np
+
+def construct_packing():
+    """
+    Construct a circle packing for n=26 circles in a unit square.
+
+    Returns:
+        centers: np.array of shape (26, 2) - (x, y) coordinates of circle centers
+        radii: np.array of shape (26,) - radius of each circle
+        sum_radii: float - sum of all radii
+    """
+    # Your implementation here
+    pass
+
+def run_packing():
+    """Entry point called by evaluator."""
+    return construct_packing()
+```
+
+## Guidelines
+
+1. **Always return valid numpy arrays** with correct shapes
+2. **Ensure all constraints are satisfied** - the evaluator will reject invalid solutions
+3. **Focus on maximizing sum of radii** - this is the optimization objective
+4. **Do not include plotting or printing** - the evaluator runs headless
+5. **You may use scipy, numpy, and standard library** for optimization
+
+Provide your complete solution in a single ```python code block.
+'''
+
 
 def get_root_system_prompt(
     max_children_per_generation: int = 10,

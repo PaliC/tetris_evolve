@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from .cost_tracker import CostTracker
 from .exceptions import ChildrenLimitError, GenerationLimitError
+from .llm.prompts import CHILD_LLM_SYSTEM_PROMPT
 from .logger import ExperimentLogger
 from .parallel_worker import child_worker
 from .utils.code_extraction import extract_python_code, extract_reasoning
@@ -401,7 +402,13 @@ class EvolutionAPI:
             f"  └─ Spawning {len(children)} child LLMs in parallel: gen {self.current_generation}"
         )
 
-        # Pre-assign trial IDs for each child
+        # Sort children by parent_id for better prompt cache hits
+        # Children with the same parent share code prefix, so processing them
+        # together improves cache utilization
+        indexed_children = list(enumerate(children))
+        indexed_children.sort(key=lambda x: x[1].get("parent_id") or "")
+
+        # Pre-assign trial IDs for each child (based on original order for consistency)
         starting_trial_num = len(self.generations[self.current_generation].trials)
         trial_ids = [
             f"trial_{self.current_generation}_{starting_trial_num + i}"
@@ -413,15 +420,15 @@ class EvolutionAPI:
 
         # Substitute {{CODE_TRIAL_X_Y}} tokens in all prompts before passing to workers
         # We do this in the main process where we have access to all_trials
-        substituted_prompts = []
-        for child in children:
+        substituted_prompts: dict[int, str] = {}
+        for orig_idx, child in indexed_children:
             prompt = child.get("prompt", "")
             substituted_prompt, substitution_report = substitute_trial_codes(
                 prompt,
                 all_trials=self.all_trials,
                 experiment_dir=experiment_dir,
             )
-            substituted_prompts.append(substituted_prompt)
+            substituted_prompts[orig_idx] = substituted_prompt
             if substitution_report:
                 for sub in substitution_report:
                     if sub["success"]:
@@ -431,25 +438,26 @@ class EvolutionAPI:
                     else:
                         tqdm.write(f"       ⚠ Failed to substitute {sub['token']}: {sub['error']}")
 
-        # Prepare worker arguments
+        # Prepare worker arguments in sorted order (by parent_id) for cache optimization
         # Each worker gets: (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
-        #                    trial_id, generation, experiment_dir)
+        #                    trial_id, generation, experiment_dir, system_prompt)
         worker_args = []
-        for i, child in enumerate(children):
+        result_order = []  # Track original indices for result ordering
+        for orig_idx, child in indexed_children:
             parent_id = child.get("parent_id")
-            worker_args.append(
-                (
-                    substituted_prompts[i],  # Use substituted prompt
-                    parent_id,
-                    self.child_llm_model,
-                    self.evaluator_kwargs,
-                    4096,  # max_tokens
-                    0.7,  # temperature
-                    trial_ids[i],
-                    self.current_generation,
-                    experiment_dir,
-                )
-            )
+            worker_args.append((
+                substituted_prompts[orig_idx],  # Use substituted prompt
+                parent_id,
+                self.child_llm_model,
+                self.evaluator_kwargs,
+                4096,  # max_tokens
+                0.7,   # temperature
+                trial_ids[orig_idx],
+                self.current_generation,
+                experiment_dir,
+                CHILD_LLM_SYSTEM_PROMPT,  # Cacheable system prompt
+            ))
+            result_order.append(orig_idx)
 
         # Determine number of workers
         if num_workers is None:
@@ -458,22 +466,26 @@ class EvolutionAPI:
             num_workers = min(len(children), num_cores)
 
         # Run workers in parallel
-        results = []
         with multiprocessing.Pool(processes=num_workers) as pool:
             worker_results = pool.map(child_worker, worker_args)
 
         # Process results and record trials
+        # Results come back in sorted order, we'll return them in original order
+        results_by_trial_id: dict[str, dict[str, Any]] = {}
+
         for worker_result in worker_results:
             # Use pre-assigned trial ID from worker
             trial_id = worker_result["trial_id"]
 
-            # Record token usage in cost tracker
+            # Record token usage in cost tracker (including cache stats)
             if worker_result["input_tokens"] > 0 or worker_result["output_tokens"] > 0:
                 self.cost_tracker.record_usage(
                     input_tokens=worker_result["input_tokens"],
                     output_tokens=worker_result["output_tokens"],
                     llm_type="child",
                     call_id=worker_result["call_id"],
+                    cache_creation_input_tokens=worker_result.get("cache_creation_input_tokens", 0),
+                    cache_read_input_tokens=worker_result.get("cache_read_input_tokens", 0),
                 )
 
             # Create trial result
@@ -491,8 +503,10 @@ class EvolutionAPI:
             )
 
             self._record_trial(trial, skip_file_write=True)
-            results.append(trial.to_dict())
+            results_by_trial_id[trial_id] = trial.to_dict()
 
+        # Return results in original order (by trial_id which preserves input order)
+        results = [results_by_trial_id[trial_ids[i]] for i in range(len(children))]
         return results
 
     def evaluate_program(self, code: str) -> dict[str, Any]:
