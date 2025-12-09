@@ -39,6 +39,8 @@ class WorkerResult:
     input_tokens: int
     output_tokens: int
     call_id: str
+    cache_creation_input_tokens: int = 0
+    cache_read_input_tokens: int = 0
 
 
 def _write_trial_file(
@@ -80,9 +82,23 @@ def _make_llm_call_with_retry(
     prompt: str,
     max_tokens: int,
     temperature: float,
+    system_prompt: str | None = None,
     max_retries: int = 3,
 ) -> anthropic.types.Message:
-    """Make an LLM API call with retry logic."""
+    """Make an LLM API call with retry logic and optional caching.
+
+    Args:
+        client: Anthropic client instance
+        model: Model name
+        prompt: User prompt
+        max_tokens: Maximum tokens to generate
+        temperature: Sampling temperature
+        system_prompt: Optional system prompt (will be cached if provided)
+        max_retries: Number of retries for transient errors
+
+    Returns:
+        API response message
+    """
 
     @retry(
         stop=stop_after_attempt(max_retries + 1),
@@ -96,12 +112,24 @@ def _make_llm_call_with_retry(
         reraise=True,
     )
     def _call():
-        return client.messages.create(
-            model=model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        kwargs: dict[str, Any] = {
+            "model": model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+
+        # Add system prompt with cache_control if provided
+        if system_prompt:
+            kwargs["system"] = [
+                {
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+
+        return client.messages.create(**kwargs)
 
     return _call()
 
@@ -112,30 +140,47 @@ def child_worker(args: tuple) -> dict[str, Any]:
 
     This function runs in a separate process and:
     1. Creates its own Anthropic client
-    2. Makes the LLM call
+    2. Makes the LLM call with optional cached system prompt
     3. Extracts code from the response
     4. Evaluates the code
     5. Writes trial JSON file for real-time progress tracking
-    6. Returns all results
+    6. Returns all results including cache statistics
 
     Args:
         args: Tuple of (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
-                        trial_id, generation, experiment_dir)
+                        trial_id, generation, experiment_dir, system_prompt)
+              system_prompt is optional and defaults to None for backwards compatibility
 
     Returns:
         Dictionary with all results needed to record the trial
     """
-    (
-        prompt,
-        parent_id,
-        model,
-        evaluator_kwargs,
-        max_tokens,
-        temperature,
-        trial_id,
-        generation,
-        experiment_dir,
-    ) = args
+    # Handle both old (9 args) and new (10 args) format for backwards compatibility
+    if len(args) == 9:
+        (
+            prompt,
+            parent_id,
+            model,
+            evaluator_kwargs,
+            max_tokens,
+            temperature,
+            trial_id,
+            generation,
+            experiment_dir,
+        ) = args
+        system_prompt = None
+    else:
+        (
+            prompt,
+            parent_id,
+            model,
+            evaluator_kwargs,
+            max_tokens,
+            temperature,
+            trial_id,
+            generation,
+            experiment_dir,
+            system_prompt,
+        ) = args
 
     call_id = str(uuid.uuid4())
     response_text = ""
@@ -146,18 +191,21 @@ def child_worker(args: tuple) -> dict[str, Any]:
     error: str | None = None
     input_tokens = 0
     output_tokens = 0
+    cache_creation_input_tokens = 0
+    cache_read_input_tokens = 0
 
     try:
         # Create a new Anthropic client for this process
         client = anthropic.Anthropic()
 
-        # Make the LLM call
+        # Make the LLM call with optional system prompt caching
         response = _make_llm_call_with_retry(
             client=client,
             model=model,
             prompt=prompt,
             max_tokens=max_tokens,
             temperature=temperature,
+            system_prompt=system_prompt,
         )
 
         # Extract content and token counts
@@ -165,6 +213,14 @@ def child_worker(args: tuple) -> dict[str, Any]:
             response_text = response.content[0].text
         input_tokens = response.usage.input_tokens
         output_tokens = response.usage.output_tokens
+
+        # Extract cache statistics
+        cache_creation_input_tokens = getattr(
+            response.usage, "cache_creation_input_tokens", 0
+        ) or 0
+        cache_read_input_tokens = getattr(
+            response.usage, "cache_read_input_tokens", 0
+        ) or 0
 
         # Extract code from response
         code = extract_python_code(response_text)
@@ -197,6 +253,8 @@ def child_worker(args: tuple) -> dict[str, Any]:
                 "input_tokens": input_tokens,
                 "output_tokens": output_tokens,
                 "call_id": call_id,
+                "cache_creation_input_tokens": cache_creation_input_tokens,
+                "cache_read_input_tokens": cache_read_input_tokens,
             }
 
         # Create evaluator and evaluate the code
@@ -244,4 +302,6 @@ def child_worker(args: tuple) -> dict[str, Any]:
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "call_id": call_id,
+        "cache_creation_input_tokens": cache_creation_input_tokens,
+        "cache_read_input_tokens": cache_read_input_tokens,
     }

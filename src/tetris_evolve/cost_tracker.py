@@ -22,6 +22,8 @@ class TokenUsage:
     timestamp: datetime
     llm_type: str  # "root" or "child"
     call_id: str
+    cache_creation_input_tokens: int = 0
+    cache_read_input_tokens: int = 0
 
 
 @dataclass
@@ -36,6 +38,10 @@ class CostSummary:
     child_cost: float
     root_calls: int
     child_calls: int
+    # Cache statistics
+    total_cache_creation_tokens: int = 0
+    total_cache_read_tokens: int = 0
+    cache_savings: float = 0.0  # Estimated savings from caching
 
 
 class CostTracker:
@@ -75,6 +81,8 @@ class CostTracker:
         output_tokens: int,
         llm_type: str,
         call_id: str | None = None,
+        cache_creation_input_tokens: int = 0,
+        cache_read_input_tokens: int = 0,
     ) -> TokenUsage:
         """
         Record token usage and compute cost.
@@ -84,15 +92,42 @@ class CostTracker:
             output_tokens: Number of output tokens used
             llm_type: Either "root" or "child"
             call_id: Optional unique identifier for this call
+            cache_creation_input_tokens: Tokens written to cache (25% markup)
+            cache_read_input_tokens: Tokens read from cache (90% discount)
 
         Returns:
             TokenUsage record with computed cost
+
+        Note:
+            Anthropic's cache pricing:
+            - Cache creation: 25% more than base input price
+            - Cache read: 90% discount (10% of base price)
+            - Regular input tokens: counted in input_tokens but excludes cached
         """
         if llm_type not in self._pricing:
             raise ValueError(f"Invalid llm_type: {llm_type}. Must be 'root' or 'child'")
 
         pricing = self._pricing[llm_type]
-        cost = (input_tokens * pricing["input"]) + (output_tokens * pricing["output"])
+
+        # Calculate cost with cache pricing
+        # input_tokens from API is the total, but we need to apply different rates
+        # for cached vs non-cached tokens
+        #
+        # Anthropic's response:
+        # - cache_read_input_tokens: tokens served from cache (90% discount)
+        # - cache_creation_input_tokens: tokens written to cache (25% markup)
+        # - input_tokens: total input tokens (regular rate for non-cached portion)
+        #
+        # Cost = (non_cached * base) + (cache_creation * 1.25 * base) + (cache_read * 0.1 * base)
+        non_cached_tokens = input_tokens - cache_creation_input_tokens - cache_read_input_tokens
+        non_cached_tokens = max(0, non_cached_tokens)  # Safety check
+
+        cost = (
+            (non_cached_tokens * pricing["input"])
+            + (cache_creation_input_tokens * pricing["input"] * 1.25)
+            + (cache_read_input_tokens * pricing["input"] * 0.10)
+            + (output_tokens * pricing["output"])
+        )
 
         usage = TokenUsage(
             input_tokens=input_tokens,
@@ -101,6 +136,8 @@ class CostTracker:
             timestamp=datetime.now(),
             llm_type=llm_type,
             call_id=call_id or str(uuid.uuid4()),
+            cache_creation_input_tokens=cache_creation_input_tokens,
+            cache_read_input_tokens=cache_read_input_tokens,
         )
 
         self.usage_log.append(usage)
@@ -148,6 +185,19 @@ class CostTracker:
         root_usage = [u for u in self.usage_log if u.llm_type == "root"]
         child_usage = [u for u in self.usage_log if u.llm_type == "child"]
 
+        # Calculate cache statistics
+        total_cache_creation = sum(u.cache_creation_input_tokens for u in self.usage_log)
+        total_cache_read = sum(u.cache_read_input_tokens for u in self.usage_log)
+
+        # Calculate cache savings (what we saved by reading from cache)
+        # Savings = cache_read_tokens * base_price * 0.90 (the 90% discount)
+        # We use root pricing as a proxy since that's where most caching happens
+        cache_savings = 0.0
+        for u in self.usage_log:
+            pricing = self._pricing.get(u.llm_type, self._pricing["root"])
+            # Savings = tokens that would have been full price but were cached
+            cache_savings += u.cache_read_input_tokens * pricing["input"] * 0.90
+
         return CostSummary(
             total_cost=self.total_cost,
             remaining_budget=self.get_remaining_budget(),
@@ -157,6 +207,9 @@ class CostTracker:
             child_cost=sum(u.cost for u in child_usage),
             root_calls=len(root_usage),
             child_calls=len(child_usage),
+            total_cache_creation_tokens=total_cache_creation,
+            total_cache_read_tokens=total_cache_read,
+            cache_savings=cache_savings,
         )
 
     def to_dict(self) -> dict:
@@ -166,9 +219,13 @@ class CostTracker:
         Returns:
             Dictionary representation of the cost tracker
         """
+        summary = self.get_summary()
         return {
             "total_cost": self.total_cost,
             "max_budget": self._max_budget,
+            "cache_savings": summary.cache_savings,
+            "total_cache_creation_tokens": summary.total_cache_creation_tokens,
+            "total_cache_read_tokens": summary.total_cache_read_tokens,
             "usage_log": [
                 {
                     "input_tokens": u.input_tokens,
@@ -177,6 +234,8 @@ class CostTracker:
                     "timestamp": u.timestamp.isoformat(),
                     "llm_type": u.llm_type,
                     "call_id": u.call_id,
+                    "cache_creation_input_tokens": u.cache_creation_input_tokens,
+                    "cache_read_input_tokens": u.cache_read_input_tokens,
                 }
                 for u in self.usage_log
             ],

@@ -15,7 +15,7 @@ from .cost_tracker import CostTracker
 from .evolution_api import EvolutionAPI
 from .exceptions import BudgetExceededError, GenerationLimitError
 from .llm.client import LLMClient, MockLLMClient
-from .llm.prompts import get_root_system_prompt
+from .llm.prompts import get_root_system_prompt_parts
 from .logger import ExperimentLogger
 from .repl import REPLEnvironment
 from .utils.code_extraction import extract_repl_blocks, extract_selection_block
@@ -119,9 +119,13 @@ class RootLLMOrchestrator:
         self.messages: list[dict[str, str]] = []
         self.turn_number = 0
 
-    def _get_system_prompt(self) -> str:
-        """Get the system prompt with current generation info."""
-        return get_root_system_prompt(
+    def _get_system_prompt(self) -> list[dict]:
+        """Get the system prompt as structured content blocks for caching.
+
+        Returns:
+            List of content blocks with cache_control on the static portion.
+        """
+        return get_root_system_prompt_parts(
             max_children_per_generation=self.max_children_per_generation,
             max_generations=self.max_generations,
             current_generation=self.evolution_api.current_generation,
@@ -145,6 +149,57 @@ class RootLLMOrchestrator:
             }
         ]
         return self.messages
+
+    def _prepare_messages_with_caching(
+        self, messages: list[dict[str, str]]
+    ) -> list[dict]:
+        """
+        Prepare messages with cache_control for optimal prompt caching.
+
+        Adds cache_control to the second-to-last user message, which caches
+        all prior conversation history as a prefix. This is effective because
+        Anthropic's cache is based on the longest matching prefix.
+
+        Args:
+            messages: List of message dicts with "role" and "content"
+
+        Returns:
+            List of message dicts with cache_control added where appropriate.
+            Content may be converted to list format for messages with cache_control.
+        """
+        if len(messages) < 2:
+            # Not enough messages to benefit from caching
+            return messages
+
+        # Find the second-to-last user message (the last stable one)
+        # We cache up to this point; the final message is the new one
+        result = []
+        user_indices = [i for i, m in enumerate(messages) if m["role"] == "user"]
+
+        if len(user_indices) < 2:
+            # Only one user message, no caching benefit for message history
+            return messages
+
+        # The second-to-last user message is our cache point
+        cache_index = user_indices[-2]
+
+        for i, msg in enumerate(messages):
+            if i == cache_index:
+                # Add cache_control to this message
+                result.append({
+                    "role": msg["role"],
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": msg["content"],
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                })
+            else:
+                result.append(msg)
+
+        return result
 
     def extract_code_blocks(self, response: str) -> list[str]:
         """
@@ -394,12 +449,14 @@ class RootLLMOrchestrator:
                 # Get system prompt with current generation info
                 system_prompt = self._get_system_prompt()
 
-                # Call Root LLM
+                # Call Root LLM with cached messages
+                cached_messages = self._prepare_messages_with_caching(self.messages)
                 response = self.root_llm.generate(
-                    messages=self.messages,
-                    system=system_prompt,
+                    messages=cached_messages,
+                    system=system_prompt,  # Already structured with cache_control
                     max_tokens=4096,
                     temperature=0.7,
+                    enable_caching=False,  # System prompt already has cache_control
                 )
 
                 assistant_message = response.content
@@ -458,11 +515,13 @@ class RootLLMOrchestrator:
 
                     # Get selection response from Root LLM
                     tqdm.write("  └─ Requesting trial selection from Root LLM...")
+                    cached_messages = self._prepare_messages_with_caching(self.messages)
                     selection_response = self.root_llm.generate(
-                        messages=self.messages,
-                        system=system_prompt,
+                        messages=cached_messages,
+                        system=system_prompt,  # Already structured with cache_control
                         max_tokens=2048,
                         temperature=0.5,  # Lower temp for more deterministic selection
+                        enable_caching=False,  # System prompt already has cache_control
                     )
 
                     selection_message = selection_response.content

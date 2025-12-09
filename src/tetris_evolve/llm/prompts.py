@@ -2,14 +2,14 @@
 Prompt templates for tetris_evolve.
 
 Contains the Root LLM system prompt that documents available functions
-and guides the evolution process.
+and guides the evolution process. Structured for optimal prompt caching.
 """
 
-# Root LLM System Prompt Template
-# This prompt documents all available API functions and explains how to use the REPL.
-# The Root LLM is responsible for crafting all child prompts - there are no templates.
+# Root LLM System Prompt - Static Prefix (cacheable)
+# This contains all the stable content that doesn't change between calls.
+# Dynamic values (generation counts) are appended separately.
 
-ROOT_LLM_SYSTEM_PROMPT_TEMPLATE = '''You are orchestrating an evolutionary process to develop algorithms for circle packing.
+ROOT_LLM_SYSTEM_PROMPT_STATIC = '''You are orchestrating an evolutionary process to develop algorithms for circle packing.
 
 ## Problem Description
 
@@ -21,12 +21,6 @@ Pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their ra
 - All radii must be non-negative
 
 **Benchmark**: AlphaEvolve achieved sum = 2.635
-
-## Evolution Parameters
-
-- **Max children per generation**: {max_children_per_generation}
-- **Max generations**: {max_generations}
-- **Current generation**: {current_generation}
 
 ## Referencing Code from Previous Trials
 
@@ -94,7 +88,7 @@ You have access to these 4 functions in the REPL:
 - **children**: List of dicts, each with `prompt` (str) and optional `parent_id` (str).
 - **num_workers**: Number of parallel workers (defaults to number of children).
 - **Returns**: List of results: `[{{trial_id, code, metrics, reasoning, success, error}}, ...]`
-- **IMPORTANT**: You should spawn up to {max_children_per_generation} children to fill the generation.
+- **IMPORTANT**: You should spawn children up to the configured limit to fill the generation.
 
 Example:
 ```repl
@@ -148,12 +142,12 @@ End evolution early and return final results.
 - **reason**: Explanation for why evolution is being terminated
 - **best_program**: The best program code to save as the final result
 - **Returns**: `{{terminated, reason, best_program, num_generations, total_trials, successful_trials, cost_summary}}`
-- **Note**: Only call this if you want to end evolution early. Otherwise, evolution will run for all {max_generations} generations automatically.
+- **Note**: Only call this if you want to end evolution early. Otherwise, evolution will run for all configured generations automatically.
 
 ## How the Evolution Works
 
 1. **You are called once per generation** to spawn children for that generation.
-2. **You should spawn {max_children_per_generation} children** in your response to maximize exploration.
+2. **You should spawn children up to the configured limit** in your response to maximize exploration.
 3. **After children spawn, you will be asked to SELECT which trials to carry forward.**
 4. **Selection criteria**: Choose as many trials as you want based on your judgement. It can contain only one trial up to all of them if you see them all adding value:
    - **Performance**: High-scoring trials with proven results
@@ -193,7 +187,7 @@ Include construct_packing() and run_packing() functions."""}},
     {{"prompt": """Write an optimization-based circle packing using scipy.optimize.
 Pack 26 circles into [0,1]x[0,1] maximizing sum of radii.
 Include construct_packing() and run_packing() functions."""}},
-    # Add more children up to {max_children_per_generation} total
+    # Add more children to fill the generation
 ]
 results = spawn_children_parallel(children)
 
@@ -212,7 +206,7 @@ print(f"Best this generation: {{best_score:.4f}}")
 
 ## Guidelines
 
-1. **Spawn a full generation**: Create {max_children_per_generation} children per generation to maximize exploration.
+1. **Spawn a full generation**: Create children up to the configured limit per generation to maximize exploration.
 
 2. **Craft effective prompts**: You are responsible for creating detailed prompts for child LLMs.
    Include problem specifications, constraints, strategy guidance, and examples.
@@ -238,6 +232,65 @@ print(f"Best this generation: {{best_score:.4f}}")
    or have a specific reason to stop early. Otherwise, let evolution run its course.
 '''
 
+# Dynamic suffix template - appended after the static prefix
+ROOT_LLM_SYSTEM_PROMPT_DYNAMIC = '''
+## Current Run Parameters
+
+- **Max children per generation**: {max_children_per_generation}
+- **Max generations**: {max_generations}
+- **Current generation**: {current_generation}/{max_generations}
+'''
+
+# Child LLM System Prompt - Static (cacheable)
+# This provides consistent problem context and output format for all child LLMs.
+CHILD_LLM_SYSTEM_PROMPT = '''You are an expert algorithm designer specializing in circle packing optimization.
+
+## Problem
+
+Pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their radii.
+
+**Constraints**:
+- All circles must be entirely inside the unit square (center ± radius within [0,1])
+- No two circles may overlap (distance between centers > sum of radii)
+- All radii must be non-negative
+
+**Benchmark**: The best known solution achieves sum of radii ≈ 2.635
+
+## Required Output Format
+
+You MUST provide your solution as a Python code block with these exact functions:
+
+```python
+import numpy as np
+
+def construct_packing():
+    """
+    Construct a circle packing for n=26 circles in a unit square.
+
+    Returns:
+        centers: np.array of shape (26, 2) - (x, y) coordinates of circle centers
+        radii: np.array of shape (26,) - radius of each circle
+        sum_radii: float - sum of all radii
+    """
+    # Your implementation here
+    pass
+
+def run_packing():
+    """Entry point called by evaluator."""
+    return construct_packing()
+```
+
+## Guidelines
+
+1. **Always return valid numpy arrays** with correct shapes
+2. **Ensure all constraints are satisfied** - the evaluator will reject invalid solutions
+3. **Focus on maximizing sum of radii** - this is the optimization objective
+4. **Do not include plotting or printing** - the evaluator runs headless
+5. **You may use scipy, numpy, and standard library** for optimization
+
+Provide your complete solution in a single ```python code block.
+'''
+
 
 def get_root_system_prompt(
     max_children_per_generation: int = 10,
@@ -253,13 +306,53 @@ def get_root_system_prompt(
         current_generation: Current generation number (0-indexed)
 
     Returns:
-        Formatted system prompt string
+        Formatted system prompt string (static + dynamic parts combined)
     """
-    return ROOT_LLM_SYSTEM_PROMPT_TEMPLATE.format(
+    dynamic_part = ROOT_LLM_SYSTEM_PROMPT_DYNAMIC.format(
         max_children_per_generation=max_children_per_generation,
         max_generations=max_generations,
         current_generation=current_generation,
     )
+    return ROOT_LLM_SYSTEM_PROMPT_STATIC + dynamic_part
+
+
+def get_root_system_prompt_parts(
+    max_children_per_generation: int = 10,
+    max_generations: int = 10,
+    current_generation: int = 0,
+) -> list[dict]:
+    """
+    Get the Root LLM system prompt as structured content blocks for caching.
+
+    The static prefix is marked with cache_control for prompt caching.
+    The dynamic suffix contains run-specific parameters.
+
+    Args:
+        max_children_per_generation: Maximum children that can be spawned per generation
+        max_generations: Maximum number of generations
+        current_generation: Current generation number (0-indexed)
+
+    Returns:
+        List of content blocks suitable for Anthropic API system parameter.
+        The first block (static) has cache_control set.
+    """
+    dynamic_part = ROOT_LLM_SYSTEM_PROMPT_DYNAMIC.format(
+        max_children_per_generation=max_children_per_generation,
+        max_generations=max_generations,
+        current_generation=current_generation,
+    )
+
+    return [
+        {
+            "type": "text",
+            "text": ROOT_LLM_SYSTEM_PROMPT_STATIC,
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "text",
+            "text": dynamic_part,
+        },
+    ]
 
 
 def format_child_mutation_prompt(
