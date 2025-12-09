@@ -3,7 +3,7 @@ Tests for the prompts module.
 """
 
 from tetris_evolve.llm.prompts import (
-    ROOT_LLM_SYSTEM_PROMPT_TEMPLATE,
+    ROOT_LLM_SYSTEM_PROMPT_DYNAMIC,
     format_child_mutation_prompt,
     get_root_system_prompt,
 )
@@ -134,18 +134,18 @@ class TestFormatChildMutationPrompt:
         assert "run_packing" in prompt
 
 
-class TestRootLLMSystemPromptTemplate:
-    """Tests for the ROOT_LLM_SYSTEM_PROMPT_TEMPLATE constant."""
+class TestRootLLMSystemPromptDynamic:
+    """Tests for the ROOT_LLM_SYSTEM_PROMPT_DYNAMIC constant."""
 
     def test_template_contains_placeholders(self):
         """Test that template contains format placeholders."""
-        assert "{max_children_per_generation}" in ROOT_LLM_SYSTEM_PROMPT_TEMPLATE
-        assert "{max_generations}" in ROOT_LLM_SYSTEM_PROMPT_TEMPLATE
-        assert "{current_generation}" in ROOT_LLM_SYSTEM_PROMPT_TEMPLATE
+        assert "{max_children_per_generation}" in ROOT_LLM_SYSTEM_PROMPT_DYNAMIC
+        assert "{max_generations}" in ROOT_LLM_SYSTEM_PROMPT_DYNAMIC
+        assert "{current_generation}" in ROOT_LLM_SYSTEM_PROMPT_DYNAMIC
 
     def test_template_is_not_empty(self):
         """Test that template is not empty."""
-        assert len(ROOT_LLM_SYSTEM_PROMPT_TEMPLATE) > 0
+        assert len(ROOT_LLM_SYSTEM_PROMPT_DYNAMIC) > 0
 
     def test_function_formats_template(self):
         """Test that function properly formats the template."""

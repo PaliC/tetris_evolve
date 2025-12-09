@@ -26,7 +26,8 @@ from .exceptions import (
     LLMEvolveError,
 )
 from .llm import (
-    ROOT_LLM_SYSTEM_PROMPT_TEMPLATE,
+    ROOT_LLM_SYSTEM_PROMPT_STATIC,
+    ROOT_LLM_SYSTEM_PROMPT_DYNAMIC,
     LLMClient,
     LLMResponse,
     MockLLMClient,
@@ -71,7 +72,8 @@ __all__ = [
     "LLMClient",
     "LLMResponse",
     "MockLLMClient",
-    "ROOT_LLM_SYSTEM_PROMPT_TEMPLATE",
+    "ROOT_LLM_SYSTEM_PROMPT_STATIC",
+    "ROOT_LLM_SYSTEM_PROMPT_DYNAMIC",
     "get_root_system_prompt",
     # Root LLM Orchestrator
     "RootLLMOrchestrator",
