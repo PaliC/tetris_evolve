@@ -41,19 +41,25 @@ class TestRootSystemPrompt:
         assert "terminate_evolution" in prompt
         assert "best_program" in prompt
 
-    def test_prompt_documents_only_4_functions(self):
-        """Test that only 4 core functions are documented."""
+    def test_prompt_documents_only_5_functions(self):
+        """Test that only 5 core functions are documented."""
         prompt = get_root_system_prompt()
-        assert "4 functions" in prompt or "these 4" in prompt.lower()
+        assert "5 functions" in prompt or "these 5" in prompt.lower()
+
+    def test_prompt_documents_get_trial_code(self):
+        """Test that get_trial_code is documented."""
+        prompt = get_root_system_prompt()
+        assert "get_trial_code" in prompt
+        assert "trial_ids" in prompt
 
     def test_prompt_does_not_document_internal_functions(self):
         """Test that internal helper functions are not documented."""
         prompt = get_root_system_prompt()
-        # These should not be listed as available functions
-        assert "### get_best_trials" not in prompt
-        assert "### get_cost_remaining" not in prompt
-        assert "### get_trial" not in prompt
-        assert "### get_generation_history" not in prompt
+        # These internal methods (prefixed with _) should not be listed as available functions
+        assert "### _get_best_trials" not in prompt
+        assert "### _get_cost_remaining" not in prompt
+        assert "### _get_trial(" not in prompt  # Note: get_trial_code IS a public function
+        assert "### _get_generation_history" not in prompt
         assert "### _advance_generation" not in prompt
 
     def test_prompt_explains_repl_usage(self):

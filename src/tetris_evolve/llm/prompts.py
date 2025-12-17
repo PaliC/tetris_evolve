@@ -81,7 +81,7 @@ def run_packing():
 
 ## Available Functions
 
-You have access to these 4 functions in the REPL:
+You have access to these 5 functions in the REPL:
 
 ### spawn_children_parallel(children: list[dict], num_workers: Optional[int] = None) -> list[dict]
 **PRIMARY FUNCTION** - Spawn multiple child LLMs in parallel using multiprocessing.
@@ -143,6 +143,24 @@ End evolution early and return final results.
 - **best_program**: The best program code to save as the final result
 - **Returns**: `{{terminated, reason, best_program, num_generations, total_trials, successful_trials, cost_summary}}`
 - **Note**: Only call this if you want to end evolution early. Otherwise, evolution will run for all configured generations automatically.
+
+### get_trial_code(trial_ids: list[str]) -> dict[str, str | None]
+Retrieve the code for specific trials by their IDs.
+- **trial_ids**: List of trial IDs to retrieve code for. Example: `["trial_0_3", "trial_1_2"]`
+- **Returns**: Dictionary mapping trial_id to code string (or None if not found)
+
+Use this function when you need to inspect or analyze specific trial code. For including
+code in child LLM prompts, prefer using the `{{{{CODE_TRIAL_X_Y}}}}` token syntax.
+
+Example:
+```repl
+# Get code from specific trials to analyze
+codes = get_trial_code(["trial_0_3", "trial_0_5", "trial_1_2"])
+for trial_id, code in codes.items():
+    if code:
+        print(f"--- {{trial_id}} ---")
+        print(code[:500])  # Print first 500 chars
+```
 
 ## How the Evolution Works
 

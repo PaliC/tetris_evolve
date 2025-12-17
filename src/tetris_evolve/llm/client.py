@@ -233,18 +233,20 @@ class MockLLMClient:
     def generate(
         self,
         messages: list[dict[str, str]],
-        system: str | None = None,
+        system: str | list[dict[str, Any]] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.7,
+        enable_caching: bool = True,
     ) -> LLMResponse:
         """
         Generate a mock response.
 
         Args:
             messages: List of message dicts
-            system: Optional system prompt
+            system: Optional system prompt (string or content blocks)
             max_tokens: Maximum tokens (ignored)
             temperature: Temperature (ignored)
+            enable_caching: Whether to enable caching (ignored in mock)
 
         Returns:
             LLMResponse with mock content and token usage
@@ -281,7 +283,13 @@ class MockLLMClient:
         # Estimate token counts (rough approximation)
         input_tokens = sum(len(m.get("content", "")) // 4 for m in messages)
         if system:
-            input_tokens += len(system) // 4
+            if isinstance(system, str):
+                input_tokens += len(system) // 4
+            elif isinstance(system, list):
+                # Handle content blocks format
+                for block in system:
+                    if isinstance(block, dict) and "text" in block:
+                        input_tokens += len(block["text"]) // 4
         output_tokens = len(content) // 4
 
         # Record usage

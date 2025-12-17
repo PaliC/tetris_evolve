@@ -369,15 +369,16 @@ class TestInternalMethods:
 class TestGetAPIFunctions:
     """Tests for get_api_functions."""
 
-    def test_returns_only_4_functions(self, evolution_api):
-        """Test that only 4 core API functions are returned."""
+    def test_returns_only_5_functions(self, evolution_api):
+        """Test that only 5 core API functions are returned."""
         funcs = evolution_api.get_api_functions()
 
-        assert len(funcs) == 4
+        assert len(funcs) == 5
         assert "spawn_child_llm" in funcs
         assert "spawn_children_parallel" in funcs
         assert "evaluate_program" in funcs
         assert "terminate_evolution" in funcs
+        assert "get_trial_code" in funcs
 
     def test_advance_generation_not_exposed(self, evolution_api):
         """Test that advance_generation is not in the public API."""

@@ -156,9 +156,9 @@ class RootLLMOrchestrator:
         """
         Prepare messages with cache_control for optimal prompt caching.
 
-        Adds cache_control to the second-to-last user message, which caches
-        all prior conversation history as a prefix. This is effective because
-        Anthropic's cache is based on the longest matching prefix.
+        Strategy: Cache at the END of a stable prefix that won't change.
+        We cache the first user message (stable "Begin generation 0..." prompt)
+        since it remains constant throughout the conversation.
 
         Args:
             messages: List of message dicts with "role" and "content"
@@ -167,25 +167,13 @@ class RootLLMOrchestrator:
             List of message dicts with cache_control added where appropriate.
             Content may be converted to list format for messages with cache_control.
         """
-        if len(messages) < 2:
-            # Not enough messages to benefit from caching
+        if len(messages) < 1:
             return messages
 
-        # Find the second-to-last user message (the last stable one)
-        # We cache up to this point; the final message is the new one
         result = []
-        user_indices = [i for i, m in enumerate(messages) if m["role"] == "user"]
-
-        if len(user_indices) < 2:
-            # Only one user message, no caching benefit for message history
-            return messages
-
-        # The second-to-last user message is our cache point
-        cache_index = user_indices[-2]
-
         for i, msg in enumerate(messages):
-            if i == cache_index:
-                # Add cache_control to this message
+            if i == 0:
+                # Cache the first user message (stable "Begin generation 0..." prompt)
                 result.append({
                     "role": msg["role"],
                     "content": [
@@ -200,6 +188,105 @@ class RootLLMOrchestrator:
                 result.append(msg)
 
         return result
+
+    def _prune_message_history(self, keep_recent_generations: int = 2) -> None:
+        """
+        Prune old messages to prevent unbounded context growth.
+
+        Keeps:
+        - Initial user message (problem setup)
+        - Messages from the last N generations
+        - Replaces older generation messages with summaries
+
+        Args:
+            keep_recent_generations: Number of recent generations to keep in full detail
+        """
+        if self.evolution_api.current_generation <= keep_recent_generations:
+            return  # Not enough history to prune
+
+        cutoff_generation = self.evolution_api.current_generation - keep_recent_generations
+
+        # Build summary of old generations
+        old_gen_summaries = []
+        for gen_num in range(cutoff_generation):
+            if gen_num < len(self.evolution_api.generations):
+                gen = self.evolution_api.generations[gen_num]
+                best_score = gen.best_score
+                best_trial = gen.best_trial_id or "N/A"
+                selected = ", ".join(gen.selected_trial_ids) if gen.selected_trial_ids else "N/A"
+                summary = (
+                    f"Gen {gen_num}: {len(gen.trials)} trials, "
+                    f"best={best_score:.4f} ({best_trial}), "
+                    f"selected=[{selected}]"
+                )
+                old_gen_summaries.append(summary)
+
+        if not old_gen_summaries:
+            return
+
+        # Create consolidated history message
+        history_summary = {
+            "role": "user",
+            "content": (
+                f"[Historical Summary - Generations 0 to {cutoff_generation - 1}]\n"
+                + "\n".join(old_gen_summaries)
+                + f"\n\n[Detailed history continues from generation {cutoff_generation}]"
+            ),
+        }
+
+        # Find where recent generations start in message history
+        # Each generation adds ~5 messages, so estimate the cutoff point
+        messages_per_gen = 5
+        keep_from_index = max(1, len(self.messages) - (keep_recent_generations * messages_per_gen))
+
+        # Rebuild messages: initial message + summary + recent messages
+        self.messages = (
+            [self.messages[0]]  # Keep initial "Begin generation 0" message
+            + [history_summary]
+            + self.messages[keep_from_index:]
+        )
+
+        tqdm.write(
+            f"  📦 Pruned message history: keeping generations {cutoff_generation}-"
+            f"{self.evolution_api.current_generation}, summarized earlier generations"
+        )
+
+    def _get_context_size_estimate(self) -> dict:
+        """
+        Estimate current context size.
+
+        Returns:
+            Dictionary with context statistics and health indicators.
+        """
+        total_chars = sum(
+            len(m.get("content", "")) if isinstance(m.get("content"), str)
+            else sum(len(c.get("text", "")) for c in m.get("content", []) if isinstance(c, dict))
+            for m in self.messages
+        )
+        estimated_tokens = total_chars // 4
+
+        return {
+            "total_chars": total_chars,
+            "estimated_tokens": estimated_tokens,
+            "message_count": len(self.messages),
+            "warning": estimated_tokens > 150_000,
+            "critical": estimated_tokens > 250_000,
+        }
+
+    def _check_context_health(self) -> None:
+        """Check context size and warn if growing too large."""
+        stats = self._get_context_size_estimate()
+
+        if stats["critical"]:
+            tqdm.write(
+                f"  ⚠️  CRITICAL: Context size ~{stats['estimated_tokens']:,} tokens. "
+                "Risk of API failure. Consider pruning history."
+            )
+        elif stats["warning"]:
+            tqdm.write(
+                f"  ⚠️  WARNING: Context size ~{stats['estimated_tokens']:,} tokens. "
+                "Approaching limits."
+            )
 
     def extract_code_blocks(self, response: str) -> list[str]:
         """
@@ -258,7 +345,12 @@ class RootLLMOrchestrator:
         return self.evolution_api.is_terminated
 
     def _build_generation_feedback_message(self) -> str:
-        """Build a feedback message with results from the previous generation."""
+        """Build a compact feedback message with results from the previous generation.
+
+        Note: Full code is NOT included to reduce context size. The Root LLM can
+        use get_trial_code(trial_ids) to retrieve specific code when needed, or
+        use {{CODE_TRIAL_X_Y}} tokens in child prompts.
+        """
         prev_gen = self.evolution_api.current_generation - 1
         if prev_gen < 0:
             return ""
@@ -266,11 +358,13 @@ class RootLLMOrchestrator:
         gen_summary = self.evolution_api.generations[prev_gen]
         trials = gen_summary.trials
 
-        # Build feedback message
+        # Build compact feedback message
         lines = [
             f"Generation {prev_gen} complete. {len(trials)} children spawned.",
             "",
-            "Results:",
+            "Results (use `get_trial_code([trial_ids])` to retrieve code, "
+            "or `{{CODE_TRIAL_X_Y}}` tokens in child prompts):",
+            "",
         ]
 
         # Sort by score
@@ -281,10 +375,24 @@ class RootLLMOrchestrator:
         )
 
         for trial in sorted_trials:
-            lines.append(f"  - {trial.trial_id}:")
-            lines.append(f"    Code: {trial.code}")
-            lines.append(f"    Metrics: {trial.metrics}")
-            lines.append(f"    Reasoning: {trial.reasoning}")
+            score = trial.metrics.get("sum_radii", 0) if trial.success else 0
+            valid = "valid" if trial.success else "INVALID"
+
+            # Extract generation and trial number for code reference token
+            parts = trial.trial_id.split("_")
+            gen_num, trial_num = parts[1], parts[2]
+            code_ref = f"{{{{CODE_TRIAL_{gen_num}_{trial_num}}}}}"
+
+            lines.append(f"  - **{trial.trial_id}** [{valid}] score={score:.4f}")
+            lines.append(f"    Code ref: {code_ref}")
+            if trial.reasoning:
+                # Truncate reasoning to first 150 chars
+                reasoning_short = trial.reasoning[:150].replace("\n", " ")
+                lines.append(f"    Approach: {reasoning_short}...")
+            if not trial.success and trial.error:
+                error_short = str(trial.error)[:100]
+                lines.append(f"    Error: {error_short}")
+            lines.append("")
 
         return "\n".join(lines)
 
@@ -439,6 +547,9 @@ class RootLLMOrchestrator:
                 children_pbar.set_description(f"  Gen {current_gen} children")
                 update_pbar_postfix()
 
+                # Check context health at the start of each generation
+                self._check_context_health()
+
                 # Check budget before LLM call
                 try:
                     self.cost_tracker.raise_if_over_budget()
@@ -552,6 +663,9 @@ class RootLLMOrchestrator:
                         )
                         gen_pbar.update(1)
                         generations_completed = generation + 1
+
+                        # Prune message history to prevent unbounded context growth
+                        self._prune_message_history(keep_recent_generations=2)
                     except GenerationLimitError:
                         # Reached max generations - generation was finalized before exception
                         gen_pbar.update(1)

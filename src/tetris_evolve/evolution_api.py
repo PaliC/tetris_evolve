@@ -749,6 +749,38 @@ class EvolutionAPI:
         trial = self.all_trials.get(trial_id)
         return trial.to_dict() if trial else None
 
+    def get_trial_code(self, trial_ids: list[str]) -> dict[str, str | None]:
+        """
+        Retrieve the code for specific trials by their IDs.
+
+        This function allows the Root LLM to fetch code from previous trials
+        on demand, rather than having all code included in feedback messages.
+        Use this when you need to inspect or analyze specific trial code.
+
+        For including code in child LLM prompts, prefer using the {{CODE_TRIAL_X_Y}}
+        token syntax which automatically substitutes the code.
+
+        Args:
+            trial_ids: List of trial IDs to retrieve code for.
+                      Example: ["trial_0_3", "trial_1_2", "trial_2_5"]
+
+        Returns:
+            Dictionary mapping trial_id to code string (or None if not found).
+            Example: {
+                "trial_0_3": "import numpy as np\\n...",
+                "trial_1_2": None,  # Not found
+                "trial_2_5": "import numpy as np\\n..."
+            }
+        """
+        result: dict[str, str | None] = {}
+        for trial_id in trial_ids:
+            trial = self.all_trials.get(trial_id)
+            if trial:
+                result[trial_id] = trial.code
+            else:
+                result[trial_id] = None
+        return result
+
     def _get_current_generation(self) -> int:
         """Get the current generation number (internal method)."""
         return self.current_generation
@@ -757,11 +789,12 @@ class EvolutionAPI:
         """
         Get a dictionary of API functions to inject into the REPL.
 
-        The 4 core evolution functions are exposed:
+        The 5 core evolution functions are exposed:
         - spawn_child_llm: Generate new programs via child LLM (sequential)
         - spawn_children_parallel: Generate multiple programs in parallel
         - evaluate_program: Evaluate code directly
         - terminate_evolution: End the evolution process
+        - get_trial_code: Retrieve code from specific trials on demand
 
         Note: advance_generation is no longer exposed - it happens automatically.
 
@@ -773,4 +806,5 @@ class EvolutionAPI:
             "spawn_children_parallel": self.spawn_children_parallel,
             "evaluate_program": self.evaluate_program,
             "terminate_evolution": self.terminate_evolution,
+            "get_trial_code": self.get_trial_code,
         }

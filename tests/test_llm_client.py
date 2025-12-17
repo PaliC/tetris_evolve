@@ -217,6 +217,8 @@ class TestLLMClient:
         mock_response.content = [MagicMock(text="Test response")]
         mock_response.usage.input_tokens = 10
         mock_response.usage.output_tokens = 5
+        mock_response.usage.cache_creation_input_tokens = 0
+        mock_response.usage.cache_read_input_tokens = 0
         mock_response.stop_reason = "end_turn"
 
         mock_client.messages.create.return_value = mock_response
@@ -247,6 +249,8 @@ class TestLLMClient:
         mock_response.content = [MagicMock(text="Response")]
         mock_response.usage.input_tokens = 1000
         mock_response.usage.output_tokens = 500
+        mock_response.usage.cache_creation_input_tokens = 0
+        mock_response.usage.cache_read_input_tokens = 0
         mock_response.stop_reason = "end_turn"
 
         mock_client.messages.create.return_value = mock_response
