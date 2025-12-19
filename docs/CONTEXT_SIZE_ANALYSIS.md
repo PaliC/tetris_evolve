@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The tetris_evolve system suffers from **unbounded context growth** that will cause failures at scale. Analysis of the experiment logs reveals that context size grows by approximately **35,000-50,000 tokens per generation**, reaching ~190,000 tokens after just 5 generations. At this rate, a full 10-generation run would require ~400,000+ tokens, exceeding Claude's context limits.
+The pineapple_evolve system suffers from **unbounded context growth** that will cause failures at scale. Analysis of the experiment logs reveals that context size grows by approximately **35,000-50,000 tokens per generation**, reaching ~190,000 tokens after just 5 generations. At this rate, a full 10-generation run would require ~400,000+ tokens, exceeding Claude's context limits.
 
 The primary cause is the inclusion of **full source code for every trial** in feedback messages sent to the Root LLM. A single generation's feedback message contains ~75-170KB of text, most of which is redundant code that could be referenced via existing `{{CODE_TRIAL_X_Y}}` tokens.
 
@@ -563,7 +563,7 @@ Replace inline code with references to the existing `{{CODE_TRIAL_X_Y}}` token s
 
 #### Implementation
 
-**File:** `src/tetris_evolve/root_llm.py`
+**File:** `src/pineapple_evolve/root_llm.py`
 
 **Current code (lines 260-289):**
 ```python
@@ -668,7 +668,7 @@ Implement a sliding window that keeps only recent generations in full detail, re
 
 #### Implementation
 
-**File:** `src/tetris_evolve/root_llm.py`
+**File:** `src/pineapple_evolve/root_llm.py`
 
 **Add new method:**
 ```python
@@ -753,7 +753,7 @@ Restructure messages so that a stable, cacheable prefix exists at the beginning 
 
 #### Implementation
 
-**File:** `src/tetris_evolve/root_llm.py`
+**File:** `src/pineapple_evolve/root_llm.py`
 
 **Replace `_prepare_messages_with_caching()` with a better strategy:**
 
@@ -855,7 +855,7 @@ Streamline the selection request format.
 
 #### Implementation
 
-**File:** `src/tetris_evolve/root_llm.py`
+**File:** `src/pineapple_evolve/root_llm.py`
 
 **Current approach builds ~2-3KB messages. Optimize to ~1KB:**
 
@@ -911,7 +911,7 @@ Add context size tracking and warnings.
 
 #### Implementation
 
-**File:** `src/tetris_evolve/root_llm.py`
+**File:** `src/pineapple_evolve/root_llm.py`
 
 **Add monitoring method:**
 ```python

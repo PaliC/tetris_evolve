@@ -6,15 +6,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from tetris_evolve import (
+from pineapple_evolve import (
     CostTracker,
     EvolutionAPI,
     ExperimentLogger,
 )
-from tetris_evolve.evolution_api import GenerationSummary, TrialSelection
-from tetris_evolve.llm import MockLLMClient
-from tetris_evolve.root_llm import RootLLMOrchestrator
-from tetris_evolve.utils.code_extraction import extract_selection_block
+from pineapple_evolve.evolution_api import GenerationSummary, TrialSelection
+from pineapple_evolve.llm import MockLLMClient
+from pineapple_evolve.root_llm import RootLLMOrchestrator
+from pineapple_evolve.utils.code_extraction import extract_selection_block
 
 
 class TestTrialSelection:

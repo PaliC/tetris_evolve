@@ -1,5 +1,5 @@
 """
-Prompt templates for tetris_evolve.
+Prompt templates for pineapple_evolve.
 
 Contains the Root LLM system prompt that documents available functions
 and guides the evolution process. Structured for optimal prompt caching.

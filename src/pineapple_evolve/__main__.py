@@ -1,5 +1,5 @@
 """
-Allow running as: python -m tetris_evolve
+Allow running as: python -m pineapple_evolve
 """
 
 from .main import main

@@ -1,5 +1,5 @@
 """
-End-to-end tests for tetris_evolve with real LLM API calls.
+End-to-end tests for pineapple_evolve with real LLM API calls.
 
 These tests require a valid ANTHROPIC_API_KEY environment variable.
 They are skipped by default in CI and only run when explicitly enabled.
@@ -15,12 +15,12 @@ import os
 
 import pytest
 
-from tetris_evolve import CostTracker, config_from_dict
-from tetris_evolve.evaluation.circle_packing import CirclePackingEvaluator
-from tetris_evolve.evolution_api import EvolutionAPI
-from tetris_evolve.llm.client import LLMClient
-from tetris_evolve.logger import ExperimentLogger
-from tetris_evolve.root_llm import RootLLMOrchestrator
+from pineapple_evolve import CostTracker, config_from_dict
+from pineapple_evolve.evaluation.circle_packing import CirclePackingEvaluator
+from pineapple_evolve.evolution_api import EvolutionAPI
+from pineapple_evolve.llm.client import LLMClient
+from pineapple_evolve.logger import ExperimentLogger
+from pineapple_evolve.root_llm import RootLLMOrchestrator
 
 # Skip all tests in this module if no API key is set
 pytestmark = pytest.mark.skipif(
@@ -48,7 +48,7 @@ def e2e_config_dict(temp_dir):
             "cost_per_million_output_tokens": 15.0,
         },
         "evaluation": {
-            "evaluator_fn": "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+            "evaluator_fn": "pineapple_evolve.evaluation.circle_packing:CirclePackingEvaluator",
             "evaluator_kwargs": {
                 "n_circles": 26,
                 "target": 2.635,

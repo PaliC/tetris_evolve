@@ -1,5 +1,5 @@
 """
-Evaluation modules for tetris_evolve.
+Evaluation modules for pineapple_evolve.
 """
 
 from .circle_packing import (

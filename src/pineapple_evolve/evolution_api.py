@@ -1,5 +1,5 @@
 """
-Evolution API for tetris_evolve.
+Evolution API for pineapple_evolve.
 
 Provides the core API exposed to the Root LLM for controlling the evolution process.
 """

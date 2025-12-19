@@ -20,7 +20,7 @@ This document provides a detailed, ordered list of implementation tasks for the 
 
 **Files to Create**:
 ```
-src/tetris_evolve/
+src/pineapple_evolve/
 ├── __init__.py
 ├── config.py
 ├── cost_tracker.py
@@ -72,7 +72,7 @@ configs/
 **Dependencies**: [1.1]
 
 **Files**:
-- `src/tetris_evolve/exceptions.py`
+- `src/pineapple_evolve/exceptions.py`
 
 **Tests**:
 - `tests/test_exceptions.py` (simple import tests)
@@ -102,7 +102,7 @@ class EvaluationError(LLMEvolveError):
 
 **Acceptance Criteria**:
 - [x] All exceptions inherit from `LLMEvolveError`
-- [x] Exceptions can be imported from `tetris_evolve.exceptions`
+- [x] Exceptions can be imported from `pineapple_evolve.exceptions`
 
 ---
 
@@ -112,7 +112,7 @@ class EvaluationError(LLMEvolveError):
 **Dependencies**: [1.1, 1.2]
 
 **Files**:
-- `src/tetris_evolve/config.py`
+- `src/pineapple_evolve/config.py`
 - `configs/example_config.yaml`
 
 **Tests**:
@@ -145,7 +145,7 @@ child_llm:
 
 # Evaluation points to an evaluator function/class (pluggable)
 evaluation:
-  evaluator_fn: "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_fn: "pineapple_evolve.evaluation.circle_packing:CirclePackingEvaluator"
   evaluator_kwargs:
     n_circles: 26
     target: 2.635
@@ -173,7 +173,7 @@ budget:
 **Dependencies**: [1.2, 1.3]
 
 **Files**:
-- `src/tetris_evolve/cost_tracker.py` ✅ Implemented
+- `src/pineapple_evolve/cost_tracker.py` ✅ Implemented
 
 **Tests**:
 - `tests/test_cost_tracker.py` ✅ Implemented
@@ -201,7 +201,7 @@ budget:
 **Dependencies**: [1.2, 1.3, 1.4]
 
 **Files**:
-- `src/tetris_evolve/logger.py` ✅ Implemented
+- `src/pineapple_evolve/logger.py` ✅ Implemented
 
 **Tests**:
 - `tests/test_logger.py` ✅ Implemented
@@ -228,7 +228,7 @@ budget:
 **Dependencies**: [1.1, 1.2]
 
 **Files**:
-- `src/tetris_evolve/repl.py` ✅ Implemented
+- `src/pineapple_evolve/repl.py` ✅ Implemented
 
 **Tests**:
 - `tests/test_repl.py` ✅ Implemented
@@ -260,7 +260,7 @@ This module extracts those blocks for execution in the REPL environment.
 **Dependencies**: [1.1, 1.2]
 
 **Files**:
-- `src/tetris_evolve/utils/code_extraction.py` ✅ Implemented
+- `src/pineapple_evolve/utils/code_extraction.py` ✅ Implemented
 
 **Tests**:
 - `tests/test_code_extraction.py`
@@ -285,7 +285,7 @@ This module extracts those blocks for execution in the REPL environment.
 **Dependencies**: [1.1, 1.2, 1.3]
 
 **Files**:
-- `src/tetris_evolve/evaluation/circle_packing.py` ✅ Implemented
+- `src/pineapple_evolve/evaluation/circle_packing.py` ✅ Implemented
 
 **Tests**:
 - `tests/test_evaluator.py`
@@ -354,7 +354,7 @@ def run_packing():
 **Dependencies**: [1.4]
 
 **Files**:
-- `src/tetris_evolve/llm/client.py` ✅ Implemented
+- `src/pineapple_evolve/llm/client.py` ✅ Implemented
 
 **Tests**:
 - `tests/test_llm_client.py` ✅ Implemented
@@ -386,7 +386,7 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 **Dependencies**: [1.1]
 
 **Files**:
-- `src/tetris_evolve/llm/prompts.py` ✅ Implemented
+- `src/pineapple_evolve/llm/prompts.py` ✅ Implemented
 
 **Tests**:
 - `tests/test_prompts.py` ✅ Implemented
@@ -407,7 +407,7 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 **Dependencies**: [1.4, 1.5, 1.7, 1.8, 2.1]
 
 **Files**:
-- `src/tetris_evolve/evolution_api.py` ✅ Implemented
+- `src/pineapple_evolve/evolution_api.py` ✅ Implemented
 
 **Tests**:
 - `tests/test_evolution_api.py` ✅ Implemented
@@ -436,8 +436,8 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 **Dependencies**: [1.6, 2.3]
 
 **Files**:
-- `src/tetris_evolve/repl.py` ✅ Modified (supports api_functions injection)
-- `src/tetris_evolve/evolution_api.py` ✅ Provides get_api_functions()
+- `src/pineapple_evolve/repl.py` ✅ Modified (supports api_functions injection)
+- `src/pineapple_evolve/evolution_api.py` ✅ Provides get_api_functions()
 
 **Tests**:
 - `tests/test_evolution_api.py` ✅ Tests API integration
@@ -465,7 +465,7 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 **Dependencies**: [1.5, 2.1, 2.2, 2.4]
 
 **Files**:
-- `src/tetris_evolve/root_llm.py` ✅ Implemented
+- `src/pineapple_evolve/root_llm.py` ✅ Implemented
 
 **Tests**:
 - `tests/test_root_llm.py` ✅ Implemented
@@ -492,8 +492,8 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 **Dependencies**: [1.3, 3.1]
 
 **Files**:
-- `src/tetris_evolve/main.py` ✅ Implemented
-- `src/tetris_evolve/__main__.py` ✅ Implemented (module entry point)
+- `src/pineapple_evolve/main.py` ✅ Implemented
+- `src/pineapple_evolve/__main__.py` ✅ Implemented (module entry point)
 
 **Tests**:
 - `tests/test_main.py` ✅ Implemented
@@ -507,7 +507,7 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 
 **Acceptance Criteria**:
 - [x] All tests pass
-- [x] Can run: `uv run python -m tetris_evolve --config configs/example.yaml`
+- [x] Can run: `uv run python -m pineapple_evolve --config configs/example.yaml`
 
 ---
 
@@ -669,19 +669,19 @@ Phase 4 (Polish):
 | Task | Status | Notes |
 |------|--------|-------|
 | 1.1 Project Structure | ✅ DONE | All directories and __init__.py files |
-| 1.2 Exceptions | ✅ DONE | `src/tetris_evolve/exceptions.py` |
-| 1.3 Configuration | ✅ DONE | `src/tetris_evolve/config.py` - with pluggable evaluator |
-| 1.4 Cost Tracker | ✅ DONE | `src/tetris_evolve/cost_tracker.py` |
-| 1.5 Logger | ✅ DONE | `src/tetris_evolve/logger.py` |
-| 1.6 REPL | ✅ DONE | `src/tetris_evolve/repl.py` |
-| 1.7 Code Extraction | ✅ DONE | `src/tetris_evolve/utils/code_extraction.py` - repl blocks only |
-| 1.8 CirclePackingEvaluator | ✅ DONE | `src/tetris_evolve/evaluation/circle_packing.py` |
-| 2.1 LLM Client | ✅ DONE | `src/tetris_evolve/llm/client.py` |
-| 2.2 Root LLM System Prompt | ✅ DONE | `src/tetris_evolve/llm/prompts.py` |
-| 2.3 Evolution API | ✅ DONE | `src/tetris_evolve/evolution_api.py` |
+| 1.2 Exceptions | ✅ DONE | `src/pineapple_evolve/exceptions.py` |
+| 1.3 Configuration | ✅ DONE | `src/pineapple_evolve/config.py` - with pluggable evaluator |
+| 1.4 Cost Tracker | ✅ DONE | `src/pineapple_evolve/cost_tracker.py` |
+| 1.5 Logger | ✅ DONE | `src/pineapple_evolve/logger.py` |
+| 1.6 REPL | ✅ DONE | `src/pineapple_evolve/repl.py` |
+| 1.7 Code Extraction | ✅ DONE | `src/pineapple_evolve/utils/code_extraction.py` - repl blocks only |
+| 1.8 CirclePackingEvaluator | ✅ DONE | `src/pineapple_evolve/evaluation/circle_packing.py` |
+| 2.1 LLM Client | ✅ DONE | `src/pineapple_evolve/llm/client.py` |
+| 2.2 Root LLM System Prompt | ✅ DONE | `src/pineapple_evolve/llm/prompts.py` |
+| 2.3 Evolution API | ✅ DONE | `src/pineapple_evolve/evolution_api.py` |
 | 2.4 REPL + Evolution API | ✅ DONE | API injection via `get_api_functions()` |
-| 3.1 Root LLM Orchestrator | ✅ DONE | `src/tetris_evolve/root_llm.py` |
-| 3.2 Main Entry Point | ✅ DONE | `src/tetris_evolve/main.py` + `__main__.py` |
+| 3.1 Root LLM Orchestrator | ✅ DONE | `src/pineapple_evolve/root_llm.py` |
+| 3.2 Main Entry Point | ✅ DONE | `src/pineapple_evolve/main.py` + `__main__.py` |
 | 4.1 Integration Tests | ✅ DONE | `tests/test_integration.py` |
 | 4.2 E2E Tests | ✅ DONE | `tests/test_e2e.py` (skipped without API key) |
 | 4.3 Example Configuration | ✅ DONE | `configs/example_config.yaml` |

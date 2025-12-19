@@ -1,5 +1,5 @@
 """
-Utility modules for tetris_evolve.
+Utility modules for pineapple_evolve.
 """
 
 from .code_extraction import (

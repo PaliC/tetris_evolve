@@ -352,7 +352,7 @@ Our proof-of-concept testing showed these results:
 ## Files
 
 ```
-src/tetris_evolve/
+src/pineapple_evolve/
 ├── evaluation/
 │   └── circle_packing.py      # Evaluator (DONE)
 ├── config.py                   # Configuration loading

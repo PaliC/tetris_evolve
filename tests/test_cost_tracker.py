@@ -1,11 +1,11 @@
 """
-Tests for tetris_evolve.cost_tracker module.
+Tests for pineapple_evolve.cost_tracker module.
 """
 
 import pytest
 
-from tetris_evolve import CostTracker, config_from_dict
-from tetris_evolve.exceptions import BudgetExceededError
+from pineapple_evolve import CostTracker, config_from_dict
+from pineapple_evolve.exceptions import BudgetExceededError
 
 
 class TestCostTracker:

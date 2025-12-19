@@ -1,5 +1,5 @@
 """
-Experiment logging system for tetris_evolve.
+Experiment logging system for pineapple_evolve.
 
 Handles structured logging for experiments, generations, and trials.
 """

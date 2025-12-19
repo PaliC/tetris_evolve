@@ -6,16 +6,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from tetris_evolve import (
+from pineapple_evolve import (
     BudgetExceededError,
     CostTracker,
     EvolutionAPI,
     ExperimentLogger,
     TrialResult,
 )
-from tetris_evolve.evaluation.circle_packing import CirclePackingEvaluator
-from tetris_evolve.exceptions import ChildrenLimitError, GenerationLimitError
-from tetris_evolve.llm import MockLLMClient
+from pineapple_evolve.evaluation.circle_packing import CirclePackingEvaluator
+from pineapple_evolve.exceptions import ChildrenLimitError, GenerationLimitError
+from pineapple_evolve.llm import MockLLMClient
 
 
 @pytest.fixture
@@ -869,7 +869,7 @@ class TestParallelSpawnWithTokenSubstitution:
         # The actual parallel execution is tested in integration tests
 
         # Verify the parent trial code is available for substitution
-        from tetris_evolve.utils.prompt_substitution import substitute_trial_codes
+        from pineapple_evolve.utils.prompt_substitution import substitute_trial_codes
 
         prompt = "Improve: {{CODE_TRIAL_0_0}}"
         result, report = substitute_trial_codes(

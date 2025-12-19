@@ -1,5 +1,5 @@
 """
-Configuration system for tetris_evolve.
+Configuration system for pineapple_evolve.
 
 Loads and validates YAML configuration files into typed dataclasses.
 """
@@ -53,7 +53,7 @@ class EvaluationConfig:
     """Evaluation configuration.
 
     The evaluator_fn should be a module path to an evaluator function or class,
-    e.g., "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+    e.g., "pineapple_evolve.evaluation.circle_packing:CirclePackingEvaluator"
 
     The evaluator_kwargs are passed to the evaluator function/class constructor.
     """

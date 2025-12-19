@@ -221,7 +221,7 @@ child_llm:
 # Evaluation config points to an evaluator function/class
 # This makes the system pluggable for different evaluation problems
 evaluation:
-  evaluator_fn: "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_fn: "pineapple_evolve.evaluation.circle_packing:CirclePackingEvaluator"
   evaluator_kwargs:
     n_circles: 26
     target: 2.635
@@ -299,7 +299,7 @@ class BudgetExceededError(Exception):
 
 ### 3. Circle Packing Evaluator (`evaluation/circle_packing.py`)
 
-**Already Implemented** - See `src/tetris_evolve/evaluation/circle_packing.py`
+**Already Implemented** - See `src/pineapple_evolve/evaluation/circle_packing.py`
 
 ```python
 class CirclePackingEvaluator:
@@ -466,7 +466,7 @@ class RootLLMOrchestrator:
 ### 1. Experiment Initialization
 
 ```
-User runs: python -m tetris_evolve --config config.yaml
+User runs: python -m pineapple_evolve --config config.yaml
 
 1. Load and validate configuration
 2. Create experiment directory
@@ -608,7 +608,7 @@ Our proof-of-concept testing validated the architecture:
 ## File Structure
 
 ```
-src/tetris_evolve/
+src/pineapple_evolve/
 ├── __init__.py
 ├── config.py                           # Configuration loading
 ├── cost_tracker.py                     # Budget enforcement

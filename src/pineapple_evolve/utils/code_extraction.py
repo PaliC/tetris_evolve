@@ -1,5 +1,5 @@
 """
-Code extraction utilities for tetris_evolve.
+Code extraction utilities for pineapple_evolve.
 
 Extracts REPL code blocks from LLM responses. The Root LLM uses ```repl```
 code blocks to indicate Python code that should be executed in the REPL.

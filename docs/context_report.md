@@ -13,7 +13,7 @@
   - Gen3: 171,850 chars (~43.0k tokens).
   - Gen4: 141,234 chars (~35.3k tokens).
   - Total conversation by turn 30: ~762k chars (~190k tokens).
-- Source of bloat: `src/tetris_evolve/root_llm.py:_build_generation_feedback_message` appends `Code: {trial.code}` for every trial to the feedback user message each generation.
+- Source of bloat: `src/pineapple_evolve/root_llm.py:_build_generation_feedback_message` appends `Code: {trial.code}` for every trial to the feedback user message each generation.
 - Caching mismatch: `_prepare_messages_with_caching` caches the second-to-last user message (the small selection request), not the large feedback blobs, so cache hits are minimal while the heavy messages are resent.
 - Missing completion artifact: no `experiment.json` in the run directory, suggesting the run halted before `save_experiment` executed (likely due to the context blow-up).
 - Timeouts: many trials report `Timeout after 300s`, adding to log size without value.

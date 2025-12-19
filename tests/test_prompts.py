@@ -2,7 +2,7 @@
 Tests for the prompts module.
 """
 
-from tetris_evolve.llm.prompts import (
+from pineapple_evolve.llm.prompts import (
     ROOT_LLM_SYSTEM_PROMPT_DYNAMIC,
     format_child_mutation_prompt,
     get_root_system_prompt,

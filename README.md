@@ -30,7 +30,7 @@ Pack 26 circles into a unit square to maximize the sum of their radii.
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd tetris_evolve
+cd pineapple_evolve
 
 # Install dependencies
 uv sync
@@ -50,10 +50,10 @@ export ANTHROPIC_API_KEY=your_api_key_here
 
 ```bash
 # Run the evolution with the example config
-uv run python -m tetris_evolve --config configs/example_config_sonnet.yaml
+uv run python -m pineapple_evolve --config configs/example_config_sonnet.yaml
 
 # Run with verbose output
-uv run python -m tetris_evolve --config configs/example_config_haiku.yaml --verbose
+uv run python -m pineapple_evolve --config configs/example_config_haiku.yaml --verbose
 ```
 
 ### Run PoC Examples (No API Key Required)
@@ -132,7 +132,7 @@ child_llm:
 
 # Evaluation configuration
 evaluation:
-  evaluator_fn: "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_fn: "pineapple_evolve.evaluation.circle_packing:CirclePackingEvaluator"
   evaluator_kwargs:
     n_circles: 26               # Number of circles to pack
     target: 2.635               # Target sum of radii (benchmark)
@@ -239,7 +239,7 @@ When running an experiment, results are saved to:
 ### Project Structure
 
 ```
-src/tetris_evolve/
+src/pineapple_evolve/
 ├── __init__.py
 ├── config.py              # Configuration loading
 ├── cost_tracker.py        # Budget enforcement
@@ -278,7 +278,7 @@ tests/
 uv run pytest
 
 # Run with coverage
-uv run pytest --cov=tetris_evolve
+uv run pytest --cov=pineapple_evolve
 
 # Run specific test categories
 uv run pytest tests/test_integration.py -v
@@ -287,7 +287,7 @@ uv run pytest -k "not e2e"  # Skip E2E tests
 
 ### Adding a New Evaluator
 
-1. Create a new evaluator class in `src/tetris_evolve/evaluation/`:
+1. Create a new evaluator class in `src/pineapple_evolve/evaluation/`:
 
 ```python
 class MyEvaluator:
@@ -307,7 +307,7 @@ class MyEvaluator:
 
 ```yaml
 evaluation:
-  evaluator_fn: "tetris_evolve.evaluation.my_module:MyEvaluator"
+  evaluator_fn: "pineapple_evolve.evaluation.my_module:MyEvaluator"
   evaluator_kwargs:
     param1: value1
 ```

@@ -1,5 +1,5 @@
 """
-Cost tracking system for tetris_evolve.
+Cost tracking system for pineapple_evolve.
 
 Tracks token usage and enforces budget limits.
 """

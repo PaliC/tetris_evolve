@@ -1,8 +1,8 @@
 """
-Tests for tetris_evolve.utils.code_extraction module.
+Tests for pineapple_evolve.utils.code_extraction module.
 """
 
-from tetris_evolve.utils import (
+from pineapple_evolve.utils import (
     extract_code_blocks,
     extract_python_code,
     extract_reasoning,

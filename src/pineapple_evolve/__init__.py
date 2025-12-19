@@ -1,5 +1,5 @@
 """
-tetris_evolve: LLM-driven evolutionary code generation.
+pineapple_evolve: LLM-driven evolutionary code generation.
 
 This package implements an evolutionary system for generating and optimizing
 circle packing algorithms using LLMs.
