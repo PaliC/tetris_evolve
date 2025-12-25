@@ -197,8 +197,7 @@ class TestAdvanceGenerationWithSelections:
         mock_evaluator = MagicMock()
         mock_evaluator.evaluate.return_value = {
             "valid": True,
-            "sum_radii": 2.0,
-            "target_ratio": 0.76,
+            "score": 2.0,
             "eval_time": 0.1,
         }
 
@@ -390,7 +389,7 @@ class TestOrchestratorSelectionFlow:
 children = [{"prompt": "test1"}, {"prompt": "test2"}]
 results = spawn_children_parallel(children)
 for r in results:
-    print(f"{r['trial_id']}: {r['metrics'].get('sum_radii', 0):.4f}")
+    print(f"{r['trial_id']}: {r['metrics'].get('score', 0):.4f}")
 ```
 """,
                 """Based on results:
@@ -454,8 +453,7 @@ class TestSelectionValidation:
             call_count[0] += 1
             return {
                 "valid": True,
-                "sum_radii": score,
-                "target_ratio": score / 2.635,
+                "score": score,
                 "eval_time": 0.1,
             }
 
@@ -510,8 +508,8 @@ class TestSelectionValidation:
         def mock_evaluate(code):
             call_count[0] += 1
             if call_count[0] == 2:
-                return {"valid": False, "sum_radii": 0, "error": "overlap"}
-            return {"valid": True, "sum_radii": 1.5, "target_ratio": 0.57}
+                return {"valid": False, "score": 0, "error": "overlap"}
+            return {"valid": True, "score": 1.5}
 
         mock_evaluator.evaluate.side_effect = mock_evaluate
 

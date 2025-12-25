@@ -373,12 +373,12 @@ class RootLLMOrchestrator:
         # Sort by score
         sorted_trials = sorted(
             trials,
-            key=lambda t: t.metrics.get("sum_radii", 0) if t.success else 0,
+            key=lambda t: t.metrics.get("score", 0) if t.success else 0,
             reverse=True,
         )
 
         for trial in sorted_trials:
-            score = trial.metrics.get("sum_radii", 0) if trial.success else 0
+            score = trial.metrics.get("score", 0) if trial.success else 0
             valid = "valid" if trial.success else "INVALID"
 
             # Extract generation and trial number for code reference token
@@ -415,12 +415,12 @@ class RootLLMOrchestrator:
         # Sort by score but show all
         sorted_trials = sorted(
             trials,
-            key=lambda t: t.metrics.get("sum_radii", 0) if t.success else 0,
+            key=lambda t: t.metrics.get("score", 0) if t.success else 0,
             reverse=True,
         )
 
         for i, trial in enumerate(sorted_trials, 1):
-            score = trial.metrics.get("sum_radii", 0) if trial.success else 0
+            score = trial.metrics.get("score", 0) if trial.success else 0
             valid_str = "valid" if trial.success else "INVALID"
             lines.append(f"{i}. **{trial.trial_id}** [{valid_str}]")
             lines.append(f"   Score: {score:.4f}")
@@ -523,7 +523,7 @@ class RootLLMOrchestrator:
             successes = sum(1 for t in self.evolution_api.all_trials.values() if t.success)
             best_score = max(
                 (
-                    t.metrics.get("sum_radii", 0)
+                    t.metrics.get("score", 0)
                     for t in self.evolution_api.all_trials.values()
                     if t.success
                 ),
@@ -720,7 +720,7 @@ class RootLLMOrchestrator:
         # Get best trial info
         best_trials = self.evolution_api._get_best_trials(n=1)
         best_program = best_trials[0]["code"] if best_trials else None
-        best_score = best_trials[0]["metrics"].get("sum_radii", 0) if best_trials else 0
+        best_score = best_trials[0]["metrics"].get("score", 0) if best_trials else 0
 
         # Compute statistics
         all_trials = self.evolution_api.all_trials

@@ -4,7 +4,6 @@ Evaluation modules for tetris_evolve.
 
 from .circle_packing import (
     DEFAULT_N_CIRCLES,
-    DEFAULT_TARGET,
     CirclePackingEvaluator,
     PackingResult,
     evaluate_code,
@@ -16,6 +15,5 @@ __all__ = [
     "PackingResult",
     "validate_packing",
     "evaluate_code",
-    "DEFAULT_TARGET",
     "DEFAULT_N_CIRCLES",
 ]

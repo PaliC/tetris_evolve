@@ -17,7 +17,7 @@ class TestWriteTrialFile:
             generation=0,
             experiment_dir=str(temp_dir),
             code="def run_packing(): pass",
-            metrics={"valid": True, "sum_radii": 1.5},
+            metrics={"valid": True, "score": 1.5},
             prompt="Test prompt",
             response="Test response",
             reasoning="Test reasoning",
@@ -34,7 +34,7 @@ class TestWriteTrialFile:
         assert data["generation"] == 0
         assert data["code"] == "def run_packing(): pass"
         assert data["metrics"]["valid"] is True
-        assert data["metrics"]["sum_radii"] == 1.5
+        assert data["metrics"]["score"] == 1.5
         assert data["prompt"] == "Test prompt"
         assert data["response"] == "Test response"
         assert data["reasoning"] == "Test reasoning"
@@ -119,7 +119,7 @@ class TestTrialFileTracking:
                 generation=0,
                 experiment_dir=str(temp_dir),
                 code=f"def run_packing_{i}(): pass",
-                metrics={"valid": True, "sum_radii": 1.0 + i * 0.1},
+                metrics={"valid": True, "score": 1.0 + i * 0.1},
                 prompt=f"Prompt {i}",
                 response=f"Response {i}",
                 reasoning=f"Reasoning {i}",
@@ -138,7 +138,7 @@ class TestTrialFileTracking:
             generation=0,
             experiment_dir=str(temp_dir),
             code="def run_packing(): return valid()",
-            metrics={"valid": True, "sum_radii": 2.0},
+            metrics={"valid": True, "score": 2.0},
             prompt="Test",
             response="Code here",
             reasoning="Good",
@@ -160,7 +160,7 @@ class TestTrialFileTracking:
             generation=0,
             experiment_dir=str(temp_dir),
             code="def run_packing(): return another()",
-            metrics={"valid": True, "sum_radii": 1.8},
+            metrics={"valid": True, "score": 1.8},
             prompt="Test",
             response="More code",
             reasoning="Also good",

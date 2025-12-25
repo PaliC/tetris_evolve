@@ -57,7 +57,6 @@ class TestRootSystemPrompt:
         prompt = get_root_system_prompt()
         # These internal methods (prefixed with _) should not be listed as available functions
         assert "### _get_best_trials" not in prompt
-        assert "### _get_cost_remaining" not in prompt
         assert "### _get_trial(" not in prompt  # Note: get_trial_code IS a public function
         assert "### _get_generation_history" not in prompt
         assert "### _advance_generation" not in prompt

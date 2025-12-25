@@ -151,7 +151,7 @@ class ExperimentLogger:
         selected_trial_ids: list[str],
         selection_reasoning: str,
         best_trial_id: str | None = None,
-        best_sum_radii: float = 0.0,
+        best_score: float = 0.0,
         trial_selections: list[dict[str, Any]] | None = None,
     ) -> Path:
         """
@@ -163,7 +163,7 @@ class ExperimentLogger:
             selected_trial_ids: IDs of trials selected for next generation
             selection_reasoning: Reasoning for selection
             best_trial_id: ID of best trial this generation
-            best_sum_radii: Best sum_radii achieved
+            best_score: Best score achieved (sum of radii)
             trial_selections: List of detailed trial selection data with reasoning
 
         Returns:
@@ -178,7 +178,7 @@ class ExperimentLogger:
                 1 for t in trials if t.get("metrics", {}).get("valid", False)
             ),
             "best_trial_id": best_trial_id,
-            "best_sum_radii": best_sum_radii,
+            "best_score": best_score,
             "selected_trial_ids": selected_trial_ids,
             "selection_reasoning": selection_reasoning,
             "trial_selections": trial_selections or [],
@@ -189,12 +189,12 @@ class ExperimentLogger:
         self._experiment_data["num_generations"] = generation + 1
 
         # Update best trial if this is the best overall
-        if self._experiment_data["best_trial"] is None or best_sum_radii > self._experiment_data[
+        if self._experiment_data["best_trial"] is None or best_score > self._experiment_data[
             "best_trial"
-        ].get("sum_radii", 0):
+        ].get("score", 0):
             self._experiment_data["best_trial"] = {
                 "trial_id": best_trial_id,
-                "sum_radii": best_sum_radii,
+                "score": best_score,
                 "generation": generation,
             }
 

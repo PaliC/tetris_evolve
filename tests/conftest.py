@@ -35,7 +35,6 @@ def sample_config_dict():
             "evaluator_fn": "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator",
             "evaluator_kwargs": {
                 "n_circles": 26,
-                "target": 2.635,
                 "timeout_seconds": 30,
             },
         },

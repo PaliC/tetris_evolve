@@ -396,7 +396,7 @@ class TestFullOrchestration:
 ```repl
 prompt = "Write a circle packing algorithm."
 result = spawn_child_llm(prompt)
-print(f"Result: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
+print(f"Result: valid={result['metrics'].get('valid')}, score={result['metrics'].get('score', 0):.4f}")
 best_code = result['code']
 ```
 """,

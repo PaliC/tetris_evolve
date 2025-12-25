@@ -31,7 +31,7 @@ class TestExperimentLogger:
             trial_id="trial_0_0",
             generation=0,
             code="def run_packing(): pass",
-            metrics={"valid": True, "sum_radii": 1.5},
+            metrics={"valid": True, "score": 1.5},
             prompt="Try grid packing",
             response="Here is the code...",
             reasoning="I used a grid approach",
@@ -52,8 +52,8 @@ class TestExperimentLogger:
         logger.create_experiment_directory()
 
         trials = [
-            {"trial_id": "trial_0_0", "metrics": {"valid": True, "sum_radii": 1.5}},
-            {"trial_id": "trial_0_1", "metrics": {"valid": False, "sum_radii": 0}},
+            {"trial_id": "trial_0_0", "metrics": {"valid": True, "score": 1.5}},
+            {"trial_id": "trial_0_1", "metrics": {"valid": False, "score": 0}},
         ]
 
         summary_path = logger.log_generation(
@@ -62,7 +62,7 @@ class TestExperimentLogger:
             selected_trial_ids=["trial_0_0"],
             selection_reasoning="Best score",
             best_trial_id="trial_0_0",
-            best_sum_radii=1.5,
+            best_score=1.5,
         )
 
         assert summary_path.exists()
@@ -182,7 +182,7 @@ class TestExperimentLogger:
             selected_trial_ids=[],
             selection_reasoning="",
             best_trial_id="trial_0_0",
-            best_sum_radii=1.5,
+            best_score=1.5,
         )
 
         # Second generation with better result
@@ -192,14 +192,14 @@ class TestExperimentLogger:
             selected_trial_ids=[],
             selection_reasoning="",
             best_trial_id="trial_1_0",
-            best_sum_radii=2.0,
+            best_score=2.0,
         )
 
         logger.save_experiment()
 
         data = logger.load_experiment()
         assert data["best_trial"]["trial_id"] == "trial_1_0"
-        assert data["best_trial"]["sum_radii"] == 2.0
+        assert data["best_trial"]["score"] == 2.0
 
     def test_from_directory(self, sample_config, temp_dir):
         """Create logger from existing directory."""

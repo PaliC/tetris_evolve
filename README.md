@@ -135,7 +135,6 @@ evaluation:
   evaluator_fn: "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
   evaluator_kwargs:
     n_circles: 26               # Number of circles to pack
-    target: 2.635               # Target sum of radii (benchmark)
     timeout_seconds: 30         # Max evaluation time per trial
 
 # Evolution settings
@@ -182,7 +181,7 @@ result = spawn_child_llm("Write a circle packing algorithm")
 # Returns: {
 #   'trial_id': 'trial_0_0',
 #   'code': '...',
-#   'metrics': {'valid': True, 'sum_radii': 2.08, ...},
+#   'metrics': {'valid': True, 'score': 2.08, ...},
 #   'success': True,
 #   'error': None
 # }
@@ -194,7 +193,7 @@ Evaluate code directly without spawning a child LLM.
 
 ```python
 metrics = evaluate_program(code_string)
-# Returns: {'valid': True, 'sum_radii': 2.08, 'target_ratio': 0.79, ...}
+# Returns: {'valid': True, 'score': 2.08, ...}
 ```
 
 #### `advance_generation(selected_trial_ids: list, reasoning: str) -> int`
@@ -325,15 +324,14 @@ Testing Circle Packing Evolution Pipeline...
 ============================================================
 
 Generation 0: Exploring diverse strategies...
-  gen0_trial0: VALID, sum_radii=1.7687  (grid)
-  gen0_trial1: VALID, sum_radii=2.0800  (hexagonal)
-  gen0_trial2: INVALID, sum_radii=0.0000 (greedy - failed)
-  gen0_trial3: VALID, sum_radii=1.6512  (corner-first)
-  gen0_trial4: VALID, sum_radii=1.0795  (concentric)
+  gen0_trial0: VALID, score=1.7687  (grid)
+  gen0_trial1: VALID, score=2.0800  (hexagonal)
+  gen0_trial2: INVALID, score=0.0000 (greedy - failed)
+  gen0_trial3: VALID, score=1.6512  (corner-first)
+  gen0_trial4: VALID, score=1.0795  (concentric)
 
 Best strategy: hexagonal
   Sum of radii: 2.0800
-  Target ratio: 0.7894 (target: 2.635)
 ```
 
 ## License

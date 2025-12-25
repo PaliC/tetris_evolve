@@ -344,7 +344,7 @@ class EvolutionAPI:
 
         # Update best trial for generation
         gen = self.generations[self.current_generation]
-        score = trial.metrics.get("sum_radii", 0) if trial.success else 0
+        score = trial.metrics.get("score", 0) if trial.success else 0
         if score > gen.best_score:
             gen.best_score = score
             gen.best_trial_id = trial.trial_id
@@ -608,7 +608,7 @@ class EvolutionAPI:
             selected_trial_ids=gen.selected_trial_ids,
             selection_reasoning=gen.selection_reasoning,
             best_trial_id=gen.best_trial_id,
-            best_sum_radii=gen.best_score,
+            best_score=gen.best_score,
             trial_selections=[s.to_dict() for s in gen.trial_selections],
         )
 
@@ -683,7 +683,7 @@ class EvolutionAPI:
         if best_program is None and best_trials:
             best_program = best_trials[0].get("code", "")
 
-        best_score = best_trials[0].get("metrics", {}).get("sum_radii", 0) if best_trials else 0
+        best_score = best_trials[0].get("metrics", {}).get("score", 0) if best_trials else 0
 
         # Show termination message
         tqdm.write(f"\n{'=' * 60}")
@@ -719,14 +719,14 @@ class EvolutionAPI:
         Returns:
             List of trial dictionaries sorted by score (descending)
         """
-        # Sort by sum_radii (only valid trials)
+        # Sort by score (only valid trials)
         valid_trials = [
-            t for t in self.all_trials.values() if t.success and t.metrics.get("sum_radii", 0) > 0
+            t for t in self.all_trials.values() if t.success and t.metrics.get("score", 0) > 0
         ]
 
         sorted_trials = sorted(
             valid_trials,
-            key=lambda t: t.metrics.get("sum_radii", 0),
+            key=lambda t: t.metrics.get("score", 0),
             reverse=True,
         )
 
@@ -740,15 +740,6 @@ class EvolutionAPI:
             List of generation summary dictionaries
         """
         return [gen.to_dict() for gen in self.generations]
-
-    def _get_cost_remaining(self) -> float:
-        """
-        Get remaining budget in USD (internal method).
-
-        Returns:
-            Remaining budget
-        """
-        return self.cost_tracker.get_remaining_budget()
 
     def _get_trial(self, trial_id: str) -> dict[str, Any] | None:
         """

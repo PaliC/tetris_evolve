@@ -148,7 +148,6 @@ evaluation:
   evaluator_fn: "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
   evaluator_kwargs:
     n_circles: 26
-    target: 2.635
     timeout_seconds: 30
 
 evolution:
@@ -298,7 +297,7 @@ This module extracts those blocks for execution in the REPL environment.
 5. `test_validate_packing_overlap`: Detects overlapping circles
 6. `test_validate_packing_bounds`: Detects circles outside unit square
 7. `test_validate_packing_negative_radii`: Detects negative radii
-8. `test_metrics_computed`: All expected metrics returned (sum_radii, target_ratio, valid)
+8. `test_metrics_computed`: All expected metrics returned (score, valid)
 9. `test_timeout_handling`: Code that takes too long is killed
 
 **Code Specification**:
@@ -330,9 +329,7 @@ def run_packing():
 ```python
 {
     "valid": bool,           # True if packing satisfies all constraints
-    "sum_radii": float,      # Sum of all radii (0 if invalid)
-    "target_ratio": float,   # sum_radii / 2.635 (0 if invalid)
-    "combined_score": float, # target_ratio if valid, else 0
+    "score": float,          # Sum of all radii (0 if invalid)
     "eval_time": float,      # Seconds to evaluate
     "error": Optional[str],  # Error message if any
 }
@@ -340,7 +337,7 @@ def run_packing():
 
 **Acceptance Criteria**:
 - [x] All tests pass
-- [x] Metrics include sum_radii, target_ratio, valid, combined_score
+- [x] Metrics include score, valid
 - [x] Errors handled gracefully without crashing
 - [x] Subprocess isolation with timeout
 
@@ -420,7 +417,7 @@ all prompts sent to child LLMs. This gives the Root LLM full control over:
 5. `test_advance_generation`: Generation counter increments
 6. `test_terminate_evolution`: Returns final results
 7. `test_get_generation_history`: Returns all generations
-8. `test_get_best_trials`: Returns sorted trials by sum_radii
+8. `test_get_best_trials`: Returns sorted trials by score
 9. `test_trial_logging`: Trials logged correctly
 
 **Acceptance Criteria**:

@@ -149,9 +149,7 @@ def run_packing():
 ```python
 {
     "valid": bool,           # True if packing satisfies all constraints
-    "sum_radii": float,      # Sum of all radii (0 if invalid)
-    "target_ratio": float,   # sum_radii / 2.635 (0 if invalid)
-    "combined_score": float, # target_ratio if valid, else 0
+    "score": float,          # Sum of all radii (0 if invalid)
     "eval_time": float,      # Seconds to evaluate
     "error": Optional[str],  # Error message if any
 }
@@ -224,7 +222,6 @@ evaluation:
   evaluator_fn: "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
   evaluator_kwargs:
     n_circles: 26
-    target: 2.635
     timeout_seconds: 30
 
 evolution:
@@ -303,9 +300,7 @@ class BudgetExceededError(Exception):
 
 ```python
 class CirclePackingEvaluator:
-    def __init__(self, target: float = 2.635, n_circles: int = 26,
-                 timeout_seconds: int = 30):
-        self.target = target
+    def __init__(self, n_circles: int = 26, timeout_seconds: int = 30):
         self.n_circles = n_circles
         self.timeout_seconds = timeout_seconds
 
@@ -316,9 +311,7 @@ class CirclePackingEvaluator:
         Returns:
             {
                 'valid': bool,
-                'sum_radii': float,
-                'target_ratio': float,
-                'combined_score': float,
+                'score': float,
                 'eval_time': float,
                 'error': Optional[str]
             }
@@ -404,7 +397,7 @@ class EvolutionAPI:
             {
                 'trial_id': str,
                 'code': str,
-                'metrics': {'sum_radii': float, 'target_ratio': float, ...},
+                'metrics': {'score': float, ...},
                 'reasoning': str,
                 'success': bool,
                 'error': Optional[str]
@@ -423,7 +416,7 @@ class EvolutionAPI:
         """End evolution and return final results."""
 
     def get_best_trials(self, n: int = 5) -> List[Dict]:
-        """Get top n trials by sum_radii."""
+        """Get top n trials by score."""
 
     def get_cost_remaining(self) -> float:
         """Get remaining budget in USD."""
@@ -589,13 +582,13 @@ over what prompts are sent to child LLMs. This allows the Root LLM to:
 
 Our proof-of-concept testing validated the architecture:
 
-| Strategy | Valid | Sum of Radii | Target Ratio |
-|----------|-------|--------------|--------------|
-| Hexagonal | Yes | 2.08 | 0.79 |
-| Grid | Yes | 1.77 | 0.67 |
-| Corner-first | Yes | 1.65 | 0.63 |
-| Concentric | Yes | 1.08 | 0.41 |
-| Greedy | No | - | - |
+| Strategy | Valid | Sum of Radii |
+|----------|-------|--------------|
+| Hexagonal | Yes | 2.08 |
+| Grid | Yes | 1.77 |
+| Corner-first | Yes | 1.65 |
+| Concentric | Yes | 1.08 |
+| Greedy | No | - |
 
 **Key findings**:
 - Hexagonal packing performs best among simple strategies
@@ -670,9 +663,7 @@ docs/
 - response (full LLM response)
 - reasoning (extracted explanation)
 - valid (geometric validity)
-- sum_radii
-- target_ratio
-- combined_score
+- score (sum of radii)
 - eval_time
 - input_tokens
 - output_tokens
@@ -683,7 +674,7 @@ docs/
 - generation_num
 - num_trials
 - num_successful_trials
-- best_sum_radii
+- best_score
 - best_trial_id
 - selected_trial_ids
 - selection_reasoning

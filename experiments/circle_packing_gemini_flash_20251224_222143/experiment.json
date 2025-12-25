@@ -1,0 +1,390 @@
+{
+  "experiment_id": "circle_packing_gemini_flash_20251224_222143",
+  "config": {
+    "experiment": {
+      "name": "circle_packing_gemini_flash",
+      "output_dir": "./experiments",
+      "seed": null
+    },
+    "root_llm": {
+      "model": "google/gemini-3-flash-preview",
+      "cost_per_million_input_tokens": 0.5,
+      "cost_per_million_output_tokens": 3.0,
+      "provider": "openrouter",
+      "max_iterations": 30
+    },
+    "child_llm": {
+      "model": "google/gemini-3-flash-preview",
+      "cost_per_million_input_tokens": 0.5,
+      "cost_per_million_output_tokens": 3.0,
+      "provider": "openrouter",
+      "max_iterations": null
+    },
+    "evaluation": {
+      "evaluator_fn": "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+      "evaluator_kwargs": {
+        "n_circles": 26,
+        "timeout_seconds": 300
+      }
+    },
+    "evolution": {
+      "max_generations": 10,
+      "max_children_per_generation": 15
+    },
+    "budget": {
+      "max_total_cost": 5.0
+    }
+  },
+  "start_time": "2025-12-24T22:21:43.746133",
+  "end_time": "2025-12-24T22:29:47.506505",
+  "termination_reason": "max_generations_reached",
+  "num_generations": 10,
+  "total_trials": 0,
+  "best_trial": {
+    "trial_id": "trial_9_0",
+    "score": 2.635328412488767,
+    "generation": 9
+  },
+  "generations": [
+    {
+      "generation_num": 0,
+      "num_trials": 15,
+      "num_successful_trials": 12,
+      "best_trial_id": "trial_0_5",
+      "best_score": 2.6164193368850475,
+      "selected_trial_ids": [
+        "trial_0_5",
+        "trial_0_10",
+        "trial_0_12",
+        "trial_0_3"
+      ],
+      "selection_reasoning": "Selected the top two performers which use optimization-heavy strategies, along with two diverse approaches (Power Diagrams and Force-Directed layouts) that might offer better exploration of the search space when refined.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_0_5",
+          "reasoning": "Highest score in generation 0 (2.6164). This trial uses a multi-start optimization approach with SLSQP, which seems robust for this problem size.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_0_10",
+          "reasoning": "Second highest score (2.6104). It uses a grid-based initialization followed by optimization, which is a strong strategy for circle packing.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_0_12",
+          "reasoning": "Uses a Power Diagram inspired approach. While the score is slightly lower (2.5212), this geometric approach provides a diverse alternative to pure gradient-based optimization.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_0_3",
+          "reasoning": "The force-directed/spring layout approach has a lower score (1.9045) but offers a completely different mechanism for resolving overlaps that could be hybridized with local search.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:22:16.690292"
+    },
+    {
+      "generation_num": 1,
+      "num_trials": 10,
+      "num_successful_trials": 10,
+      "best_trial_id": "trial_1_2",
+      "best_score": 2.624510285999692,
+      "selected_trial_ids": [
+        "trial_1_2",
+        "trial_1_5",
+        "trial_1_9",
+        "trial_1_3"
+      ],
+      "selection_reasoning": "Selected the new top performer (trial_1_2) which uses a geometric Voronoi-based approach, along with three other trials that offer diverse initialization and refinement strategies (Greedy Growing, Multi-stage Wiggling, and Force-Directed Hybridization).",
+      "trial_selections": [
+        {
+          "trial_id": "trial_1_2",
+          "reasoning": "Highest score achieved so far (2.6245). This trial successfully improved the Power Diagram/Voronoi approach by integrating it with a local optimizer, showing that geometric heuristics combined with gradient descent are very effective.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_1_5",
+          "reasoning": "Strong score (2.6159) using a 'Greedy Growing' strategy with repulsion forces. This provides a different initialization logic compared to the pure grid or random starts used in other top trials.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_1_9",
+          "reasoning": "Achieved 2.6139 using a multi-stage refinement approach. The 'wiggle' logic to escape local optima is a valuable metaheuristic to carry forward.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_1_3",
+          "reasoning": "Although the score is lower (2.5456), this trial successfully hybridized force-directed layouts with SLSQP. Further tuning of the force constants or the transition to the optimizer could yield better results.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:22:41.940052"
+    },
+    {
+      "generation_num": 2,
+      "num_trials": 7,
+      "num_successful_trials": 5,
+      "best_trial_id": "trial_2_0",
+      "best_score": 2.6195735177725603,
+      "selected_trial_ids": [
+        "trial_2_0",
+        "trial_2_5",
+        "trial_2_3"
+      ],
+      "selection_reasoning": "We carry forward the all-time best (trial_1_2) and the best of this generation (trial_2_0). We also include trial_2_5 for its unique local search logic and trial_2_3 for its multi-algorithm pipeline.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_2_0",
+          "reasoning": "The highest score of this generation (2.6196). Although it didn't beat trial_1_2, the multi-start Voronoi approach is sound and may just need better hyperparameters or more iterations.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_2_5",
+          "reasoning": "Implements a targeted 'Smallest Circle' optimization. This logic of focusing on the bottleneck circles to increase the total sum is a sophisticated local search strategy.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_2_3",
+          "reasoning": "Successfully combined Force-Directed, Voronoi, and SLSQP. This pipeline approach is diverse and could potentially find a superior global topology with better force-tuning.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T22:23:06.285067"
+    },
+    {
+      "generation_num": 3,
+      "num_trials": 7,
+      "num_successful_trials": 6,
+      "best_trial_id": "trial_3_1",
+      "best_score": 2.6198001659082943,
+      "selected_trial_ids": [
+        "trial_3_1",
+        "trial_3_5",
+        "trial_3_4"
+      ],
+      "selection_reasoning": "We maintain the historical best (trial_1_2) while incorporating the most successful refinements from this generation (trial_3_1). We also include diverse topological strategies (Boundary-First and Circle Swapping) to prevent premature convergence.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_3_1",
+          "reasoning": "The top performer of Generation 3 (2.6198). It used a cooling factor for Voronoi movement and 'trust-constr' as an intermediate step, which is a promising refinement technique.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_3_5",
+          "reasoning": "Implements a 'Boundary-First' greedy strategy. While the score (2.5889) is lower, it explores a specific topological constraint (perimeter-heavy packing) that is common in optimal solutions.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_3_4",
+          "reasoning": "Uses a 'Circle Swapping' meta-heuristic. This is a form of Large Neighborhood Search that can help escape local optima by changing the packing topology entirely.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:23:48.200570"
+    },
+    {
+      "generation_num": 4,
+      "num_trials": 6,
+      "num_successful_trials": 5,
+      "best_trial_id": "trial_4_0",
+      "best_score": 2.6199728454041087,
+      "selected_trial_ids": [
+        "trial_4_0",
+        "trial_4_3",
+        "trial_4_2"
+      ],
+      "selection_reasoning": "We continue to benchmark against the best (trial_1_2) while focusing on the multi-topology grid approach (trial_4_0). We also keep the ring-based boundary strategy and the cluster-swapping heuristic to ensure we don't get stuck in a single topological basin.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_4_0",
+          "reasoning": "Achieved 2.6200, the best of this generation. It explored multiple grid topologies (5x5+1, 4x6+2, etc.), which is the right direction for breaking the current score ceiling.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_4_3",
+          "reasoning": "Successfully implemented a more complex 'Boundary-First' strategy with concentric rings. This provides a very different geometric starting point than the standard grids.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_4_2",
+          "reasoning": "Uses a 'Tightest Cluster' swapping meta-heuristic. This targeted perturbation is a smart way to explore topological changes without completely randomizing the layout.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:24:12.007031"
+    },
+    {
+      "generation_num": 5,
+      "num_trials": 6,
+      "num_successful_trials": 6,
+      "best_trial_id": "trial_5_0",
+      "best_score": 2.62102237232591,
+      "selected_trial_ids": [
+        "trial_5_0",
+        "trial_5_4",
+        "trial_5_1",
+        "trial_5_3"
+      ],
+      "selection_reasoning": "We are maintaining the top performer (trial_1_2) and the best multi-topology refinement (trial_5_0). We are also carrying forward three distinct meta-heuristics: Radius Balancing, Topological Shaking, and Basin Hopping, to maximize our chances of finding a superior packing topology.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_5_0",
+          "reasoning": "The best score of this generation (2.6210). It successfully combined multiple grid topologies with a 'wiggle' strategy, proving that exploring topological variations is key to approaching the 2.6245 benchmark.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_5_4",
+          "reasoning": "Introduced 'Radius Balancing' (sum(radii) + alpha * min(radii)). This is a very promising meta-strategy to push the optimizer out of local minima where one circle is squeezed too small.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_5_1",
+          "reasoning": "Implemented a 'Topological Shake' (moving 3 circles to random locations). Although the score was lower, this stochastic search is essential for breaking out of the 5x5 grid basin.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_5_3",
+          "reasoning": "Used Basin Hopping with SLSQP. This is a standard global optimization technique that, with better step-size tuning, could find the global maximum.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:24:39.133359"
+    },
+    {
+      "generation_num": 6,
+      "num_trials": 6,
+      "num_successful_trials": 5,
+      "best_trial_id": "trial_6_2",
+      "best_score": 2.628069776555644,
+      "selected_trial_ids": [
+        "trial_6_2",
+        "trial_6_3",
+        "trial_6_0",
+        "trial_6_5"
+      ],
+      "selection_reasoning": "We have finally broken the 2.6245 barrier with two different methods: Logarithmic Barrier (trial_6_2) and Topological Shaking (trial_6_3). The next generation will focus on hybridizing these successful techniques with the SOR acceleration from trial_6_0.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_6_2",
+          "reasoning": "Achieved a new all-time high score of 2.6281. The use of a Logarithmic Barrier objective (sum(radii) + epsilon * sum(log(radii))) successfully pushed the packing beyond the previous 2.6245 plateau by preventing circles from shrinking too much during intermediate optimization steps.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_6_3",
+          "reasoning": "Also surpassed the previous best with a score of 2.6254. It used a 'Topological Shake' combined with Basin Hopping, proving that stochastic jumps combined with local refinement can find superior configurations.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_6_0",
+          "reasoning": "Achieved 2.6221 using Successive Over-Relaxation (SOR) for the Voronoi step. This technique accelerates convergence and could be combined with the Logarithmic Barrier for even better results.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_6_5",
+          "reasoning": "Provides a completely different initialization strategy using K-Means centroids. While the score (2.5999) is lower, it offers a non-grid-based topology that might be useful for escaping grid-induced local optima.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T22:25:16.719926"
+    },
+    {
+      "generation_num": 7,
+      "num_trials": 5,
+      "num_successful_trials": 4,
+      "best_trial_id": "trial_7_1",
+      "best_score": 2.6290454041969773,
+      "selected_trial_ids": [
+        "trial_7_1",
+        "trial_7_0",
+        "trial_7_3"
+      ],
+      "selection_reasoning": "We are moving forward with the new leader (2.6290) and the core techniques that enabled it: Probabilistic Shaking and Logarithmic Barriers. We also keep the SOR acceleration and a diverse 'pruning' strategy to ensure we don't overlook non-grid topologies.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_7_1",
+          "reasoning": "New best score of 2.6290. The 'Probabilistic Shake' (swapping vs. moving smallest) combined with the Logarithmic Barrier objective is successfully navigating the high-dimensional search space.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_7_0",
+          "reasoning": "Achieved 2.6255 by combining Successive Over-Relaxation (SOR) with the Logarithmic Barrier. This combination of faster geometric convergence and better objective smoothing has high potential.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_7_3",
+          "reasoning": "Although it failed due to a boundary check error, the 'Dense-to-Relaxed' strategy (starting with 30 circles and pruning to 26) is a classic technique in circle packing that often finds non-obvious optimal topologies.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T22:26:04.336395"
+    },
+    {
+      "generation_num": 8,
+      "num_trials": 5,
+      "num_successful_trials": 5,
+      "best_trial_id": "trial_8_0",
+      "best_score": 2.6323416356725073,
+      "selected_trial_ids": [
+        "trial_8_0",
+        "trial_8_1",
+        "trial_8_4",
+        "trial_8_2"
+      ],
+      "selection_reasoning": "The next generation will prioritize refining the 2.6323 leader (trial_8_0) while attempting to cross-pollinate its successful barrier/polishing techniques with the diverse topological discovery methods found in the pruning and physical simulation trials.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_8_0",
+          "reasoning": "Achieved a significant jump to 2.6323, nearing the benchmark upper bound. The combination of probabilistic shaking, cooling logarithmic barriers, and high-precision final polishing is clearly the most effective strategy found so far.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_8_1",
+          "reasoning": "Explored 'Radius Equalization' and SOR. While the score (2.6163) is lower than the leader, the idea of penalizing radius variance (std(radii)) is a powerful way to force the optimizer to utilize empty corners.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_8_4",
+          "reasoning": "The physical simulation (Elastic Net) approach provides a completely different topological discovery mechanism. It reached 2.6071, which is respectable for a first attempt at this strategy.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_8_2",
+          "reasoning": "Successfully fixed the 'Dense-to-Relaxed' pruning strategy. This method is structurally different from grid-based or stochastic-shake methods and could find the global optimum if combined with the barrier methods of trial_8_0.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T22:27:23.452684"
+    },
+    {
+      "generation_num": 9,
+      "num_trials": 5,
+      "num_successful_trials": 5,
+      "best_trial_id": "trial_9_0",
+      "best_score": 2.635328412488767,
+      "selected_trial_ids": [
+        "trial_9_0",
+        "trial_9_1",
+        "trial_9_4"
+      ],
+      "selection_reasoning": "We have reached 2.6353, nearly hitting the benchmark. The final generation will focus on a 'brute force' refinement of trial_9_0, combining its successful parameters with the local coordinate descent and even more exhaustive search parameters to bridge the final gap to 2.6359.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_9_0",
+          "reasoning": "Achieved a score of 2.6353, which is extremely close to the known upper bound (2.6359). The extended Basin Hopping (250 iterations) and granular Logarithmic Barrier schedule proved highly effective.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_9_1",
+          "reasoning": "The 'Dense-to-Relaxed' pruning combined with the trial_8_0 pipeline reached 2.6297. This confirms that topological diversity is key to reaching the highest scores.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_9_4",
+          "reasoning": "The 'Coordinate Descent' approach reached 2.6217. While not the top score, the logic of local greedy refinement is a valuable secondary optimization phase that could be applied to the 2.6353 solution.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T22:29:47.504260"
+    }
+  ]
+}

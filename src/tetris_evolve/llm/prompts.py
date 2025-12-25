@@ -20,7 +20,7 @@ Pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their ra
 - No two circles may overlap
 - All radii must be non-negative
 
-**Benchmark**: AlphaEvolve achieved sum = 2.635
+**Benchmark**: So far the upper bound is 2.63597770931127
 
 ## Referencing Code from Previous Trials
 
@@ -100,7 +100,7 @@ children = [
 ]
 results = spawn_children_parallel(children)
 for r in results:
-    print(f"Trial {{r['trial_id']}}: valid={{r['metrics'].get('valid')}}, sum={{r['metrics'].get('sum_radii', 0):.4f}}")
+    print(f"Trial {{r['trial_id']}}: valid={{r['metrics'].get('valid')}}, score={{r['metrics'].get('score', 0):.4f}}")
 ```
 
 Mutation example with parent_id and {{{{CODE_TRIAL_X_Y}}}} token:
@@ -127,15 +127,10 @@ Focus on: adding scipy.optimize refinement step.""", "parent_id": "trial_0_3"}},
 results = spawn_children_parallel(children)
 ```
 
-### spawn_child_llm(prompt: str, parent_id: Optional[str] = None) -> dict
-**LEGACY** - Spawn a single child LLM sequentially. Use `spawn_children_parallel` instead.
-- **prompt**: The complete prompt to send to the child LLM.
-- **parent_id**: Optional trial ID to associate as parent.
-- **Returns**: `{{trial_id, code, metrics, reasoning, success, error}}`
-
 ### evaluate_program(code: str) -> dict
 Evaluate code directly using the configured evaluator.
-- **Returns**: `{{valid, sum_radii, target_ratio, combined_score, eval_time, error}}`
+- **Returns**: `{{valid, score, eval_time, error}}`
+  - `score`: Sum of circle radii (higher is better)
 
 ### terminate_evolution(reason: str, best_program: Optional[str] = None) -> dict
 End evolution early and return final results.
@@ -213,8 +208,8 @@ results = spawn_children_parallel(children)
 best_code = None
 best_score = 0
 for r in results:
-    score = r['metrics'].get('sum_radii', 0) if r['success'] else 0
-    print(f"{{r['trial_id']}}: valid={{r['success']}}, sum={{score:.4f}}")
+    score = r['metrics'].get('score', 0) if r['success'] else 0
+    print(f"{{r['trial_id']}}: valid={{r['success']}}, score={{score:.4f}}")
     if r['success'] and score > best_score:
         best_score = score
         best_code = r['code']
@@ -385,13 +380,13 @@ def format_child_mutation_prompt(
 
     Args:
         parent_code: The parent program code
-        parent_score: The parent's sum_radii score
+        parent_score: The parent's score (sum of radii)
         guidance: Optional specific guidance for mutation
 
     Returns:
         Formatted prompt string
     """
-    prompt = f"""Improve this circle packing algorithm. The current version achieves sum_radii = {parent_score:.4f}.
+    prompt = f"""Improve this circle packing algorithm. The current version achieves score = {parent_score:.4f}.
 
 Current code:
 ```python

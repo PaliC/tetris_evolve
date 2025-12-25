@@ -19,8 +19,6 @@ from typing import Any
 
 import numpy as np
 
-# Default target: AlphaEvolve result for n=26
-DEFAULT_TARGET = 2.635
 DEFAULT_N_CIRCLES = 26
 
 
@@ -29,9 +27,7 @@ class PackingResult:
     """Result of evaluating a circle packing program."""
 
     valid: bool
-    sum_radii: float
-    target_ratio: float
-    combined_score: float
+    score: float
     eval_time: float
     error: str | None = None
     centers: np.ndarray | None = None
@@ -225,7 +221,6 @@ with open("{results_path}", "wb") as f:
 
 def evaluate_code(
     code: str,
-    target: float = DEFAULT_TARGET,
     n_circles: int = DEFAULT_N_CIRCLES,
     timeout_seconds: int = 30,
     python_executable: str | None = None,
@@ -239,7 +234,6 @@ def evaluate_code(
 
     Args:
         code: Python code defining the packing function
-        target: Target sum of radii (for computing ratio)
         n_circles: Expected number of circles
         timeout_seconds: Maximum execution time
         python_executable: Path to Python executable to use. If None, uses sys.executable.
@@ -248,9 +242,7 @@ def evaluate_code(
     Returns:
         Dictionary with evaluation metrics:
         - valid: bool - whether the packing is geometrically valid
-        - sum_radii: float - sum of all radii (0 if invalid)
-        - target_ratio: float - sum_radii / target (0 if invalid)
-        - combined_score: float - target_ratio if valid, else 0
+        - score: float - sum of all radii (0 if invalid)
         - eval_time: float - evaluation time in seconds
         - error: Optional[str] - error message if any
     """
@@ -267,9 +259,7 @@ def evaluate_code(
     if error or centers is None or radii is None or reported_sum is None:
         return {
             "valid": False,
-            "sum_radii": 0.0,
-            "target_ratio": 0.0,
-            "combined_score": 0.0,
+            "score": 0.0,
             "eval_time": time.time() - start_time,
             "error": error or "Invalid result from code execution",
         }
@@ -280,28 +270,22 @@ def evaluate_code(
     if not valid:
         return {
             "valid": False,
-            "sum_radii": 0.0,
-            "target_ratio": 0.0,
-            "combined_score": 0.0,
+            "score": 0.0,
             "eval_time": time.time() - start_time,
             "error": validation_error,
         }
 
-    # Compute metrics
-    sum_radii = float(np.sum(radii))
-    target_ratio = sum_radii / target
-    combined_score = target_ratio  # Only valid packings reach here
+    # Compute score (sum of radii)
+    score = float(np.sum(radii))
 
     # Verify reported sum matches computed sum
-    if abs(sum_radii - reported_sum) > 1e-6:
+    if abs(score - reported_sum) > 1e-6:
         # Warning but not an error
         pass
 
     return {
         "valid": True,
-        "sum_radii": sum_radii,
-        "target_ratio": target_ratio,
-        "combined_score": combined_score,
+        "score": score,
         "eval_time": time.time() - start_time,
         "error": None,
     }
@@ -316,7 +300,6 @@ class CirclePackingEvaluator:
 
     def __init__(
         self,
-        target: float = DEFAULT_TARGET,
         n_circles: int = DEFAULT_N_CIRCLES,
         timeout_seconds: int = 30,
         python_executable: str | None = None,
@@ -325,7 +308,6 @@ class CirclePackingEvaluator:
         Initialize the evaluator.
 
         Args:
-            target: Target sum of radii for computing ratio
             n_circles: Number of circles to pack
             timeout_seconds: Maximum time for evaluation
             python_executable: Path to Python executable to use for running child code.
@@ -339,7 +321,6 @@ class CirclePackingEvaluator:
                               Then set python_executable: ".venv-restricted/bin/python"
                               This ensures child code cannot import matplotlib or other packages.
         """
-        self.target = target
         self.n_circles = n_circles
         self.timeout_seconds = timeout_seconds
         self.python_executable = python_executable
@@ -352,11 +333,10 @@ class CirclePackingEvaluator:
             code: Python code defining run_packing() or construct_packing()
 
         Returns:
-            Dictionary with metrics: valid, sum_radii, target_ratio, combined_score, eval_time, error
+            Dictionary with metrics: valid, score, eval_time, error
         """
         return evaluate_code(
             code,
-            target=self.target,
             n_circles=self.n_circles,
             timeout_seconds=self.timeout_seconds,
             python_executable=self.python_executable,
@@ -492,15 +472,13 @@ if __name__ == "__main__":
     print("\n1. Simple Grid Program:")
     result = evaluator.evaluate(SIMPLE_GRID_PROGRAM)
     print(f"   Valid: {result['valid']}")
-    print(f"   Sum of radii: {result['sum_radii']:.4f}")
-    print(f"   Target ratio: {result['target_ratio']:.4f}")
+    print(f"   Score: {result['score']:.4f}")
     print(f"   Time: {result['eval_time']:.3f}s")
 
     print("\n2. Concentric Rings Program:")
     result = evaluator.evaluate(CONCENTRIC_RINGS_PROGRAM)
     print(f"   Valid: {result['valid']}")
-    print(f"   Sum of radii: {result['sum_radii']:.4f}")
-    print(f"   Target ratio: {result['target_ratio']:.4f}")
+    print(f"   Score: {result['score']:.4f}")
     print(f"   Time: {result['eval_time']:.3f}s")
 
     print("\n3. Broken Program:")

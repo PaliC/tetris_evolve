@@ -94,9 +94,7 @@ class TestCirclePackingEvaluator:
         result = evaluator.evaluate(sample_valid_packing_code)
 
         assert result["valid"] is True
-        assert result["sum_radii"] > 0
-        assert result["target_ratio"] > 0
-        assert result["combined_score"] > 0
+        assert result["score"] > 0
         assert result["error"] is None
 
     def test_evaluate_no_function(self, evaluator, sample_no_function_code):
@@ -138,9 +136,7 @@ def run_packing(
         result = evaluator.evaluate(sample_valid_packing_code)
 
         assert "valid" in result
-        assert "sum_radii" in result
-        assert "target_ratio" in result
-        assert "combined_score" in result
+        assert "score" in result
         assert "eval_time" in result
         assert "error" in result
 
@@ -165,33 +161,5 @@ def run_packing():
         """Invalid packings have zero scores."""
         result = evaluator.evaluate(sample_invalid_packing_code)
 
-        assert result["sum_radii"] == 0.0
-        assert result["target_ratio"] == 0.0
-        assert result["combined_score"] == 0.0
+        assert result["score"] == 0.0
 
-    def test_target_ratio_calculation(self, evaluator, sample_valid_packing_code):
-        """Target ratio is sum_radii / target."""
-        result = evaluator.evaluate(sample_valid_packing_code)
-
-        expected_ratio = result["sum_radii"] / 2.635
-        assert abs(result["target_ratio"] - expected_ratio) < 1e-6
-
-    def test_custom_target(self):
-        """Custom target value is used."""
-        evaluator = CirclePackingEvaluator(target=3.0)
-
-        code = """
-import numpy as np
-
-def run_packing():
-    centers = np.array([[0.5, 0.5]])
-    radii = np.array([0.3])
-    return centers, radii, 0.3
-"""
-        result = evaluator.evaluate(code)
-
-        # With different n_circles default, this might fail validation
-        # But the target should be used if it gets that far
-        if result["valid"]:
-            expected_ratio = result["sum_radii"] / 3.0
-            assert abs(result["target_ratio"] - expected_ratio) < 1e-6

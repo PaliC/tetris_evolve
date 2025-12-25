@@ -51,7 +51,6 @@ def e2e_config_dict(temp_dir):
             "evaluator_fn": "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator",
             "evaluator_kwargs": {
                 "n_circles": 26,
-                "target": 2.635,
                 "timeout_seconds": 30,
             },
         },
@@ -89,7 +88,7 @@ class TestSingleTrialRealLLM:
         logger = ExperimentLogger(e2e_config)
         logger.create_experiment_directory()
 
-        evaluator = CirclePackingEvaluator(n_circles=26, target=2.635)
+        evaluator = CirclePackingEvaluator(n_circles=26)
 
         child_llm = LLMClient(
             model=e2e_config.child_llm.model,
@@ -161,7 +160,7 @@ Return the complete code in a single Python code block."""
         print(f"Trial ID: {result['trial_id']}")
         print(f"Success: {result['success']}")
         print(f"Valid: {result['metrics'].get('valid')}")
-        print(f"Sum Radii: {result['metrics'].get('sum_radii', 0):.4f}")
+        print(f"Score: {result['metrics'].get('score', 0):.4f}")
         print(f"Cost: ${summary.total_cost:.6f}")
         print(f"Tokens: {summary.total_input_tokens} in / {summary.total_output_tokens} out")
 

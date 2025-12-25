@@ -24,9 +24,7 @@ def mock_evaluator():
     evaluator = MagicMock()
     evaluator.evaluate.return_value = {
         "valid": True,
-        "sum_radii": 2.0,
-        "target_ratio": 0.76,
-        "combined_score": 0.76,
+        "score": 2.0,
         "eval_time": 0.1,
         "error": None,
     }
@@ -77,12 +75,6 @@ class TestEvolutionAPIBasic:
     def test_get_current_generation(self, evolution_api):
         """Test getting current generation."""
         assert evolution_api._get_current_generation() == 0
-
-    def test_get_cost_remaining(self, evolution_api):
-        """Test getting remaining cost."""
-        remaining = evolution_api._get_cost_remaining()
-        assert remaining > 0
-
 
 class TestSpawnChildLLM:
     """Tests for spawn_child_llm."""
@@ -172,7 +164,7 @@ class TestEvaluateProgram:
         result = evolution_api.evaluate_program("test code")
 
         assert "valid" in result
-        assert "sum_radii" in result
+        assert "score" in result
 
     def test_evaluate_handles_error(self, sample_config, temp_dir):
         """Test that evaluate_program handles errors gracefully."""
@@ -301,9 +293,7 @@ class TestInternalMethods:
             call_count[0] += 1
             return {
                 "valid": True,
-                "sum_radii": score,
-                "target_ratio": score / 2.635,
-                "combined_score": score / 2.635,
+                "score": score,
                 "eval_time": 0.1,
                 "error": None,
             }
@@ -336,16 +326,16 @@ class TestInternalMethods:
         best = api._get_best_trials(n=3)
 
         assert len(best) == 3
-        assert best[0]["metrics"]["sum_radii"] == 2.0
-        assert best[1]["metrics"]["sum_radii"] == 1.8
-        assert best[2]["metrics"]["sum_radii"] == 1.5
+        assert best[0]["metrics"]["score"] == 2.0
+        assert best[1]["metrics"]["score"] == 1.8
+        assert best[2]["metrics"]["score"] == 1.5
 
     def test_get_best_filters_invalid(self, evolution_api, mock_evaluator):
         """Test that _get_best_trials filters invalid trials."""
         # Make evaluator return invalid
         mock_evaluator.evaluate.return_value = {
             "valid": False,
-            "sum_radii": 0,
+            "score": 0,
             "error": "Invalid packing",
         }
 
@@ -394,7 +384,6 @@ class TestGetAPIFunctions:
         # These should NOT be in the API
         assert "get_best_trials" not in funcs
         assert "get_generation_history" not in funcs
-        assert "get_cost_remaining" not in funcs
         assert "get_trial" not in funcs
         assert "get_current_generation" not in funcs
         assert "_advance_generation" not in funcs
@@ -415,7 +404,7 @@ class TestTrialResult:
         trial = TrialResult(
             trial_id="test_0_0",
             code="def run_packing(): pass",
-            metrics={"sum_radii": 1.5},
+            metrics={"score": 1.5},
             prompt="Test prompt",
             response="Test response",
             reasoning="Test reasoning",
@@ -429,7 +418,7 @@ class TestTrialResult:
 
         assert d["trial_id"] == "test_0_0"
         assert d["code"] == "def run_packing(): pass"
-        assert d["metrics"] == {"sum_radii": 1.5}
+        assert d["metrics"] == {"score": 1.5}
         assert d["success"] is True
         assert d["parent_id"] == "parent_0_0"
 
@@ -657,7 +646,6 @@ class TestIntegrationWithRealEvaluator:
         logger.create_experiment_directory()
 
         evaluator = CirclePackingEvaluator(
-            target=2.635,
             n_circles=26,
             timeout_seconds=30,
         )
@@ -681,7 +669,7 @@ class TestIntegrationWithRealEvaluator:
 
         assert result["success"] is True
         assert result["metrics"]["valid"] is True
-        assert result["metrics"]["sum_radii"] > 0
+        assert result["metrics"]["score"] > 0
 
 
 class TestTrialCodeSubstitution:
@@ -855,7 +843,7 @@ class TestParallelSpawnWithTokenSubstitution:
             cost_tracker=cost_tracker,
             logger=logger,
             child_llm_model="test-model",
-            evaluator_kwargs={"n_circles": 26, "target": 2.635, "timeout_seconds": 30},
+            evaluator_kwargs={"n_circles": 26, "timeout_seconds": 30},
         )
 
         api.spawn_child_llm(prompt="Parent trial")

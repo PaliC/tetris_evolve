@@ -180,7 +180,6 @@ class TestLoadEvaluator:
         # Should be a CirclePackingEvaluator instance
         assert hasattr(evaluator, "evaluate")
         assert evaluator.n_circles == 26
-        assert evaluator.target == 2.635
 
     def test_load_evaluator_invalid_format(self):
         """Raise on invalid evaluator_fn format."""
@@ -222,11 +221,10 @@ class TestLoadEvaluator:
         """Load evaluator with custom kwargs."""
         config = EvaluationConfig(
             evaluator_fn="tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator",
-            evaluator_kwargs={"n_circles": 10, "target": 1.5, "timeout_seconds": 5},
+            evaluator_kwargs={"n_circles": 10, "timeout_seconds": 5},
         )
 
         evaluator = load_evaluator(config)
 
         assert evaluator.n_circles == 10
-        assert evaluator.target == 1.5
         assert evaluator.timeout_seconds == 5

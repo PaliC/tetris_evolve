@@ -57,7 +57,7 @@ Circle packing is an ideal test problem because:
 │  │              CIRCLE PACKING EVALUATOR                       │ │
 │  │  - Executes code in isolated subprocess                     │ │
 │  │  - Validates: no overlaps, within unit square               │ │
-│  │  - Returns: sum_radii, target_ratio, validity               │ │
+│  │  - Returns: score, validity                                  │ │
 │  └────────────────────────────────────────────────────────────┘ │
 │                                                                  │
 │  ┌────────────────────────────────────────────────────────────┐ │
@@ -104,9 +104,7 @@ The evaluator returns:
 ```python
 {
     "valid": bool,           # True if packing satisfies all constraints
-    "sum_radii": float,      # Sum of all radii (0 if invalid)
-    "target_ratio": float,   # sum_radii / 2.635 (0 if invalid)
-    "combined_score": float, # target_ratio if valid, else 0
+    "score": float,          # Sum of all radii (0 if invalid)
     "eval_time": float,      # Seconds to evaluate
     "error": Optional[str],  # Error message if any
 }
@@ -174,7 +172,7 @@ End evolution and return final results.
 
 ### get_best_trials(n: int = 5) -> list[dict]
 
-Get top n trials by sum_radii across all generations.
+Get top n trials by score across all generations.
 
 ### get_cost_remaining() -> float
 
@@ -231,7 +229,7 @@ results = []
 for strategy in strategies:
     trial = spawn_child_llm(f"Implement {strategy} for 26 circles in unit square")
     results.append(trial)
-    print(f"{trial['trial_id']}: sum={trial['metrics']['sum_radii']:.4f}")
+    print(f"{trial['trial_id']}: score={trial['metrics']['score']:.4f}")
 
 # Analyze and select
 best = get_best_trials(3)
@@ -251,8 +249,7 @@ for parent in best:
 
 # Check progress
 current_best = get_best_trials(1)[0]
-print(f"Current best: {current_best['metrics']['sum_radii']:.4f}")
-print(f"Target ratio: {current_best['metrics']['target_ratio']:.4f}")
+print(f"Current best: {current_best['metrics']['score']:.4f}")
 
 # Terminate when satisfied or budget low
 if get_cost_remaining() < 2.0:

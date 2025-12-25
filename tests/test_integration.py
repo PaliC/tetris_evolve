@@ -37,7 +37,7 @@ class TestSpawnEvaluateCycle:
     def test_spawn_evaluate_cycle(self, integration_config, temp_dir, sample_valid_packing_code):
         """Test that spawn_child_llm correctly spawns, evaluates, and records a trial."""
         # Set up components
-        evaluator = CirclePackingEvaluator(n_circles=26, target=2.635)
+        evaluator = CirclePackingEvaluator(n_circles=26)
         cost_tracker = CostTracker(integration_config)
         logger = ExperimentLogger(integration_config)
         logger.create_experiment_directory()
@@ -71,7 +71,7 @@ class TestSpawnEvaluateCycle:
 
         # Verify evaluation ran
         assert result["metrics"].get("valid") is True
-        assert result["metrics"].get("sum_radii", 0) > 0
+        assert result["metrics"].get("score", 0) > 0
         assert result["success"] is True
 
         # Verify trial was recorded
@@ -80,7 +80,7 @@ class TestSpawnEvaluateCycle:
 
     def test_spawn_with_invalid_code(self, integration_config, sample_invalid_packing_code):
         """Test that invalid code is correctly evaluated and recorded."""
-        evaluator = CirclePackingEvaluator(n_circles=26, target=2.635)
+        evaluator = CirclePackingEvaluator(n_circles=26)
         cost_tracker = CostTracker(integration_config)
         logger = ExperimentLogger(integration_config)
         logger.create_experiment_directory()
@@ -111,7 +111,7 @@ class TestMultiGenerationFlow:
 
     def test_multi_generation_flow(self, integration_config, temp_dir, sample_valid_packing_code):
         """Test that multiple generations can be advanced correctly."""
-        evaluator = CirclePackingEvaluator(n_circles=26, target=2.635)
+        evaluator = CirclePackingEvaluator(n_circles=26)
         cost_tracker = CostTracker(integration_config)
         logger = ExperimentLogger(integration_config)
         logger.create_experiment_directory()
@@ -176,7 +176,7 @@ class TestMultiGenerationFlow:
         self, integration_config, sample_valid_packing_code
     ):
         """Test that best trials are correctly ranked across generations."""
-        evaluator = CirclePackingEvaluator(n_circles=26, target=2.635)
+        evaluator = CirclePackingEvaluator(n_circles=26)
         cost_tracker = CostTracker(integration_config)
         logger = ExperimentLogger(integration_config)
         logger.create_experiment_directory()
@@ -207,8 +207,8 @@ class TestMultiGenerationFlow:
         # Get best trials
         best = evolution_api._get_best_trials(n=5)
         assert len(best) == 2
-        # Should be sorted by sum_radii descending
-        assert best[0]["metrics"]["sum_radii"] >= best[1]["metrics"]["sum_radii"]
+        # Should be sorted by score descending
+        assert best[0]["metrics"]["score"] >= best[1]["metrics"]["score"]
 
 
 class TestBudgetStopsEvolution:
@@ -505,7 +505,7 @@ class TestEndToEndWithMockLLM:
 
 ```repl
 result = spawn_child_llm("Try a grid-based packing approach")
-print(f"Trial: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
+print(f"Trial: valid={result['metrics'].get('valid')}, score={result['metrics'].get('score', 0):.4f}")
 ```
 """,
                 """```selection
@@ -516,7 +516,7 @@ print(f"Trial: valid={result['metrics'].get('valid')}, sum={result['metrics'].ge
 
 ```repl
 result = spawn_child_llm("Try a hexagonal packing approach")
-print(f"Trial: valid={result['metrics'].get('valid')}, sum={result['metrics'].get('sum_radii', 0):.4f}")
+print(f"Trial: valid={result['metrics'].get('valid')}, score={result['metrics'].get('score', 0):.4f}")
 ```
 """,
                 """```selection
