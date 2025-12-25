@@ -81,7 +81,7 @@ def run_packing():
 
 ## Available Functions
 
-You have access to these 5 functions in the REPL:
+You have access to these 6 functions in the REPL:
 
 ### spawn_children_parallel(children: list[dict], num_workers: Optional[int] = None) -> list[dict]
 **PRIMARY FUNCTION** - Spawn multiple child LLMs in parallel using multiprocessing.
@@ -156,6 +156,71 @@ for trial_id, code in codes.items():
         print(f"--- {{trial_id}} ---")
         print(code[:500])  # Print first 500 chars
 ```
+
+### update_scratchpad(content: str) -> dict
+Update your persistent scratchpad with new content.
+- **content**: New scratchpad content (replaces existing). Max ~4000 chars recommended.
+- **Returns**: `{{success: True, length: int}}`
+
+The scratchpad persists across generations and is shown to you at the start of each
+generation. Use it to track insights, promising approaches, and notes.
+
+Suggested structure:
+```
+### Active Approaches
+- Approach A (from trial_X_Y): description...
+- Approach B (from trial_X_Y): description...
+
+### Key Insights
+- What works: ...
+- What doesn't: ...
+
+### To Try Next
+- Ideas for future generations...
+```
+
+Example:
+```repl
+update_scratchpad("""### Active Approaches
+- Grid-based (trial_0_2): Hexagonal grid shows promise, score 2.45
+- Optimization (trial_0_5): scipy.optimize getting stuck in local minima
+
+### Key Insights
+- Greedy placement order matters significantly
+- Smaller circles should be placed last
+- Boundary effects are significant near edges
+
+### To Try Next
+- Hybrid: grid initialization + local optimization
+- Simulated annealing for escaping local minima
+""")
+
+## Evolution Memory
+
+At the start of each generation, you will see an **Evolution Memory** block containing:
+
+### Lineage Map (auto-generated)
+Shows how trials evolved from their parents, with scores and brief descriptions.
+This is built automatically from the `parent_id` tracking - you don't need to manage it.
+
+Example:
+```
+trial_0_2 (2.4500) [Hexagonal grid approach...]
+    └── trial_1_3 (2.5200) [Improved spacing...]
+        └── trial_2_1 (2.5800) [Added local opt...] ← best
+
+trial_0_5 (2.4100) [Greedy placement...]
+```
+
+### Scratchpad (your notes)
+A persistent notepad that you control with `update_scratchpad(content)`.
+Use it to track:
+- **Active Approaches**: Which lineages are you developing?
+- **Key Insights**: What have you learned works/doesn't work?
+- **To Try Next**: Ideas for future generations
+
+The scratchpad persists across generations and survives context pruning.
+Update it regularly to maintain continuity across the evolution.
 
 ## How the Evolution Works
 

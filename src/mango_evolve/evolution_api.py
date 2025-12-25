@@ -174,6 +174,9 @@ class EvolutionAPI:
         self._terminated = False
         self._termination_reason: str | None = None
 
+        # Scratchpad: persistent notes controlled by Root LLM
+        self.scratchpad: str = ""
+
     @property
     def max_generations(self) -> int:
         """Maximum number of generations (read-only after initialization)."""
@@ -697,7 +700,7 @@ class EvolutionAPI:
 
         # Save experiment
         self.logger.log_cost_tracking(self.cost_tracker.to_dict())
-        self.logger.save_experiment(termination_reason=reason)
+        self.logger.save_experiment(termination_reason=reason, scratchpad=self.scratchpad)
 
         return {
             "terminated": True,
@@ -790,16 +793,135 @@ class EvolutionAPI:
         """Get the current generation number (internal method)."""
         return self.current_generation
 
+    def update_scratchpad(self, content: str) -> dict[str, Any]:
+        """
+        Update the scratchpad with new content.
+
+        The scratchpad persists across generations and is shown to you at the
+        start of each generation. Use it to track insights, promising approaches,
+        and notes for future iterations.
+
+        Suggested structure:
+        - **Active Approaches**: What lineages are you developing?
+        - **Key Insights**: What have you learned works/doesn't work?
+        - **To Try Next**: Ideas for future generations
+
+        Args:
+            content: New scratchpad content (replaces existing content).
+                     Max recommended length: 4000 characters.
+
+        Returns:
+            Dictionary with success status and content length.
+        """
+        max_length = 8000  # Hard limit to prevent context bloat
+        if len(content) > max_length:
+            tqdm.write(
+                f"  ⚠️ Scratchpad truncated from {len(content)} to {max_length} chars"
+            )
+            content = content[:max_length]
+
+        self.scratchpad = content
+        tqdm.write(f"  📝 Scratchpad updated ({len(content)} chars)")
+        return {"success": True, "length": len(content)}
+
+    def _build_lineage_map(self) -> str:
+        """
+        Build a visual lineage map from parent_id relationships.
+
+        Returns a formatted string showing how trials evolved from parents,
+        with scores and annotations.
+        """
+        if not self.all_trials:
+            return "(No trials yet)"
+
+        # Build parent -> children mapping
+        children_map: dict[str | None, list[str]] = {}
+        for trial_id, trial in self.all_trials.items():
+            parent = trial.parent_id
+            if parent not in children_map:
+                children_map[parent] = []
+            children_map[parent].append(trial_id)
+
+        # Find root trials (no parent)
+        roots = children_map.get(None, [])
+
+        # Find the global best trial
+        best_trial_id = None
+        best_score = 0.0
+        for trial in self.all_trials.values():
+            if trial.success:
+                score = trial.metrics.get("score", 0)
+                if score > best_score:
+                    best_score = score
+                    best_trial_id = trial.trial_id
+
+        # Build tree representation
+        lines: list[str] = []
+
+        def format_trial(trial_id: str, indent: str = "", is_last: bool = True) -> None:
+            """Recursively format a trial and its descendants."""
+            trial = self.all_trials.get(trial_id)
+            if not trial:
+                return
+
+            # Format score
+            if trial.success:
+                score = trial.metrics.get("score", 0)
+                score_str = f"{score:.4f}"
+            else:
+                score_str = "INVALID"
+
+            # Mark best trial
+            best_marker = " ← best" if trial_id == best_trial_id else ""
+
+            # Get reasoning snippet (first 40 chars)
+            reasoning_snippet = ""
+            if trial.reasoning:
+                snippet = trial.reasoning[:40].replace("\n", " ").strip()
+                if snippet:
+                    reasoning_snippet = f" [{snippet}...]"
+
+            # Build the line
+            prefix = "└── " if indent else ""
+            lines.append(f"{indent}{prefix}{trial_id} ({score_str}){reasoning_snippet}{best_marker}")
+
+            # Process children
+            trial_children = children_map.get(trial_id, [])
+            # Sort children by generation and trial number
+            trial_children.sort()
+
+            for i, child_id in enumerate(trial_children):
+                is_last_child = i == len(trial_children) - 1
+                child_indent = indent + ("    " if is_last else "│   ")
+                format_trial(child_id, child_indent, is_last_child)
+
+        # Sort roots by score (best first)
+        def get_score(trial_id: str) -> float:
+            trial = self.all_trials.get(trial_id)
+            if trial and trial.success:
+                return trial.metrics.get("score", 0)
+            return 0.0
+
+        roots.sort(key=get_score, reverse=True)
+
+        # Format each root lineage
+        for root_id in roots:
+            format_trial(root_id)
+            lines.append("")  # Empty line between lineages
+
+        return "\n".join(lines).rstrip()
+
     def get_api_functions(self) -> dict[str, Callable]:
         """
         Get a dictionary of API functions to inject into the REPL.
 
-        The 5 core evolution functions are exposed:
+        The 6 core evolution functions are exposed:
         - spawn_child_llm: Generate new programs via child LLM (sequential)
         - spawn_children_parallel: Generate multiple programs in parallel
         - evaluate_program: Evaluate code directly
         - terminate_evolution: End the evolution process
         - get_trial_code: Retrieve code from specific trials on demand
+        - update_scratchpad: Update persistent notes across generations
 
         Note: advance_generation is no longer exposed - it happens automatically.
 
@@ -812,4 +934,5 @@ class EvolutionAPI:
             "evaluate_program": self.evaluate_program,
             "terminate_evolution": self.terminate_evolution,
             "get_trial_code": self.get_trial_code,
+            "update_scratchpad": self.update_scratchpad,
         }

@@ -359,16 +359,17 @@ class TestInternalMethods:
 class TestGetAPIFunctions:
     """Tests for get_api_functions."""
 
-    def test_returns_only_5_functions(self, evolution_api):
-        """Test that only 5 core API functions are returned."""
+    def test_returns_only_6_functions(self, evolution_api):
+        """Test that only 6 core API functions are returned."""
         funcs = evolution_api.get_api_functions()
 
-        assert len(funcs) == 5
+        assert len(funcs) == 6
         assert "spawn_child_llm" in funcs
         assert "spawn_children_parallel" in funcs
         assert "evaluate_program" in funcs
         assert "terminate_evolution" in funcs
         assert "get_trial_code" in funcs
+        assert "update_scratchpad" in funcs
 
     def test_advance_generation_not_exposed(self, evolution_api):
         """Test that advance_generation is not in the public API."""
@@ -868,3 +869,143 @@ class TestParallelSpawnWithTokenSubstitution:
 
         assert parent_code in result
         assert report[0]["success"] is True
+
+
+class TestScratchpad:
+    """Tests for the scratchpad functionality."""
+
+    def test_scratchpad_initially_empty(self, evolution_api):
+        """Test that scratchpad is initially empty."""
+        assert evolution_api.scratchpad == ""
+
+    def test_update_scratchpad(self, evolution_api):
+        """Test updating the scratchpad."""
+        result = evolution_api.update_scratchpad("Test notes")
+
+        assert result["success"] is True
+        assert result["length"] == 10
+        assert evolution_api.scratchpad == "Test notes"
+
+    def test_update_scratchpad_replaces_content(self, evolution_api):
+        """Test that update_scratchpad replaces existing content."""
+        evolution_api.update_scratchpad("First notes")
+        evolution_api.update_scratchpad("Second notes")
+
+        assert evolution_api.scratchpad == "Second notes"
+
+    def test_update_scratchpad_truncates_long_content(self, evolution_api):
+        """Test that very long content is truncated."""
+        long_content = "x" * 10000  # Exceeds 8000 limit
+        result = evolution_api.update_scratchpad(long_content)
+
+        assert result["length"] == 8000
+        assert len(evolution_api.scratchpad) == 8000
+
+
+class TestLineageMap:
+    """Tests for the lineage map builder."""
+
+    def test_empty_lineage_map(self, evolution_api):
+        """Test lineage map with no trials."""
+        result = evolution_api._build_lineage_map()
+        assert result == "(No trials yet)"
+
+    def test_single_trial_lineage(self, sample_config, temp_dir, mock_evaluator):
+        """Test lineage map with a single trial."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        child_llm = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            responses=["```python\ndef run_packing(): pass\n```"],
+        )
+
+        api = EvolutionAPI(
+            evaluator=mock_evaluator,
+            child_llm=child_llm,
+            cost_tracker=cost_tracker,
+            logger=logger,
+        )
+
+        api.spawn_child_llm(prompt="Test trial")
+        lineage = api._build_lineage_map()
+
+        assert "trial_0_0" in lineage
+        assert "2.0000" in lineage  # Score from mock evaluator
+
+    def test_parent_child_lineage(self, sample_config, temp_dir, mock_evaluator):
+        """Test lineage map shows parent-child relationships."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        child_llm = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            responses=[
+                "```python\ndef run_packing(): pass\n```",
+                "```python\ndef run_packing(): pass\n```",
+            ],
+        )
+
+        api = EvolutionAPI(
+            evaluator=mock_evaluator,
+            child_llm=child_llm,
+            cost_tracker=cost_tracker,
+            logger=logger,
+        )
+
+        # Spawn parent
+        api.spawn_child_llm(prompt="Parent trial")
+        # Spawn child with parent_id
+        api.spawn_child_llm(prompt="Child trial", parent_id="trial_0_0")
+
+        lineage = api._build_lineage_map()
+
+        assert "trial_0_0" in lineage
+        assert "trial_0_1" in lineage
+        assert "└──" in lineage  # Tree structure
+
+    def test_best_trial_marked(self, sample_config, temp_dir):
+        """Test that the best trial is marked in lineage map."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        # Create evaluator that returns different scores
+        evaluator = MagicMock()
+        evaluator.evaluate.side_effect = [
+            {"valid": True, "score": 1.0},
+            {"valid": True, "score": 2.5},  # Best
+            {"valid": True, "score": 1.5},
+        ]
+
+        child_llm = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child",
+            responses=["```python\ndef run_packing(): pass\n```"] * 3,
+        )
+
+        api = EvolutionAPI(
+            evaluator=evaluator,
+            child_llm=child_llm,
+            cost_tracker=cost_tracker,
+            logger=logger,
+        )
+
+        for i in range(3):
+            api.spawn_child_llm(prompt=f"Trial {i}")
+
+        lineage = api._build_lineage_map()
+
+        # trial_0_1 should be marked as best
+        assert "trial_0_1" in lineage
+        assert "← best" in lineage

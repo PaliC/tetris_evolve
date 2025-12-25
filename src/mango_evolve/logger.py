@@ -56,6 +56,7 @@ class ExperimentLogger:
             "num_generations": 0,
             "total_trials": 0,
             "best_trial": None,
+            "scratchpad": "",
         }
 
         self._generation_data: list[dict[str, Any]] = []
@@ -257,12 +258,15 @@ class ExperimentLogger:
 
         return cost_path
 
-    def save_experiment(self, termination_reason: str | None = None) -> Path:
+    def save_experiment(
+        self, termination_reason: str | None = None, scratchpad: str = ""
+    ) -> Path:
         """
         Save the full experiment state.
 
         Args:
             termination_reason: Why the experiment ended
+            scratchpad: The Root LLM's scratchpad content
 
         Returns:
             Path to the experiment JSON file
@@ -272,6 +276,7 @@ class ExperimentLogger:
         self._experiment_data["end_time"] = datetime.now().isoformat()
         self._experiment_data["termination_reason"] = termination_reason
         self._experiment_data["generations"] = self._generation_data
+        self._experiment_data["scratchpad"] = scratchpad
 
         experiment_path = self.base_dir / "experiment.json"
         with open(experiment_path, "w") as f:

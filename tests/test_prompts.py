@@ -35,16 +35,29 @@ class TestRootSystemPrompt:
         assert "terminate_evolution" in prompt
         assert "best_program" in prompt
 
-    def test_prompt_documents_only_5_functions(self):
-        """Test that only 5 core functions are documented."""
+    def test_prompt_documents_only_6_functions(self):
+        """Test that only 6 core functions are documented."""
         prompt = get_root_system_prompt()
-        assert "5 functions" in prompt or "these 5" in prompt.lower()
+        assert "6 functions" in prompt or "these 6" in prompt.lower()
 
     def test_prompt_documents_get_trial_code(self):
         """Test that get_trial_code is documented."""
         prompt = get_root_system_prompt()
         assert "get_trial_code" in prompt
         assert "trial_ids" in prompt
+
+    def test_prompt_documents_update_scratchpad(self):
+        """Test that update_scratchpad is documented."""
+        prompt = get_root_system_prompt()
+        assert "update_scratchpad" in prompt
+        assert "scratchpad" in prompt.lower()
+
+    def test_prompt_documents_evolution_memory(self):
+        """Test that Evolution Memory section is documented."""
+        prompt = get_root_system_prompt()
+        assert "Evolution Memory" in prompt
+        assert "Lineage Map" in prompt
+        assert "Scratchpad" in prompt
 
     def test_prompt_does_not_document_internal_functions(self):
         """Test that internal helper functions are not documented."""

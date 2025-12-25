@@ -141,13 +141,17 @@ class RootLLMOrchestrator:
         Returns:
             List of message dicts to start the conversation
         """
+        # Build evolution memory (empty for generation 0, but shows the structure)
+        evolution_memory = self._build_evolution_memory()
+
         # Start with a user message prompting the LLM to begin
         self.messages = [
             {
                 "role": "user",
                 "content": (
                     f"Begin generation 0. Spawn up to {self.evolution_api.max_children_per_generation} children "
-                    "exploring different circle packing strategies."
+                    "exploring different circle packing strategies.\n\n"
+                    f"{evolution_memory}"
                 ),
             }
         ]
@@ -347,6 +351,35 @@ class RootLLMOrchestrator:
         """
         return self.evolution_api.is_terminated
 
+    def _build_evolution_memory(self) -> str:
+        """
+        Build the evolution memory block containing lineage map and scratchpad.
+
+        This is shown to the Root LLM at the start of each generation to provide
+        context about solution lineages and persistent notes.
+
+        Returns:
+            Formatted evolution memory string.
+        """
+        lineage_map = self.evolution_api._build_lineage_map()
+        scratchpad = self.evolution_api.scratchpad
+
+        lines = [
+            "─" * 60,
+            "## Evolution Memory",
+            "",
+            "### Lineage Map (auto-generated from parent_id tracking)",
+            "",
+            lineage_map if lineage_map else "(No trials yet)",
+            "",
+            "### Scratchpad (update with `update_scratchpad(content)`)",
+            "",
+            scratchpad if scratchpad else "(Empty - use update_scratchpad() to add persistent notes)",
+            "",
+            "─" * 60,
+        ]
+        return "\n".join(lines)
+
     def _build_generation_feedback_message(self) -> str:
         """Build a compact feedback message with results from the previous generation.
 
@@ -396,6 +429,15 @@ class RootLLMOrchestrator:
                 error_short = str(trial.error)[:100]
                 lines.append(f"    Error: {error_short}")
             lines.append("")
+
+        # Add evolution memory at the end
+        lines.append("")
+        lines.append(self._build_evolution_memory())
+        lines.append("")
+        lines.append(
+            f"Continue to generation {self.evolution_api.current_generation}. "
+            "Consider updating your scratchpad with insights from the previous generation."
+        )
 
         return "\n".join(lines)
 
@@ -715,7 +757,10 @@ class RootLLMOrchestrator:
 
         # Save experiment
         self.logger.log_cost_tracking(self.cost_tracker.to_dict())
-        self.logger.save_experiment(termination_reason=termination_reason)
+        self.logger.save_experiment(
+            termination_reason=termination_reason,
+            scratchpad=self.evolution_api.scratchpad,
+        )
 
         # Get best trial info
         best_trials = self.evolution_api._get_best_trials(n=1)
