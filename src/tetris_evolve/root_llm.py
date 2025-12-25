@@ -14,7 +14,7 @@ from .config import Config, load_evaluator
 from .cost_tracker import CostTracker
 from .evolution_api import EvolutionAPI
 from .exceptions import BudgetExceededError, GenerationLimitError
-from .llm.client import LLMClient, MockLLMClient
+from .llm.client import LLMClient, MockLLMClient, create_llm_client
 from .llm.prompts import get_root_system_prompt_parts
 from .logger import ExperimentLogger
 from .repl import REPLEnvironment
@@ -79,7 +79,8 @@ class RootLLMOrchestrator:
         if root_llm is not None:
             self.root_llm = root_llm
         else:
-            self.root_llm = LLMClient(
+            self.root_llm = create_llm_client(
+                provider=config.root_llm.provider,
                 model=config.root_llm.model,
                 cost_tracker=self.cost_tracker,
                 llm_type="root",
@@ -88,7 +89,8 @@ class RootLLMOrchestrator:
         if child_llm is not None:
             self.child_llm = child_llm
         else:
-            self.child_llm = LLMClient(
+            self.child_llm = create_llm_client(
+                provider=config.child_llm.provider,
                 model=config.child_llm.model,
                 cost_tracker=self.cost_tracker,
                 llm_type="child",
@@ -109,6 +111,7 @@ class RootLLMOrchestrator:
             max_generations=config.evolution.max_generations,
             max_children_per_generation=config.evolution.max_children_per_generation,
             child_llm_model=config.child_llm.model,
+            child_llm_provider=config.child_llm.provider,
             evaluator_kwargs=evaluator_kwargs,
         )
 

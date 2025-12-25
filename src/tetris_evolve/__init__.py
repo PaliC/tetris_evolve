@@ -26,8 +26,8 @@ from .exceptions import (
     LLMEvolveError,
 )
 from .llm import (
-    ROOT_LLM_SYSTEM_PROMPT_STATIC,
     ROOT_LLM_SYSTEM_PROMPT_DYNAMIC,
+    ROOT_LLM_SYSTEM_PROMPT_STATIC,
     LLMClient,
     LLMResponse,
     MockLLMClient,

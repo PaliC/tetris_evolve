@@ -141,6 +141,7 @@ class EvolutionAPI:
         max_generations: int = 10,
         max_children_per_generation: int = 10,
         child_llm_model: str | None = None,
+        child_llm_provider: str = "anthropic",
         evaluator_kwargs: dict[str, Any] | None = None,
     ):
         """
@@ -154,6 +155,7 @@ class EvolutionAPI:
             max_generations: Maximum number of generations
             max_children_per_generation: Maximum children per generation
             child_llm_model: Model name for child LLM (for parallel spawning)
+            child_llm_provider: Provider name for child LLM ("anthropic" or "openrouter")
             evaluator_kwargs: Kwargs for creating evaluator in worker processes
         """
         self.evaluator = evaluator
@@ -163,6 +165,7 @@ class EvolutionAPI:
         self._max_generations = max_generations  # Read-only after init
         self._max_children_per_generation = max_children_per_generation  # Read-only after init
         self.child_llm_model = child_llm_model
+        self.child_llm_provider = child_llm_provider
         self.evaluator_kwargs = evaluator_kwargs or {}
 
         self.current_generation = 0
@@ -450,7 +453,7 @@ class EvolutionAPI:
 
         # Prepare worker arguments in sorted order (by parent_id) for cache optimization
         # Each worker gets: (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
-        #                    trial_id, generation, experiment_dir, system_prompt)
+        #                    trial_id, generation, experiment_dir, system_prompt, provider)
         worker_args = []
         result_order = []  # Track original indices for result ordering
         for orig_idx, child in indexed_children:
@@ -466,6 +469,7 @@ class EvolutionAPI:
                 self.current_generation,
                 experiment_dir,
                 CHILD_LLM_SYSTEM_PROMPT,  # Cacheable system prompt
+                self.child_llm_provider,  # Provider for child LLM
             ))
             result_order.append(orig_idx)
 

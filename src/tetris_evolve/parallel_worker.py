@@ -3,9 +3,12 @@ Parallel worker for child LLM calls.
 
 This module contains the worker function that runs in a separate process
 to make LLM calls and evaluate the results.
+
+Supports multiple providers (Anthropic and OpenRouter).
 """
 
 import json
+import os
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
@@ -13,6 +16,9 @@ from pathlib import Path
 from typing import Any
 
 import anthropic
+from openai import APIConnectionError as OpenAIAPIConnectionError
+from openai import OpenAI
+from openai import RateLimitError as OpenAIRateLimitError
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -76,7 +82,7 @@ def _write_trial_file(
         json.dump(trial_data, f, indent=2)
 
 
-def _make_llm_call_with_retry(
+def _make_anthropic_call_with_retry(
     client: anthropic.Anthropic,
     model: str,
     prompt: str,
@@ -85,7 +91,7 @@ def _make_llm_call_with_retry(
     system_prompt: str | None = None,
     max_retries: int = 3,
 ) -> anthropic.types.Message:
-    """Make an LLM API call with retry logic and optional caching.
+    """Make an Anthropic API call with retry logic and optional caching.
 
     Args:
         client: Anthropic client instance
@@ -134,12 +140,62 @@ def _make_llm_call_with_retry(
     return _call()
 
 
+def _make_openrouter_call_with_retry(
+    client: OpenAI,
+    model: str,
+    prompt: str,
+    max_tokens: int,
+    temperature: float,
+    system_prompt: str | None = None,
+    max_retries: int = 3,
+):
+    """Make an OpenRouter API call with retry logic.
+
+    Args:
+        client: OpenAI client configured for OpenRouter
+        model: Model name (e.g., "google/gemini-2.0-flash-001")
+        prompt: User prompt
+        max_tokens: Maximum tokens to generate
+        temperature: Sampling temperature
+        system_prompt: Optional system prompt
+        max_retries: Number of retries for transient errors
+
+    Returns:
+        API response
+    """
+
+    @retry(
+        stop=stop_after_attempt(max_retries + 1),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(
+            (OpenAIRateLimitError, OpenAIAPIConnectionError)
+        ),
+        reraise=True,
+    )
+    def _call():
+        messages: list[dict[str, str]] = []
+
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+
+        messages.append({"role": "user", "content": prompt})
+
+        return client.chat.completions.create(
+            model=model,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
+
+    return _call()
+
+
 def child_worker(args: tuple) -> dict[str, Any]:
     """
     Worker function for parallel child LLM calls.
 
     This function runs in a separate process and:
-    1. Creates its own Anthropic client
+    1. Creates an LLM client (Anthropic or OpenRouter based on provider)
     2. Makes the LLM call with optional cached system prompt
     3. Extracts code from the response
     4. Evaluates the code
@@ -148,13 +204,16 @@ def child_worker(args: tuple) -> dict[str, Any]:
 
     Args:
         args: Tuple of (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
-                        trial_id, generation, experiment_dir, system_prompt)
-              system_prompt is optional and defaults to None for backwards compatibility
+                        trial_id, generation, experiment_dir, system_prompt, provider)
+              system_prompt and provider are optional for backwards compatibility
 
     Returns:
         Dictionary with all results needed to record the trial
     """
-    # Handle both old (9 args) and new (10 args) format for backwards compatibility
+    # Handle different arg formats for backwards compatibility
+    # 9 args: original format (no system_prompt, no provider)
+    # 10 args: with system_prompt (no provider)
+    # 11 args: with system_prompt and provider
     if len(args) == 9:
         (
             prompt,
@@ -168,6 +227,21 @@ def child_worker(args: tuple) -> dict[str, Any]:
             experiment_dir,
         ) = args
         system_prompt = None
+        provider = "anthropic"
+    elif len(args) == 10:
+        (
+            prompt,
+            parent_id,
+            model,
+            evaluator_kwargs,
+            max_tokens,
+            temperature,
+            trial_id,
+            generation,
+            experiment_dir,
+            system_prompt,
+        ) = args
+        provider = "anthropic"
     else:
         (
             prompt,
@@ -180,6 +254,7 @@ def child_worker(args: tuple) -> dict[str, Any]:
             generation,
             experiment_dir,
             system_prompt,
+            provider,
         ) = args
 
     call_id = str(uuid.uuid4())
@@ -195,32 +270,61 @@ def child_worker(args: tuple) -> dict[str, Any]:
     cache_read_input_tokens = 0
 
     try:
-        # Create a new Anthropic client for this process
-        client = anthropic.Anthropic()
+        # Make the LLM call based on provider
+        if provider == "openrouter":
+            # Create OpenRouter client (OpenAI SDK with custom base_url)
+            api_key = os.environ.get("OPENROUTER_API_KEY")
+            if not api_key:
+                raise ValueError("OPENROUTER_API_KEY environment variable not set")
 
-        # Make the LLM call with optional system prompt caching
-        response = _make_llm_call_with_retry(
-            client=client,
-            model=model,
-            prompt=prompt,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            system_prompt=system_prompt,
-        )
+            client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=api_key,
+            )
 
-        # Extract content and token counts
-        if response.content:
-            response_text = response.content[0].text
-        input_tokens = response.usage.input_tokens
-        output_tokens = response.usage.output_tokens
+            response = _make_openrouter_call_with_retry(
+                client=client,
+                model=model,
+                prompt=prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system_prompt=system_prompt,
+            )
 
-        # Extract cache statistics
-        cache_creation_input_tokens = getattr(
-            response.usage, "cache_creation_input_tokens", 0
-        ) or 0
-        cache_read_input_tokens = getattr(
-            response.usage, "cache_read_input_tokens", 0
-        ) or 0
+            # Extract content and token counts (OpenAI format)
+            response_text = response.choices[0].message.content or ""
+            input_tokens = response.usage.prompt_tokens if response.usage else 0
+            output_tokens = response.usage.completion_tokens if response.usage else 0
+
+            # OpenRouter doesn't support caching
+            cache_creation_input_tokens = 0
+            cache_read_input_tokens = 0
+        else:
+            # Anthropic provider (default)
+            anthropic_client = anthropic.Anthropic()
+
+            response = _make_anthropic_call_with_retry(
+                client=anthropic_client,
+                model=model,
+                prompt=prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system_prompt=system_prompt,
+            )
+
+            # Extract content and token counts (Anthropic format)
+            if response.content:
+                response_text = response.content[0].text
+            input_tokens = response.usage.input_tokens
+            output_tokens = response.usage.output_tokens
+
+            # Extract cache statistics
+            cache_creation_input_tokens = getattr(
+                response.usage, "cache_creation_input_tokens", 0
+            ) or 0
+            cache_read_input_tokens = getattr(
+                response.usage, "cache_read_input_tokens", 0
+            ) or 0
 
         # Extract code from response
         code = extract_python_code(response_text)

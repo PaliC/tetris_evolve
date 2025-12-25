@@ -1,0 +1,415 @@
+{
+  "experiment_id": "circle_packing_gemini_flash_20251224_183721",
+  "config": {
+    "experiment": {
+      "name": "circle_packing_gemini_flash",
+      "output_dir": "./experiments",
+      "seed": null
+    },
+    "root_llm": {
+      "model": "google/gemini-3-flash-preview",
+      "cost_per_million_input_tokens": 0.5,
+      "cost_per_million_output_tokens": 3.0,
+      "provider": "openrouter",
+      "max_iterations": 30
+    },
+    "child_llm": {
+      "model": "google/gemini-3-flash-preview",
+      "cost_per_million_input_tokens": 0.5,
+      "cost_per_million_output_tokens": 3.0,
+      "provider": "openrouter",
+      "max_iterations": null
+    },
+    "evaluation": {
+      "evaluator_fn": "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+      "evaluator_kwargs": {
+        "n_circles": 26,
+        "target": 2.635,
+        "timeout_seconds": 300
+      }
+    },
+    "evolution": {
+      "max_generations": 10,
+      "max_children_per_generation": 15
+    },
+    "budget": {
+      "max_total_cost": 5.0
+    }
+  },
+  "start_time": "2025-12-24T18:37:21.971314",
+  "end_time": "2025-12-24T18:48:53.734109",
+  "termination_reason": "max_generations_reached",
+  "num_generations": 10,
+  "total_trials": 0,
+  "best_trial": {
+    "trial_id": "trial_4_0",
+    "sum_radii": 2.635895738411598,
+    "generation": 4
+  },
+  "generations": [
+    {
+      "generation_num": 0,
+      "num_trials": 15,
+      "num_successful_trials": 12,
+      "best_trial_id": "trial_0_2",
+      "best_sum_radii": 2.620035255686708,
+      "selected_trial_ids": [
+        "trial_0_2",
+        "trial_0_7",
+        "trial_0_13",
+        "trial_0_14",
+        "trial_0_3"
+      ],
+      "selection_reasoning": "Selected the top performers for immediate gains, along with optimization and physics-based approaches that show high potential for refinement and architectural diversity.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_0_2",
+          "reasoning": "Highest score in generation 0 (2.6200), very close to the benchmark. This approach likely uses a robust optimization or a very well-tuned greedy strategy.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_0_7",
+          "reasoning": "Strong performance (2.5605) using a grid-shifting strategy. This geometric approach is reliable and can be further refined with local search.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_0_13",
+          "reasoning": "Uses a constrained optimization approach with scipy. This is a mathematically sound method that can be improved by better initialization or different solver parameters.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_0_14",
+          "reasoning": "Combines Centroidal Voronoi Tessellation (CVT) with optimization. CVT is excellent for spreading points evenly, and the hybrid nature of this trial is worth exploring.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_0_3",
+          "reasoning": "Although it failed due to a negative radius error, the force-directed/physics simulation strategy is a powerful alternative to standard optimization and deserves a fix.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T18:37:53.432504"
+    },
+    {
+      "generation_num": 1,
+      "num_trials": 15,
+      "num_successful_trials": 14,
+      "best_trial_id": "trial_1_0",
+      "best_sum_radii": 2.6222550856654485,
+      "selected_trial_ids": [
+        "trial_1_0",
+        "trial_1_10",
+        "trial_1_2",
+        "trial_1_7",
+        "trial_1_3"
+      ],
+      "selection_reasoning": "Selected the new top performer, two strong optimization-based trials, a geometric CVT-based trial, and the physics-based trial to maintain a diverse pool of strategies for the next generation.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_1_0",
+          "reasoning": "Highest score so far (2.6223). It successfully improved upon the best Gen 0 trial, demonstrating that local refinement of the current best architecture is working.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_1_10",
+          "reasoning": "Strong performance (2.6044) using a clean constrained optimization formulation. It represents a robust mathematical approach that might reach the benchmark with better hyperparameter tuning.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_1_2",
+          "reasoning": "Good score (2.5976) and likely uses a multi-start or jittered initialization strategy which provides diversity in the starting configurations for the solver.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_1_7",
+          "reasoning": "Achieved 2.5974. This trial likely refined the CVT or boundary-constrained logic, which is a distinct geometric approach from the pure optimization trials.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_1_3",
+          "reasoning": "Although the score is lower (2.1597), it represents the fixed force-directed/physics simulation. This is a highly diverse strategy compared to the others and could potentially jump to a new global optimum if combined with a final optimization step.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T18:38:26.500289"
+    },
+    {
+      "generation_num": 2,
+      "num_trials": 15,
+      "num_successful_trials": 14,
+      "best_trial_id": "trial_2_4",
+      "best_sum_radii": 2.627177664591029,
+      "selected_trial_ids": [
+        "trial_2_4",
+        "trial_2_5",
+        "trial_2_2",
+        "trial_2_3",
+        "trial_2_1"
+      ],
+      "selection_reasoning": "Selected the new top performer (Basin Hopping), a local search polisher, and three diverse initialization strategies (Weighted CVT, Jittered Grid, and Physics-based) to maximize the chance of hitting the 2.635 benchmark.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_2_4",
+          "reasoning": "Highest score achieved so far (2.6272), very close to the benchmark of 2.635. This trial uses Basin Hopping, a powerful global optimization technique that is clearly effective for this problem.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_2_5",
+          "reasoning": "Achieved 2.6159 using a coordinate-wise local search/polishing step. This fine-tuning approach is a great complement to global search methods.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_2_2",
+          "reasoning": "Scored 2.6150 using a Weighted CVT approach. This geometric method provides a different 'topology' of circle centers compared to pure optimization, which is valuable for diversity.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_2_3",
+          "reasoning": "Scored 2.6088 using a jittered grid multi-start. The grid-based initialization remains one of the most reliable ways to find high-quality packings for small N.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_2_1",
+          "reasoning": "Successfully integrated a physics-to-optimization pipeline (2.6067). This hybrid approach has high potential if the physics stage can be tuned to explore more varied configurations.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T18:39:17.062242"
+    },
+    {
+      "generation_num": 3,
+      "num_trials": 15,
+      "num_successful_trials": 15,
+      "best_trial_id": "trial_3_12",
+      "best_sum_radii": 2.6159377660684284,
+      "selected_trial_ids": [
+        "trial_3_12",
+        "trial_3_10",
+        "trial_3_1",
+        "trial_3_11"
+      ],
+      "selection_reasoning": "We are carrying forward the best overall trial (2_4) and the most promising new strategies from Gen 3, including smoothed constraints, boundary framing, and penalty-based relaxation to overcome the performance plateau.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_3_12",
+          "reasoning": "The top performer of Generation 3 (2.6159). It uses a smoothed non-linear programming approach (log-sum-exp) which may help in navigating the complex constraint space more effectively than hard constraints.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_3_10",
+          "reasoning": "Uses a 'frame' strategy (fixing boundary circles). This geometric insight is a different approach to reducing the dimensionality of the optimization problem.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_3_1",
+          "reasoning": "Successfully hybridized Basin Hopping with CVT initialization. While the score (2.6104) is slightly lower than the leader, the structural quality of CVT-based starts is worth further tuning.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_3_11",
+          "reasoning": "Uses a penalty-based relaxation method. Although the current score is lower (2.5243), this technique is often used in high-dimensional packing to escape local optima that trap SLSQP.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T18:40:05.977091"
+    },
+    {
+      "generation_num": 4,
+      "num_trials": 15,
+      "num_successful_trials": 14,
+      "best_trial_id": "trial_4_0",
+      "best_sum_radii": 2.635895738411598,
+      "selected_trial_ids": [
+        "trial_4_0",
+        "trial_4_8",
+        "trial_4_1",
+        "trial_4_13",
+        "trial_4_2"
+      ],
+      "selection_reasoning": "Selected the new benchmark-breaking trial (4_0) along with the most successful global search and constraint-relaxation variants to ensure continued progress beyond the 2.635 mark.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_4_0",
+          "reasoning": "This trial achieved a score of 2.6359, surpassing the AlphaEvolve benchmark of 2.635. It is the new state-of-the-art for this evolution and should be the primary focus for further micro-refinement.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_4_8",
+          "reasoning": "Achieved a very strong score of 2.6297 using an adaptive step Basin Hopping approach. This confirms that global search with adaptive meta-heuristics is highly effective.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_4_1",
+          "reasoning": "Scored 2.6255 by combining Basin Hopping with log-sum-exp constraint smoothing. This hybrid approach has high potential for finding even better basins if the smoothing schedule is optimized further.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_4_13",
+          "reasoning": "Scored 2.6225 using a multi-start grid configuration. It provides a reliable, high-performing alternative to the Basin Hopping family of solutions.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_4_2",
+          "reasoning": "Scored 2.6186 using a penalty-based annealing method. This is a mathematically distinct approach from the hard-constraint SLSQP methods and could be useful if we hit another plateau.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T18:41:21.299863"
+    },
+    {
+      "generation_num": 5,
+      "num_trials": 15,
+      "num_successful_trials": 11,
+      "best_trial_id": "trial_5_3",
+      "best_sum_radii": 2.6339187431167286,
+      "selected_trial_ids": [
+        "trial_5_3",
+        "trial_5_10",
+        "trial_5_12"
+      ],
+      "selection_reasoning": "We are retaining the benchmark-breaking trial 4_0 while incorporating the best refinements from Gen 5, specifically the smoothed constraint annealing and Voronoi-based heuristics, to try and break the 2.636 barrier.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_5_3",
+          "reasoning": "The highest score of Generation 5 (2.6339). It successfully refined the log-sum-exp annealing approach, showing that smoothed constraints are a viable path to high-quality solutions.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_5_10",
+          "reasoning": "Achieved 2.6284 using Voronoi-informed jitters. This geometric heuristic provides a different way to escape local optima compared to random noise or Basin Hopping.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_5_12",
+          "reasoning": "Uses Sequential Linear Programming (SLP). Although the score (2.6000) is lower, the linearization of constraints is a powerful mathematical tool that may find better directions than gradient-based SLSQP in tight packings.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T18:45:58.555706"
+    },
+    {
+      "generation_num": 6,
+      "num_trials": 15,
+      "num_successful_trials": 9,
+      "best_trial_id": "trial_6_13",
+      "best_sum_radii": 2.6155895469205896,
+      "selected_trial_ids": [
+        "trial_6_13",
+        "trial_6_3",
+        "trial_6_12"
+      ],
+      "selection_reasoning": "Generation 6 struggled to improve the top score, with many high-potential refinements resulting in invalid packings. I am selecting the global best (4_0), the best of the current generation (6_13), and the most promising theoretical approaches (log-sum-exp and penalty schedules) to attempt a more controlled refinement in Gen 7.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_6_13",
+          "reasoning": "The highest score of Generation 6 (2.6156). It uses a 'swirl' transformation to break symmetry. While lower than the best, the approach of using non-linear coordinate transformations to escape local optima is worth further exploration.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_6_3",
+          "reasoning": "Achieved 2.6075 using a seeded Basin Hopping approach. It represents the most stable derivative of the 4_0 lineage in this generation.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_6_12",
+          "reasoning": "Uses a penalty method with a variable exponent. Although the score is lower (2.5124), the implementation of a 'cooling schedule' for the penalty power is a robust technique that could be better tuned.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T18:46:36.885714"
+    },
+    {
+      "generation_num": 7,
+      "num_trials": 15,
+      "num_successful_trials": 12,
+      "best_trial_id": "trial_7_4",
+      "best_sum_radii": 2.6245102877829636,
+      "selected_trial_ids": [
+        "trial_7_4",
+        "trial_7_5",
+        "trial_7_13"
+      ],
+      "selection_reasoning": "We are carrying forward the two all-time best trials (4_0 and 5_3) along with the most successful variants from the current generation. The focus remains on high-precision refinement and symmetry-breaking perturbations to exceed the 2.6359 mark.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_7_4",
+          "reasoning": "The top performer of Generation 7 (2.6245). It used a 'swirl' transformation on 4_0 to break symmetry. The fact that it stayed close to the peak suggests this type of structural perturbation is safe and potentially useful.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_7_5",
+          "reasoning": "Scored 2.6241 using an iterative penalty method. This diversity in constraint handling is important to maintain as we approach the final generations.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_7_13",
+          "reasoning": "Achieved 2.6195 using a jittered annealing process. It represents a different search metaheuristic that could be useful for escaping the current 2.635 plateau.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T18:47:18.780907"
+    },
+    {
+      "generation_num": 8,
+      "num_trials": 15,
+      "num_successful_trials": 12,
+      "best_trial_id": "trial_8_2",
+      "best_sum_radii": 2.6262679081324065,
+      "selected_trial_ids": [
+        "trial_8_2",
+        "trial_8_9",
+        "trial_8_12"
+      ],
+      "selection_reasoning": "We are entering the final generations still anchored by trial_4_0. The selection balances the two all-time leaders with the best local-search variant from Gen 8 and two diverse numerical strategies (SQP and Log-Barrier) to try and find a path past the current plateau.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_8_2",
+          "reasoning": "The top performer of Generation 8 (2.6263). It used a coordinate-wise greedy expansion on 4_0. While it didn't beat the parent, it shows that local search can maintain high scores while exploring the neighborhood.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_8_9",
+          "reasoning": "Achieved 2.6159 using an SQP-inspired approach. This provides a different numerical solver perspective that might be useful if SLSQP is hitting a precision wall.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_8_12",
+          "reasoning": "Although the score is low (0.3057), the log-barrier implementation is a sophisticated 'Interior Point' method. With better tuning of the barrier parameter 'mu', it could navigate the feasible region more effectively than active-set methods.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T18:48:06.792055"
+    },
+    {
+      "generation_num": 9,
+      "num_trials": 15,
+      "num_successful_trials": 12,
+      "best_trial_id": "trial_9_0",
+      "best_sum_radii": 2.597908064056415,
+      "selected_trial_ids": [
+        "trial_9_0",
+        "trial_9_7",
+        "trial_9_9"
+      ],
+      "selection_reasoning": "As we enter the final generation, we carry forward the two all-time leaders (4_0 and 5_3) and the most promising variants from Gen 9. The strategy for the final generation will focus on combining these top-tier layouts with extreme numerical precision and hybrid solver techniques.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_9_0",
+          "reasoning": "The best performer of Generation 9 (2.5979). While it didn't beat the global best, it represents the most successful recent attempt at high-precision SLSQP refinement.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_9_7",
+          "reasoning": "Achieved 2.5976 using a targeted small-circle replacement strategy. This approach of modifying the topology by re-inserting the smallest circles is a valuable diversity tactic for the final push.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_9_9",
+          "reasoning": "Uses a Sequential Linear Programming (SLP) approach. Although its current score is lower (2.5838), the linearization technique is a fundamentally different solver logic that might bypass SLSQP's limitations.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T18:48:53.727378"
+    }
+  ]
+}

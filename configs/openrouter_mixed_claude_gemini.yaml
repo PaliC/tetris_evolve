@@ -1,0 +1,37 @@
+# Mixed provider config: Claude for root (better reasoning), Gemini for children (cost savings)
+# Best of both worlds - smart orchestration with cheap exploration
+#
+# Requires: ANTHROPIC_API_KEY and OPENROUTER_API_KEY environment variables
+
+experiment:
+  name: "circle_packing_mixed"
+  output_dir: "./experiments"
+
+# Use Claude Sonnet for root LLM (better at orchestration/strategy)
+root_llm:
+  provider: "anthropic"
+  model: "claude-sonnet-4-5-20250929"
+  cost_per_million_input_tokens: 3.0
+  cost_per_million_output_tokens: 15.0
+  max_iterations: 30
+
+# Use Gemini Flash for children (cheap, fast exploration)
+child_llm:
+  provider: "openrouter"
+  model: "google/gemini-2.0-flash-001"
+  cost_per_million_input_tokens: 0.10
+  cost_per_million_output_tokens: 0.40
+
+evaluation:
+  evaluator_fn: "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    target: 2.635
+    timeout_seconds: 300
+
+evolution:
+  max_generations: 10
+  max_children_per_generation: 20  # Can afford more children with cheap Gemini
+
+budget:
+  max_total_cost: 10.0

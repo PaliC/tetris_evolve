@@ -4,8 +4,8 @@ LLM client and prompt modules for tetris_evolve.
 
 from .client import LLMClient, LLMResponse, MockLLMClient
 from .prompts import (
-    ROOT_LLM_SYSTEM_PROMPT_STATIC,
     ROOT_LLM_SYSTEM_PROMPT_DYNAMIC,
+    ROOT_LLM_SYSTEM_PROMPT_STATIC,
     format_child_mutation_prompt,
     get_root_system_prompt,
 )

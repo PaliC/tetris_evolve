@@ -30,6 +30,7 @@ class LLMConfig:
     model: str
     cost_per_million_input_tokens: float
     cost_per_million_output_tokens: float
+    provider: str = "anthropic"  # "anthropic" or "openrouter"
     max_iterations: int | None = None  # Only used for root LLM
 
 
@@ -130,14 +131,24 @@ def _parse_llm_config(data: dict[str, Any], section: str) -> LLMConfig:
             "model": str,
             "cost_per_million_input_tokens": float,
             "cost_per_million_output_tokens": float,
+            "provider": str,
             "max_iterations": int,
         },
         section,
     )
+    # Validate provider value
+    provider = data.get("provider", "anthropic")
+    valid_providers = {"anthropic", "openrouter"}
+    if provider not in valid_providers:
+        raise ConfigValidationError(
+            f"Invalid provider '{provider}' in section '{section}'. "
+            f"Must be one of: {', '.join(sorted(valid_providers))}"
+        )
     return LLMConfig(
         model=data["model"],
         cost_per_million_input_tokens=float(data["cost_per_million_input_tokens"]),
         cost_per_million_output_tokens=float(data["cost_per_million_output_tokens"]),
+        provider=provider,
         max_iterations=data.get("max_iterations"),
     )
 
