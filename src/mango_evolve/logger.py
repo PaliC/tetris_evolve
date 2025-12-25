@@ -154,6 +154,8 @@ class ExperimentLogger:
         best_trial_id: str | None = None,
         best_score: float = 0.0,
         trial_selections: list[dict[str, Any]] | None = None,
+        scratchpad: str | None = None,
+        lineage_map: str | None = None,
     ) -> Path:
         """
         Log generation summary.
@@ -166,6 +168,8 @@ class ExperimentLogger:
             best_trial_id: ID of best trial this generation
             best_score: Best score achieved (sum of radii)
             trial_selections: List of detailed trial selection data with reasoning
+            scratchpad: Optional scratchpad content at time of generation
+            lineage_map: Optional lineage map at time of generation
 
         Returns:
             Path to the generation summary file
@@ -204,6 +208,25 @@ class ExperimentLogger:
 
         with open(summary_path, "w") as f:
             json.dump(gen_data, f, indent=2)
+
+        # Save scratchpad output if provided
+        if scratchpad is not None or lineage_map is not None:
+            scratchpad_path = gen_dir / "scratchpad.txt"
+            with open(scratchpad_path, "w") as f:
+                f.write("=" * 60 + "\n")
+                f.write(f"SCRATCHPAD OUTPUT FOR GENERATION {generation}\n")
+                f.write("=" * 60 + "\n\n")
+                f.write("This is the scratchpad content that was available to the\n")
+                f.write("Root LLM when producing this generation.\n\n")
+                f.write("-" * 60 + "\n")
+                f.write("LINEAGE MAP\n")
+                f.write("-" * 60 + "\n\n")
+                f.write(lineage_map if lineage_map else "(No lineage yet)\n")
+                f.write("\n")
+                f.write("-" * 60 + "\n")
+                f.write("SCRATCHPAD\n")
+                f.write("-" * 60 + "\n\n")
+                f.write(scratchpad if scratchpad else "(Empty)\n")
 
         return summary_path
 

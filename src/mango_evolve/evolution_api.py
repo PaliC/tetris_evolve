@@ -613,6 +613,8 @@ class EvolutionAPI:
             best_trial_id=gen.best_trial_id,
             best_score=gen.best_score,
             trial_selections=[s.to_dict() for s in gen.trial_selections],
+            scratchpad=self.scratchpad,
+            lineage_map=self._build_lineage_map(),
         )
 
         # Show generation progress
