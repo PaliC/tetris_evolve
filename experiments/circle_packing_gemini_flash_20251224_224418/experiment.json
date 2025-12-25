@@ -1,0 +1,438 @@
+{
+  "experiment_id": "circle_packing_gemini_flash_20251224_224418",
+  "config": {
+    "experiment": {
+      "name": "circle_packing_gemini_flash",
+      "output_dir": "./experiments",
+      "seed": null
+    },
+    "root_llm": {
+      "model": "google/gemini-3-flash-preview",
+      "cost_per_million_input_tokens": 0.5,
+      "cost_per_million_output_tokens": 3.0,
+      "provider": "openrouter",
+      "max_iterations": 30
+    },
+    "child_llm": {
+      "model": "google/gemini-3-flash-preview",
+      "cost_per_million_input_tokens": 0.5,
+      "cost_per_million_output_tokens": 3.0,
+      "provider": "openrouter",
+      "max_iterations": null
+    },
+    "evaluation": {
+      "evaluator_fn": "tetris_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+      "evaluator_kwargs": {
+        "n_circles": 26,
+        "timeout_seconds": 300
+      }
+    },
+    "evolution": {
+      "max_generations": 10,
+      "max_children_per_generation": 15
+    },
+    "budget": {
+      "max_total_cost": 5.0
+    }
+  },
+  "start_time": "2025-12-24T22:44:18.523844",
+  "end_time": "2025-12-24T23:00:58.171036",
+  "termination_reason": "max_generations_reached",
+  "num_generations": 10,
+  "total_trials": 0,
+  "best_trial": {
+    "trial_id": "trial_4_0",
+    "score": 2.6353284124885095,
+    "generation": 4
+  },
+  "generations": [
+    {
+      "generation_num": 0,
+      "num_trials": 15,
+      "num_successful_trials": 13,
+      "best_trial_id": "trial_0_14",
+      "best_score": 2.6081696005614825,
+      "selected_trial_ids": [
+        "trial_0_14",
+        "trial_0_13",
+        "trial_0_4",
+        "trial_0_9",
+        "trial_0_3"
+      ],
+      "selection_reasoning": "Selected the top two performers which use optimization-heavy approaches, along with three diverse strategies (Greedy/Apollonian, Voronoi, and Force-Directed) to ensure we don't converge too early on a single local maximum.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_0_14",
+          "reasoning": "Highest score (2.6082). Uses a target-radius overlap minimization strategy which proved very effective for this objective.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_0_13",
+          "reasoning": "Second highest score (2.5963). Likely uses a robust iterative local optimization or coordinate-descent approach.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_0_4",
+          "reasoning": "Good score (2.5605) using a greedy Apollonian-style filling. This is a distinct geometric strategy from the grid-based optimizers.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_0_9",
+          "reasoning": "Uses Voronoi-based relaxation (Lloyd's). While the score is lower (2.4990), this method is excellent at spreading circles and could be a great starting point for a second-stage optimizer.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_0_3",
+          "reasoning": "Very low score but uses a force-directed approach. If the radius calculation is fixed to be more aggressive, the underlying layout might be superior.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:44:49.355484"
+    },
+    {
+      "generation_num": 1,
+      "num_trials": 15,
+      "num_successful_trials": 12,
+      "best_trial_id": "trial_1_7",
+      "best_score": 2.617265007411443,
+      "selected_trial_ids": [
+        "trial_1_7",
+        "trial_1_13",
+        "trial_1_9",
+        "trial_1_14",
+        "trial_1_11"
+      ],
+      "selection_reasoning": "Selected the top performers which utilize hybrid grid/optimization strategies, along with diverse meta-heuristics (Simulated Annealing, Partitioning, and Evolutionary Sequences) to maintain search diversity.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_1_7",
+          "reasoning": "Highest score (2.6173). Successfully combined hexagonal initialization with the robust local optimization from trial_0_13.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_1_13",
+          "reasoning": "Very strong score (2.6168). Uses a multi-grid initialization strategy which explores the state space effectively before optimizing.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_1_9",
+          "reasoning": "High score (2.6153) using a simulated annealing approach on top of a local optimizer. This meta-heuristic shows great potential for escaping local optima.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_1_14",
+          "reasoning": "Good score (2.6089) using a divide-and-conquer strategy (recursive partitioning). This is a unique structural approach compared to the global optimizers.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_1_11",
+          "reasoning": "Uses an evolutionary strategy on sequences of placements. While the score is slightly lower (2.5935), the method is fundamentally different and could yield breakthroughs if combined with better local search.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T22:45:23.887665"
+    },
+    {
+      "generation_num": 2,
+      "num_trials": 15,
+      "num_successful_trials": 15,
+      "best_trial_id": "trial_2_0",
+      "best_score": 2.6245169139070996,
+      "selected_trial_ids": [
+        "trial_2_0",
+        "trial_2_8",
+        "trial_2_11",
+        "trial_2_3"
+      ],
+      "selection_reasoning": "Selected the top performer for continued refinement, along with three trials that use significantly different strategies (density perturbation, biased Voronoi, and divide-and-conquer) to ensure the search explores diverse topological arrangements.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_2_0",
+          "reasoning": "Highest score (2.6245). This trial successfully refined the previous best by increasing random starts and adding a polishing phase, showing that the current optimization backbone is very strong.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_2_8",
+          "reasoning": "Second highest score (2.6209). Uses a 'spread-and-maximize' density-based perturbation which is a novel way to escape local optima compared to simple jitter.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_2_11",
+          "reasoning": "High score (2.6200) using a biased Voronoi-Grid hybrid. This approach to initialization provides a different topological starting point than the pure hexagonal grids.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_2_3",
+          "reasoning": "Score of 2.6124. This trial uses a divide-and-conquer strategy with boundary refinement. While not the top score, the structural approach is unique and might be necessary to reach the benchmark.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:46:07.383299"
+    },
+    {
+      "generation_num": 3,
+      "num_trials": 15,
+      "num_successful_trials": 12,
+      "best_trial_id": "trial_3_0",
+      "best_score": 2.6282124181020734,
+      "selected_trial_ids": [
+        "trial_3_0",
+        "trial_3_11",
+        "trial_3_2",
+        "trial_3_10"
+      ],
+      "selection_reasoning": "Selected the top two performers (Refined Grid and GA-Grid) along with two diverse high-scoring strategies (Weighted Voronoi and Smallest-Circle Growth) to maximize the chances of breaking the 2.6359 benchmark.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_3_0",
+          "reasoning": "Highest score (2.6282). This trial refined the hexagonal grid search and polishing phase, bringing us significantly closer to the benchmark. It is the strongest candidate for further hyper-parameter tuning.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_3_11",
+          "reasoning": "Second highest score (2.6260). Uses a Genetic Algorithm to evolve grid deformations, providing a more flexible way to find starting topologies than fixed grid sweeps.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_3_2",
+          "reasoning": "High score (2.6225). Successfully hybridized weighted Voronoi (Power Diagrams) with the robust local optimizer, proving that non-grid initializations are competitive.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_3_10",
+          "reasoning": "Score of 2.6178. Uses an iterative 'smallest-circle growth' strategy. This targeted refinement of the 'weakest links' in the packing is a promising meta-heuristic for fine-tuning.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:46:58.223361"
+    },
+    {
+      "generation_num": 4,
+      "num_trials": 15,
+      "num_successful_trials": 13,
+      "best_trial_id": "trial_4_0",
+      "best_score": 2.6353284124885095,
+      "selected_trial_ids": [
+        "trial_4_0",
+        "trial_4_4",
+        "trial_4_10",
+        "trial_4_2",
+        "trial_4_12"
+      ],
+      "selection_reasoning": "The selection focuses on the near-benchmark leader (trial_4_0) and its most successful meta-heuristic variations (Basin Hopping and Pattern Search), while retaining topological diversity through Power Diagrams and Recursive Bisection.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_4_0",
+          "reasoning": "Highest score (2.6353), extremely close to the benchmark of 2.6359. This trial significantly improved the multi-start hexagonal grid approach with a sophisticated polishing phase.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_4_4",
+          "reasoning": "Second highest score (2.6301). Uses a 'Shake-and-Bake' (Basin Hopping) meta-heuristic on top of the best previous configuration, which is effective for escaping local optima.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_4_10",
+          "reasoning": "Strong performance (2.6286) using a gradient-free pattern search. This provides a different optimization trajectory that can find improvements in 'narrow valleys' where SLSQP might struggle.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_4_2",
+          "reasoning": "Solid score (2.6258) using evolved Power Diagrams (weighted Voronoi). This maintains topological diversity compared to the grid-based methods.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_4_12",
+          "reasoning": "Unique approach using recursive bisection and local re-packing. While the score is lower (2.6180), the 'stitching' logic has high potential for solving larger or more complex packing problems.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:50:23.397135"
+    },
+    {
+      "generation_num": 5,
+      "num_trials": 15,
+      "num_successful_trials": 11,
+      "best_trial_id": "trial_5_1",
+      "best_score": 2.629572007444294,
+      "selected_trial_ids": [
+        "trial_5_1",
+        "trial_5_5",
+        "trial_5_2",
+        "trial_5_0"
+      ],
+      "selection_reasoning": "Retained the all-time leader (trial_4_0) while adding the best performers from the current generation. Included diverse strategies like ghost-circle elimination and memetic pattern search, plus a high-potential precision polisher that needs minor bug-fixing.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_5_1",
+          "reasoning": "The highest score of generation 5 (2.6296). It successfully implemented a topological swap mutation within a basin-hopping framework, showing potential to escape local minima.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_5_5",
+          "reasoning": "Achieved 2.6255 using a 'ghost circle' elimination strategy. This is a distinct approach from grid-based methods and could find configurations that are not easily reachable via lattice perturbations.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_5_2",
+          "reasoning": "Uses a memetic algorithm combining pattern search and SLSQP. This hybrid approach provides a different gradient-free exploration mechanism.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_5_0",
+          "reasoning": "Despite the invalid result due to a precision error (negative radius of 10^-19), the logic for ultra-high precision polishing is sound and just needs a 'max(0, r)' or tighter constraint handling to be the best-performing polisher.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:54:21.168554"
+    },
+    {
+      "generation_num": 6,
+      "num_trials": 15,
+      "num_successful_trials": 13,
+      "best_trial_id": "trial_6_8",
+      "best_score": 2.6310935890983136,
+      "selected_trial_ids": [
+        "trial_6_8",
+        "trial_6_3",
+        "trial_6_14",
+        "trial_6_0"
+      ],
+      "selection_reasoning": "We are maintaining the all-time leader (trial_4_0) while incorporating the best new local search (coordinate descent) and global search (Big Crunch) strategies. We also include the fixed high-precision polisher to ensure we can bridge the final gap to the benchmark.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_6_8",
+          "reasoning": "Highest score of this generation (2.6311). It implements an adaptive coordinate descent that allows circles to 'push' neighbors, which is a powerful local search mechanism for dense packings.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_6_3",
+          "reasoning": "Score of 2.6263. Uses a multi-start memetic pattern search. The gradient-free exploration combined with local polishing is a robust alternative to pure SLSQP.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_6_14",
+          "reasoning": "Score of 2.6255. Implements a 'Big Crunch' contraction/repulsion physics-based approach. This is a highly diverse strategy compared to the grid-based methods.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_6_0",
+          "reasoning": "This fixed the precision error from the previous generation. While the score (2.6219) is lower than the leader, the logic for two-stage high-precision polishing (SLSQP then L-BFGS-B) is essential for the final push.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T22:56:41.548181"
+    },
+    {
+      "generation_num": 7,
+      "num_trials": 15,
+      "num_successful_trials": 14,
+      "best_trial_id": "trial_7_0",
+      "best_score": 2.6252468276206793,
+      "selected_trial_ids": [
+        "trial_7_0",
+        "trial_7_1",
+        "trial_7_11",
+        "trial_7_13"
+      ],
+      "selection_reasoning": "We are sticking with the best-performing grid-search base (trial_4_0) while carrying forward the most successful refinements from this generation, specifically the hybrid coordinate descent and the nudge-and-polish meta-heuristic.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_7_0",
+          "reasoning": "Best performer of this generation (2.6252). It successfully integrated the 'pushing' coordinate descent from trial_6_8 with the grid search, though it likely needs more iterations or better initialization to surpass the leader.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_7_1",
+          "reasoning": "Implemented a 'Nudge and Polish' cycle. This is a crucial meta-heuristic for escaping the local optima that currently limit trial_4_0.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_7_11",
+          "reasoning": "Uses a 'Lattice Crossover' GA. This evolves the packing parameters rather than raw coordinates, offering a more structured search space.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_7_13",
+          "reasoning": "Force-directed refinement with hysteresis. Provides a physics-based alternative to gradient descent that can handle dense packings differently.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-24T22:58:17.247224"
+    },
+    {
+      "generation_num": 8,
+      "num_trials": 15,
+      "num_successful_trials": 13,
+      "best_trial_id": "trial_8_2",
+      "best_score": 2.6264918645170274,
+      "selected_trial_ids": [
+        "trial_8_2",
+        "trial_8_13",
+        "trial_8_4",
+        "trial_8_1"
+      ],
+      "selection_reasoning": "We are retaining the best-performing grid-search (trial_4_0) while carrying forward the most successful new exploration strategies: topological basin-hopping, PSO on basin centers, and high-precision SLP/Jacobian refinement.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_8_2",
+          "reasoning": "The top performer of generation 8 (2.6265). It effectively combined basin-hopping with topological perturbations, which is a key strategy for escaping the local minima that trial_4_0 is stuck in.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_8_13",
+          "reasoning": "Successfully implemented a PSO (Particle Swarm Optimization) on basin centers. This provides a collaborative search mechanism that is very different from the individual-based grid searches.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_8_4",
+          "reasoning": "Implemented a high-precision SLP (Successive Linear Programming) solver. While the score (2.6225) is not the highest, the method itself is mathematically superior for reaching the exact boundaries of the feasible region.",
+          "category": "potential"
+        },
+        {
+          "trial_id": "trial_8_1",
+          "reasoning": "Used adaptive coordinate descent with analytical Jacobians. This refinement technique is essential for the final precision push once a good basin is found.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T23:00:16.883185"
+    },
+    {
+      "generation_num": 9,
+      "num_trials": 15,
+      "num_successful_trials": 15,
+      "best_trial_id": "trial_9_2",
+      "best_score": 2.629300583733392,
+      "selected_trial_ids": [
+        "trial_9_2",
+        "trial_9_8",
+        "trial_9_3",
+        "trial_9_10"
+      ],
+      "selection_reasoning": "We are keeping the all-time leader (trial_4_0) and the best new SLP-based refiner (trial_9_2). We also include diverse strategies like multi-scale soft-spheres and PSO-coordinate descent to ensure we explore different topological arrangements in the final generation.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_9_2",
+          "reasoning": "Highest score of this generation (2.6293). It successfully refined the SLP (Successive Linear Programming) approach, which is mathematically the most precise way to handle the hard-contact constraints in circle packing.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_9_8",
+          "reasoning": "Uses a multi-scale 'soft-to-hard' sphere approach. This is a classic physics-based method that can bypass local minima by allowing temporary overlaps during the early stages of optimization.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_9_3",
+          "reasoning": "Successfully combined PSO with coordinate descent. This collaborative search mechanism is excellent for exploring the basin landscape without getting stuck as easily as single-point methods.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_9_10",
+          "reasoning": "Uses the 'trust-constr' method with analytical Jacobians. While the score is lower, this method provides the most stable convergence for highly constrained problems and is worth refining for the final precision push.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-24T23:00:58.163750"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "generation_num": 8,
+  "num_trials": 15,
+  "num_successful_trials": 13,
+  "best_trial_id": "trial_8_2",
+  "best_score": 2.6264918645170274,
+  "selected_trial_ids": [
+    "trial_8_2",
+    "trial_8_13",
+    "trial_8_4",
+    "trial_8_1"
+  ],
+  "selection_reasoning": "We are retaining the best-performing grid-search (trial_4_0) while carrying forward the most successful new exploration strategies: topological basin-hopping, PSO on basin centers, and high-precision SLP/Jacobian refinement.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_8_2",
+      "reasoning": "The top performer of generation 8 (2.6265). It effectively combined basin-hopping with topological perturbations, which is a key strategy for escaping the local minima that trial_4_0 is stuck in.",
+      "category": "performance"
+    },
+    {
+      "trial_id": "trial_8_13",
+      "reasoning": "Successfully implemented a PSO (Particle Swarm Optimization) on basin centers. This provides a collaborative search mechanism that is very different from the individual-based grid searches.",
+      "category": "diversity"
+    },
+    {
+      "trial_id": "trial_8_4",
+      "reasoning": "Implemented a high-precision SLP (Successive Linear Programming) solver. While the score (2.6225) is not the highest, the method itself is mathematically superior for reaching the exact boundaries of the feasible region.",
+      "category": "potential"
+    },
+    {
+      "trial_id": "trial_8_1",
+      "reasoning": "Used adaptive coordinate descent with analytical Jacobians. This refinement technique is essential for the final precision push once a good basin is found.",
+      "category": "potential"
+    }
+  ],
+  "timestamp": "2025-12-24T23:00:16.883185"
+}

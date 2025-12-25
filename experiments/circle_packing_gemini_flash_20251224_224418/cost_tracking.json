@@ -1,0 +1,1709 @@
+{
+  "total_cost": 0.9650974999999999,
+  "max_budget": 5.0,
+  "cache_savings": 0.0,
+  "total_cache_creation_tokens": 0,
+  "total_cache_read_tokens": 0,
+  "usage_log": [
+    {
+      "input_tokens": 2615,
+      "output_tokens": 1648,
+      "cost": 0.0062515,
+      "timestamp": "2025-12-24T22:44:28.863608",
+      "llm_type": "root",
+      "call_id": "28df1ba2-5c54-42b8-9e6e-e3d7eb5dbdaa",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 472,
+      "output_tokens": 989,
+      "cost": 0.003203,
+      "timestamp": "2025-12-24T22:44:46.348621",
+      "llm_type": "child",
+      "call_id": "ad52423e-59bc-4348-bb4d-7d8f0dab4fce",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 458,
+      "output_tokens": 1311,
+      "cost": 0.004162,
+      "timestamp": "2025-12-24T22:44:46.348809",
+      "llm_type": "child",
+      "call_id": "bdae686b-3b0f-4760-9097-11b50cf18f37",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 507,
+      "output_tokens": 1079,
+      "cost": 0.0034905,
+      "timestamp": "2025-12-24T22:44:46.348823",
+      "llm_type": "child",
+      "call_id": "c9d62ed8-5b9f-4652-bb3a-1758fa2dbd08",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 438,
+      "output_tokens": 1060,
+      "cost": 0.003399,
+      "timestamp": "2025-12-24T22:44:46.348831",
+      "llm_type": "child",
+      "call_id": "a07057d2-99a5-4e20-b88d-20015198f983",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 434,
+      "output_tokens": 1149,
+      "cost": 0.003664,
+      "timestamp": "2025-12-24T22:44:46.348838",
+      "llm_type": "child",
+      "call_id": "6d57228b-7914-4758-a29f-b02adcffb5ee",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 454,
+      "output_tokens": 1814,
+      "cost": 0.0056689999999999996,
+      "timestamp": "2025-12-24T22:44:46.348849",
+      "llm_type": "child",
+      "call_id": "c8205d7f-5852-4e81-b400-7943c78f3f34",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 435,
+      "output_tokens": 957,
+      "cost": 0.0030885,
+      "timestamp": "2025-12-24T22:44:46.348860",
+      "llm_type": "child",
+      "call_id": "3b9edad5-6aca-4343-a789-b5f3acc6e211",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 437,
+      "output_tokens": 1152,
+      "cost": 0.0036745,
+      "timestamp": "2025-12-24T22:44:46.348868",
+      "llm_type": "child",
+      "call_id": "434b438b-9ccf-4ff0-bfe3-5f1717300a0d",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 459,
+      "output_tokens": 1130,
+      "cost": 0.0036195000000000003,
+      "timestamp": "2025-12-24T22:44:46.348873",
+      "llm_type": "child",
+      "call_id": "a0a441c2-76a2-4d9b-b359-39c8c8adad86",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 457,
+      "output_tokens": 864,
+      "cost": 0.0028205,
+      "timestamp": "2025-12-24T22:44:46.348878",
+      "llm_type": "child",
+      "call_id": "0015c767-2909-4167-bab1-8c6128a7dbef",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 441,
+      "output_tokens": 1319,
+      "cost": 0.004177500000000001,
+      "timestamp": "2025-12-24T22:44:46.348887",
+      "llm_type": "child",
+      "call_id": "6a8733bf-4ed5-410e-8c95-bc7314e9b2ad",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 432,
+      "output_tokens": 1014,
+      "cost": 0.003258,
+      "timestamp": "2025-12-24T22:44:46.348893",
+      "llm_type": "child",
+      "call_id": "7851b59b-7174-4105-9f1e-f3996153a8a7",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 444,
+      "output_tokens": 1001,
+      "cost": 0.003225,
+      "timestamp": "2025-12-24T22:44:46.348897",
+      "llm_type": "child",
+      "call_id": "d6da9ed2-e604-49ef-8192-1e77cc0f64d4",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 450,
+      "output_tokens": 1253,
+      "cost": 0.0039840000000000006,
+      "timestamp": "2025-12-24T22:44:46.348902",
+      "llm_type": "child",
+      "call_id": "5cf9c75e-96e0-4bbe-a7ff-d289759b6313",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 441,
+      "output_tokens": 1266,
+      "cost": 0.0040185,
+      "timestamp": "2025-12-24T22:44:46.348910",
+      "llm_type": "child",
+      "call_id": "a7a73fb4-9115-4b5b-afdd-1eb5cfac6ff2",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 5422,
+      "output_tokens": 409,
+      "cost": 0.003938,
+      "timestamp": "2025-12-24T22:44:49.354858",
+      "llm_type": "root",
+      "call_id": "8254cb76-1448-49b4-b331-d67f9146912b",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 6907,
+      "output_tokens": 1760,
+      "cost": 0.0087335,
+      "timestamp": "2025-12-24T22:44:59.807703",
+      "llm_type": "root",
+      "call_id": "e537d0c5-5b81-4fca-bdc6-d7e7b5a0fd70",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1673,
+      "output_tokens": 1215,
+      "cost": 0.0044815,
+      "timestamp": "2025-12-24T22:45:20.415367",
+      "llm_type": "child",
+      "call_id": "a00989c5-b055-4877-a063-e07803225302",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1670,
+      "output_tokens": 1336,
+      "cost": 0.004843,
+      "timestamp": "2025-12-24T22:45:20.415466",
+      "llm_type": "child",
+      "call_id": "29c5963a-fcfb-4100-bab7-bb23783b348a",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1649,
+      "output_tokens": 1169,
+      "cost": 0.0043315,
+      "timestamp": "2025-12-24T22:45:20.415478",
+      "llm_type": "child",
+      "call_id": "e79f1a06-dbf0-407d-a6f8-84e6fc6a541d",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1684,
+      "output_tokens": 1271,
+      "cost": 0.004655,
+      "timestamp": "2025-12-24T22:45:20.415485",
+      "llm_type": "child",
+      "call_id": "58ffa4f7-cb5e-427a-9d7c-199d923234f3",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1607,
+      "output_tokens": 1382,
+      "cost": 0.004949500000000001,
+      "timestamp": "2025-12-24T22:45:20.415501",
+      "llm_type": "child",
+      "call_id": "77ceac78-e8b1-40c5-aeba-fc99d923f121",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1556,
+      "output_tokens": 1249,
+      "cost": 0.0045249999999999995,
+      "timestamp": "2025-12-24T22:45:20.415508",
+      "llm_type": "child",
+      "call_id": "afca26b8-ea3b-494b-8a66-448be5ad687b",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1548,
+      "output_tokens": 1179,
+      "cost": 0.004311000000000001,
+      "timestamp": "2025-12-24T22:45:20.415517",
+      "llm_type": "child",
+      "call_id": "127f16a3-35f7-42b6-ab7f-eb189399742f",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1558,
+      "output_tokens": 1257,
+      "cost": 0.00455,
+      "timestamp": "2025-12-24T22:45:20.415526",
+      "llm_type": "child",
+      "call_id": "d368d482-c505-4ca1-8b71-c20acb120636",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1558,
+      "output_tokens": 1102,
+      "cost": 0.004085,
+      "timestamp": "2025-12-24T22:45:20.415531",
+      "llm_type": "child",
+      "call_id": "ee6dd743-5a8b-410c-8244-150b87c23391",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1548,
+      "output_tokens": 1239,
+      "cost": 0.004491,
+      "timestamp": "2025-12-24T22:45:20.415539",
+      "llm_type": "child",
+      "call_id": "66627ac7-bc3b-43e6-9569-ca9c381955e2",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1466,
+      "output_tokens": 1160,
+      "cost": 0.004213,
+      "timestamp": "2025-12-24T22:45:20.415545",
+      "llm_type": "child",
+      "call_id": "ceda6ba2-6098-406c-a207-233d61ca9301",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1477,
+      "output_tokens": 1268,
+      "cost": 0.0045425,
+      "timestamp": "2025-12-24T22:45:20.415550",
+      "llm_type": "child",
+      "call_id": "b4173ea8-2fbf-46e7-a7e5-977150d38734",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1436,
+      "output_tokens": 1189,
+      "cost": 0.004285000000000001,
+      "timestamp": "2025-12-24T22:45:20.415558",
+      "llm_type": "child",
+      "call_id": "ea08c1ab-ab72-454c-bdd3-2b4f2eb1df07",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2322,
+      "output_tokens": 1221,
+      "cost": 0.004824,
+      "timestamp": "2025-12-24T22:45:20.415564",
+      "llm_type": "child",
+      "call_id": "026c19be-5981-47dd-a1fd-44509f94ae66",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1166,
+      "output_tokens": 1166,
+      "cost": 0.004081,
+      "timestamp": "2025-12-24T22:45:20.415569",
+      "llm_type": "child",
+      "call_id": "43527a12-3c59-4ed3-8aa4-77256c828fa8",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 9417,
+      "output_tokens": 402,
+      "cost": 0.0059145,
+      "timestamp": "2025-12-24T22:45:23.885556",
+      "llm_type": "root",
+      "call_id": "a3b88526-9872-4240-aeab-4f2910cbba2f",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 10521,
+      "output_tokens": 1918,
+      "cost": 0.0110145,
+      "timestamp": "2025-12-24T22:45:36.900275",
+      "llm_type": "root",
+      "call_id": "6554e2f9-b300-4cf7-b2ed-1336b0ed8854",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1839,
+      "output_tokens": 1419,
+      "cost": 0.0051765000000000005,
+      "timestamp": "2025-12-24T22:46:04.106460",
+      "llm_type": "child",
+      "call_id": "b337d639-3612-4152-8b91-0e311c3b9628",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1807,
+      "output_tokens": 1190,
+      "cost": 0.0044735,
+      "timestamp": "2025-12-24T22:46:04.106563",
+      "llm_type": "child",
+      "call_id": "15d48e47-7468-4a75-8dd6-7824d6d95e45",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2774,
+      "output_tokens": 1116,
+      "cost": 0.0047350000000000005,
+      "timestamp": "2025-12-24T22:46:04.106573",
+      "llm_type": "child",
+      "call_id": "246c17f7-0350-47ff-bf7f-f784423cbe65",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1694,
+      "output_tokens": 1185,
+      "cost": 0.004402,
+      "timestamp": "2025-12-24T22:46:04.106579",
+      "llm_type": "child",
+      "call_id": "a7b522a7-c3d3-4a65-b172-0921747528c1",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 459,
+      "output_tokens": 1011,
+      "cost": 0.0032625,
+      "timestamp": "2025-12-24T22:46:04.106586",
+      "llm_type": "child",
+      "call_id": "54455e22-1332-47dd-b7bc-9e1d673ab37d",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1663,
+      "output_tokens": 1329,
+      "cost": 0.0048185,
+      "timestamp": "2025-12-24T22:46:04.106591",
+      "llm_type": "child",
+      "call_id": "7faa82c4-639b-4e8b-9ce6-e1d23de3f614",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1705,
+      "output_tokens": 1239,
+      "cost": 0.004569500000000001,
+      "timestamp": "2025-12-24T22:46:04.106602",
+      "llm_type": "child",
+      "call_id": "0662c364-c517-434e-a0d8-bb76f9ea1cf2",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1686,
+      "output_tokens": 1458,
+      "cost": 0.005217,
+      "timestamp": "2025-12-24T22:46:04.106607",
+      "llm_type": "child",
+      "call_id": "e9e52d53-3b31-494d-9a26-6b3e6e89329f",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1618,
+      "output_tokens": 1240,
+      "cost": 0.004529,
+      "timestamp": "2025-12-24T22:46:04.106612",
+      "llm_type": "child",
+      "call_id": "413945bf-63c7-46f7-ae97-1a394c18f8b3",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1610,
+      "output_tokens": 1340,
+      "cost": 0.004825,
+      "timestamp": "2025-12-24T22:46:04.106618",
+      "llm_type": "child",
+      "call_id": "b0b0abca-869d-4067-b427-1adc01b8cf51",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1599,
+      "output_tokens": 1287,
+      "cost": 0.004660500000000001,
+      "timestamp": "2025-12-24T22:46:04.106623",
+      "llm_type": "child",
+      "call_id": "5981f1b0-4b70-490a-aa92-18609da92d02",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1591,
+      "output_tokens": 1065,
+      "cost": 0.0039905,
+      "timestamp": "2025-12-24T22:46:04.106628",
+      "llm_type": "child",
+      "call_id": "46d93a38-ce35-475f-a958-b1cecf7d0c34",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1611,
+      "output_tokens": 1289,
+      "cost": 0.0046725000000000004,
+      "timestamp": "2025-12-24T22:46:04.106633",
+      "llm_type": "child",
+      "call_id": "738e4f45-4971-4115-b2fb-2797bb13fefe",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1718,
+      "output_tokens": 1683,
+      "cost": 0.005908,
+      "timestamp": "2025-12-24T22:46:04.106640",
+      "llm_type": "child",
+      "call_id": "f9a58113-94ba-43d7-9150-3b6674e674d5",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1675,
+      "output_tokens": 1426,
+      "cost": 0.005115499999999999,
+      "timestamp": "2025-12-24T22:46:04.106644",
+      "llm_type": "child",
+      "call_id": "4f4eb61b-34c4-4c5d-9d7e-8fef587ac603",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 13088,
+      "output_tokens": 364,
+      "cost": 0.0076359999999999996,
+      "timestamp": "2025-12-24T22:46:07.380878",
+      "llm_type": "root",
+      "call_id": "77cfcf30-f0c5-493b-8d86-751afffaa129",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 12486,
+      "output_tokens": 1869,
+      "cost": 0.01185,
+      "timestamp": "2025-12-24T22:46:20.019626",
+      "llm_type": "root",
+      "call_id": "923ee477-27b1-4917-8ba8-25df920212b8",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1960,
+      "output_tokens": 1667,
+      "cost": 0.005981,
+      "timestamp": "2025-12-24T22:46:54.849361",
+      "llm_type": "child",
+      "call_id": "99d9e52d-a682-46b3-bb8f-cae562b7f0ae",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1898,
+      "output_tokens": 1495,
+      "cost": 0.0054340000000000005,
+      "timestamp": "2025-12-24T22:46:54.849490",
+      "llm_type": "child",
+      "call_id": "ad781fe9-9fff-431d-bd4d-61bf28d7fa9d",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1895,
+      "output_tokens": 1245,
+      "cost": 0.0046825,
+      "timestamp": "2025-12-24T22:46:54.849509",
+      "llm_type": "child",
+      "call_id": "c8706499-8dbc-4240-a1b4-9909f934abea",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1890,
+      "output_tokens": 1272,
+      "cost": 0.004761,
+      "timestamp": "2025-12-24T22:46:54.849517",
+      "llm_type": "child",
+      "call_id": "b265b41c-2b42-46d5-a301-33c990f3a564",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1888,
+      "output_tokens": 1222,
+      "cost": 0.0046099999999999995,
+      "timestamp": "2025-12-24T22:46:54.849526",
+      "llm_type": "child",
+      "call_id": "2daf8565-f5b7-4abf-bdbc-9f37d190a01b",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1878,
+      "output_tokens": 1072,
+      "cost": 0.004155,
+      "timestamp": "2025-12-24T22:46:54.849537",
+      "llm_type": "child",
+      "call_id": "afc0cb3d-b3f5-4973-8f9e-7b72f179826c",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1890,
+      "output_tokens": 1349,
+      "cost": 0.004992,
+      "timestamp": "2025-12-24T22:46:54.849544",
+      "llm_type": "child",
+      "call_id": "759b5e29-cfa9-4cb5-9deb-6f575a68e2fb",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1883,
+      "output_tokens": 1456,
+      "cost": 0.0053095,
+      "timestamp": "2025-12-24T22:46:54.849551",
+      "llm_type": "child",
+      "call_id": "df077d51-d7bf-4c11-aa0e-43ba0e6a040d",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1886,
+      "output_tokens": 1723,
+      "cost": 0.006112,
+      "timestamp": "2025-12-24T22:46:54.849562",
+      "llm_type": "child",
+      "call_id": "ee545076-e5e4-4c9b-969f-fb84f05f246d",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1884,
+      "output_tokens": 1265,
+      "cost": 0.004737,
+      "timestamp": "2025-12-24T22:46:54.849568",
+      "llm_type": "child",
+      "call_id": "f68f7c24-1cc0-49ab-85ff-ff98aa0b9025",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3084,
+      "output_tokens": 1334,
+      "cost": 0.005544,
+      "timestamp": "2025-12-24T22:46:54.849576",
+      "llm_type": "child",
+      "call_id": "6d4171fd-fa72-4104-9f2a-28139b8ca2dd",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1677,
+      "output_tokens": 1376,
+      "cost": 0.0049664999999999996,
+      "timestamp": "2025-12-24T22:46:54.849582",
+      "llm_type": "child",
+      "call_id": "f4d2edb6-a298-4bdc-b46f-6fa8238b0522",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1660,
+      "output_tokens": 1376,
+      "cost": 0.004958,
+      "timestamp": "2025-12-24T22:46:54.849589",
+      "llm_type": "child",
+      "call_id": "f0fa0528-15db-4a9a-9fdc-3e3516cbbeef",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3339,
+      "output_tokens": 1519,
+      "cost": 0.0062265,
+      "timestamp": "2025-12-24T22:46:54.849598",
+      "llm_type": "child",
+      "call_id": "4a949597-a26a-47c3-85ab-fb538196f755",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1835,
+      "output_tokens": 1376,
+      "cost": 0.0050455,
+      "timestamp": "2025-12-24T22:46:54.849603",
+      "llm_type": "child",
+      "call_id": "85302344-0ab5-42e4-9dd7-267a5da8db2d",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 15126,
+      "output_tokens": 372,
+      "cost": 0.008679,
+      "timestamp": "2025-12-24T22:46:58.221778",
+      "llm_type": "root",
+      "call_id": "3142e3e5-eb72-4b18-aa93-18b12c9c5dcc",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 11823,
+      "output_tokens": 2062,
+      "cost": 0.0120975,
+      "timestamp": "2025-12-24T22:47:11.668637",
+      "llm_type": "root",
+      "call_id": "1b81b1a8-2557-4471-9a70-0e1a2ede7641",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2179,
+      "output_tokens": 1531,
+      "cost": 0.0056825,
+      "timestamp": "2025-12-24T22:50:18.474084",
+      "llm_type": "child",
+      "call_id": "1d4b3750-5b25-4a11-8b7e-ac4e3f2a4336",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2139,
+      "output_tokens": 1430,
+      "cost": 0.0053595000000000005,
+      "timestamp": "2025-12-24T22:50:18.474280",
+      "llm_type": "child",
+      "call_id": "c7b0d2f9-09eb-41e5-90ed-056c1cec2d06",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2123,
+      "output_tokens": 1127,
+      "cost": 0.0044425,
+      "timestamp": "2025-12-24T22:50:18.474298",
+      "llm_type": "child",
+      "call_id": "bb340cad-a664-4d02-a3bc-b944588f3d1e",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2099,
+      "output_tokens": 1366,
+      "cost": 0.0051475,
+      "timestamp": "2025-12-24T22:50:18.474312",
+      "llm_type": "child",
+      "call_id": "60dde3cf-ba38-4171-a2ae-c8d1e6d428c0",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2093,
+      "output_tokens": 1405,
+      "cost": 0.0052615,
+      "timestamp": "2025-12-24T22:50:18.474323",
+      "llm_type": "child",
+      "call_id": "27f757db-d20e-4461-ac66-10f4171c4978",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2097,
+      "output_tokens": 1135,
+      "cost": 0.0044535,
+      "timestamp": "2025-12-24T22:50:18.474336",
+      "llm_type": "child",
+      "call_id": "ab57c9ad-ce3b-4327-80b4-48594c0157f3",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2096,
+      "output_tokens": 1670,
+      "cost": 0.006057999999999999,
+      "timestamp": "2025-12-24T22:50:18.474344",
+      "llm_type": "child",
+      "call_id": "e40ad497-38d5-4638-ae47-07a5618c3ca2",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2111,
+      "output_tokens": 1458,
+      "cost": 0.0054295,
+      "timestamp": "2025-12-24T22:50:18.474355",
+      "llm_type": "child",
+      "call_id": "9353d6db-0345-4c8a-a6d0-bf8195757554",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2073,
+      "output_tokens": 1098,
+      "cost": 0.0043305,
+      "timestamp": "2025-12-24T22:50:18.474364",
+      "llm_type": "child",
+      "call_id": "1c950223-2935-4063-983e-b328873ba04c",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2087,
+      "output_tokens": 1273,
+      "cost": 0.0048625,
+      "timestamp": "2025-12-24T22:50:18.474372",
+      "llm_type": "child",
+      "call_id": "7f3c57d3-cbb1-4136-a9c8-0698ddc43999",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3598,
+      "output_tokens": 1730,
+      "cost": 0.006989,
+      "timestamp": "2025-12-24T22:50:18.474379",
+      "llm_type": "child",
+      "call_id": "f5b96d77-ec82-472d-a78b-b6b36cd16f29",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3487,
+      "output_tokens": 1541,
+      "cost": 0.006366500000000001,
+      "timestamp": "2025-12-24T22:50:18.474387",
+      "llm_type": "child",
+      "call_id": "17451e26-0d7d-4f56-88e6-96fef1426b76",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1802,
+      "output_tokens": 1129,
+      "cost": 0.004288,
+      "timestamp": "2025-12-24T22:50:18.474392",
+      "llm_type": "child",
+      "call_id": "29dd7679-9416-453c-9a2b-0b4119a140ae",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3465,
+      "output_tokens": 1401,
+      "cost": 0.0059355,
+      "timestamp": "2025-12-24T22:50:18.474402",
+      "llm_type": "child",
+      "call_id": "e7d0ed21-1232-45d9-9794-cb9c12fecb50",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3482,
+      "output_tokens": 1169,
+      "cost": 0.005248,
+      "timestamp": "2025-12-24T22:50:18.474411",
+      "llm_type": "child",
+      "call_id": "0ba7ca0d-1995-4a9b-90c7-51f6aa831b4a",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 14616,
+      "output_tokens": 447,
+      "cost": 0.008648999999999999,
+      "timestamp": "2025-12-24T22:50:23.395363",
+      "llm_type": "root",
+      "call_id": "36560738-c17e-4022-b253-547eaff95030",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 12000,
+      "output_tokens": 1999,
+      "cost": 0.011997,
+      "timestamp": "2025-12-24T22:50:36.445809",
+      "llm_type": "root",
+      "call_id": "fea5d45f-676f-4c34-9a70-5584543818a2",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2082,
+      "output_tokens": 1851,
+      "cost": 0.006594,
+      "timestamp": "2025-12-24T22:54:17.035077",
+      "llm_type": "child",
+      "call_id": "8defbb3e-b3af-4165-80f2-58f4fd87c0db",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1976,
+      "output_tokens": 1194,
+      "cost": 0.00457,
+      "timestamp": "2025-12-24T22:54:17.035303",
+      "llm_type": "child",
+      "call_id": "80d1480a-5986-4c76-af74-c542f18022a6",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1965,
+      "output_tokens": 1205,
+      "cost": 0.0045975,
+      "timestamp": "2025-12-24T22:54:17.035327",
+      "llm_type": "child",
+      "call_id": "3a351eab-2d53-4353-be55-af574ff097a8",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1965,
+      "output_tokens": 1501,
+      "cost": 0.0054855,
+      "timestamp": "2025-12-24T22:54:17.035340",
+      "llm_type": "child",
+      "call_id": "00b05ca8-42d2-44cb-9954-01d2ec6b6a69",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1956,
+      "output_tokens": 1220,
+      "cost": 0.004638,
+      "timestamp": "2025-12-24T22:54:17.035349",
+      "llm_type": "child",
+      "call_id": "d4ec55eb-cc4a-4fb3-bb94-376db3ef9463",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1953,
+      "output_tokens": 1207,
+      "cost": 0.0045975,
+      "timestamp": "2025-12-24T22:54:17.035361",
+      "llm_type": "child",
+      "call_id": "84da84f3-01fa-4fcb-a10e-49ad49bf97e1",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1954,
+      "output_tokens": 1360,
+      "cost": 0.005057000000000001,
+      "timestamp": "2025-12-24T22:54:17.035373",
+      "llm_type": "child",
+      "call_id": "4988cc21-152a-4cc8-a34e-fa23a7211529",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1942,
+      "output_tokens": 1393,
+      "cost": 0.00515,
+      "timestamp": "2025-12-24T22:54:17.035395",
+      "llm_type": "child",
+      "call_id": "d7ce6e52-34ce-4837-8deb-4c781f8fc157",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1951,
+      "output_tokens": 1492,
+      "cost": 0.0054515,
+      "timestamp": "2025-12-24T22:54:17.035410",
+      "llm_type": "child",
+      "call_id": "cc8653f4-2c61-4f33-bf97-4dd5b5d4efd8",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1962,
+      "output_tokens": 1804,
+      "cost": 0.006393,
+      "timestamp": "2025-12-24T22:54:17.035419",
+      "llm_type": "child",
+      "call_id": "768893f3-1552-4def-9d39-aa0f5d95149c",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3448,
+      "output_tokens": 1566,
+      "cost": 0.006422,
+      "timestamp": "2025-12-24T22:54:17.035428",
+      "llm_type": "child",
+      "call_id": "a0d44d3f-b841-47b5-adc7-1d8580a9a2b2",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1510,
+      "output_tokens": 1263,
+      "cost": 0.004544,
+      "timestamp": "2025-12-24T22:54:17.035442",
+      "llm_type": "child",
+      "call_id": "89399c60-663e-4e2b-8232-3145055a7d18",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1853,
+      "output_tokens": 1198,
+      "cost": 0.0045205,
+      "timestamp": "2025-12-24T22:54:17.035451",
+      "llm_type": "child",
+      "call_id": "1b78aefc-2de1-4bac-b467-c29d4f19fe4f",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3419,
+      "output_tokens": 1624,
+      "cost": 0.0065815000000000005,
+      "timestamp": "2025-12-24T22:54:17.035456",
+      "llm_type": "child",
+      "call_id": "b240d02b-7202-457e-a855-8a69c836c153",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1861,
+      "output_tokens": 1497,
+      "cost": 0.0054215,
+      "timestamp": "2025-12-24T22:54:17.035461",
+      "llm_type": "child",
+      "call_id": "60930fde-92b6-48f3-9754-d361ca4181a7",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 14824,
+      "output_tokens": 448,
+      "cost": 0.008756,
+      "timestamp": "2025-12-24T22:54:21.167714",
+      "llm_type": "root",
+      "call_id": "b9a05b72-4b13-4551-9164-d99b7f897758",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 12526,
+      "output_tokens": 1951,
+      "cost": 0.012116,
+      "timestamp": "2025-12-24T22:54:36.034018",
+      "llm_type": "root",
+      "call_id": "6af188bd-18d2-45de-9904-926ebf4e4a30",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3893,
+      "output_tokens": 1270,
+      "cost": 0.0057564999999999995,
+      "timestamp": "2025-12-24T22:56:37.693033",
+      "llm_type": "child",
+      "call_id": "eed3bd5d-1787-4d18-b460-d6774e0ed6b9",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1958,
+      "output_tokens": 1238,
+      "cost": 0.004693,
+      "timestamp": "2025-12-24T22:56:37.693276",
+      "llm_type": "child",
+      "call_id": "b8b5ff7a-675b-4b31-a8f4-d45047222e0b",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1961,
+      "output_tokens": 1014,
+      "cost": 0.0040225,
+      "timestamp": "2025-12-24T22:56:37.693295",
+      "llm_type": "child",
+      "call_id": "e79f40c1-cf3f-4c9d-80a2-9febbaca4bfe",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1965,
+      "output_tokens": 1137,
+      "cost": 0.0043935,
+      "timestamp": "2025-12-24T22:56:37.693324",
+      "llm_type": "child",
+      "call_id": "921f113c-b281-4423-a4c9-f769ebebfe77",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1949,
+      "output_tokens": 1373,
+      "cost": 0.0050935,
+      "timestamp": "2025-12-24T22:56:37.693335",
+      "llm_type": "child",
+      "call_id": "1a5c7956-5e99-4cbc-a1a4-67c318478829",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1973,
+      "output_tokens": 1339,
+      "cost": 0.005003499999999999,
+      "timestamp": "2025-12-24T22:56:37.693347",
+      "llm_type": "child",
+      "call_id": "b3eccdab-7caf-495e-89c8-016853cbbcc8",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1978,
+      "output_tokens": 1498,
+      "cost": 0.005483,
+      "timestamp": "2025-12-24T22:56:37.693368",
+      "llm_type": "child",
+      "call_id": "e6674153-49ce-47a8-9a93-70fb6befeb92",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1945,
+      "output_tokens": 1195,
+      "cost": 0.0045575,
+      "timestamp": "2025-12-24T22:56:37.693388",
+      "llm_type": "child",
+      "call_id": "c3f43d24-f40c-44e3-b480-acd2d6449b34",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1940,
+      "output_tokens": 1556,
+      "cost": 0.005638000000000001,
+      "timestamp": "2025-12-24T22:56:37.693393",
+      "llm_type": "child",
+      "call_id": "765b0b2d-2f69-40c9-b0e4-449bde7b083e",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1948,
+      "output_tokens": 1726,
+      "cost": 0.006152,
+      "timestamp": "2025-12-24T22:56:37.693411",
+      "llm_type": "child",
+      "call_id": "9ea4c5a3-7327-45f8-b91f-f13e43931d05",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1940,
+      "output_tokens": 1294,
+      "cost": 0.004852,
+      "timestamp": "2025-12-24T22:56:37.693428",
+      "llm_type": "child",
+      "call_id": "9b05a756-ff24-4512-bee5-efce5b03269b",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1954,
+      "output_tokens": 1150,
+      "cost": 0.004427,
+      "timestamp": "2025-12-24T22:56:37.693435",
+      "llm_type": "child",
+      "call_id": "ed1548ef-6f9b-441d-b033-94e31d1b25ac",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3612,
+      "output_tokens": 1631,
+      "cost": 0.006699,
+      "timestamp": "2025-12-24T22:56:37.693443",
+      "llm_type": "child",
+      "call_id": "77cf1b72-6b1a-43d8-b762-56531489a2c6",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3551,
+      "output_tokens": 1620,
+      "cost": 0.0066355,
+      "timestamp": "2025-12-24T22:56:37.693454",
+      "llm_type": "child",
+      "call_id": "6a6eda99-6e09-4ca7-966b-494631fd8721",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3183,
+      "output_tokens": 1737,
+      "cost": 0.0068025,
+      "timestamp": "2025-12-24T22:56:37.693460",
+      "llm_type": "child",
+      "call_id": "0943a073-dc53-43bd-a502-bdcc15eadf43",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 15220,
+      "output_tokens": 475,
+      "cost": 0.009035,
+      "timestamp": "2025-12-24T22:56:41.546084",
+      "llm_type": "root",
+      "call_id": "95fca501-91de-4fd0-9327-af0cf55f1064",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 12536,
+      "output_tokens": 2146,
+      "cost": 0.012706,
+      "timestamp": "2025-12-24T22:56:56.178465",
+      "llm_type": "root",
+      "call_id": "4383600f-6257-4458-b1ed-a1f1f4883e11",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 4639,
+      "output_tokens": 1436,
+      "cost": 0.0066275,
+      "timestamp": "2025-12-24T22:58:13.404399",
+      "llm_type": "child",
+      "call_id": "b7bb5539-4a32-460f-b0cd-5e7c1a66c439",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2029,
+      "output_tokens": 1289,
+      "cost": 0.0048815,
+      "timestamp": "2025-12-24T22:58:13.404520",
+      "llm_type": "child",
+      "call_id": "0df623c8-e028-47bd-8850-8074ef32e9d4",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1995,
+      "output_tokens": 1952,
+      "cost": 0.0068535,
+      "timestamp": "2025-12-24T22:58:13.404531",
+      "llm_type": "child",
+      "call_id": "3722a921-3f5e-4dd8-9957-8a7685cf69cd",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1989,
+      "output_tokens": 1537,
+      "cost": 0.0056055,
+      "timestamp": "2025-12-24T22:58:13.404538",
+      "llm_type": "child",
+      "call_id": "e82e5b4d-2a48-42a2-979e-4fb564ea6ae4",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1954,
+      "output_tokens": 1579,
+      "cost": 0.005714,
+      "timestamp": "2025-12-24T22:58:13.404545",
+      "llm_type": "child",
+      "call_id": "6f532fc4-afe2-44f0-a6cd-ef03a557b96d",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1958,
+      "output_tokens": 1182,
+      "cost": 0.004525,
+      "timestamp": "2025-12-24T22:58:13.404557",
+      "llm_type": "child",
+      "call_id": "366fe5e5-8249-460a-a7b7-c313fef43b30",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1963,
+      "output_tokens": 1749,
+      "cost": 0.0062285,
+      "timestamp": "2025-12-24T22:58:13.404566",
+      "llm_type": "child",
+      "call_id": "8a253d4e-7685-4399-9f77-521fc320e8a0",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3220,
+      "output_tokens": 1248,
+      "cost": 0.005353999999999999,
+      "timestamp": "2025-12-24T22:58:13.404575",
+      "llm_type": "child",
+      "call_id": "cd4ae936-c21a-4c2c-815e-b214e7186d42",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1953,
+      "output_tokens": 1077,
+      "cost": 0.0042074999999999994,
+      "timestamp": "2025-12-24T22:58:13.404580",
+      "llm_type": "child",
+      "call_id": "b427258e-67f4-4c9d-b271-beaf5d4e571c",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1947,
+      "output_tokens": 1663,
+      "cost": 0.005962500000000001,
+      "timestamp": "2025-12-24T22:58:13.404589",
+      "llm_type": "child",
+      "call_id": "6811bf12-53ed-4407-a151-08acaeca5223",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1950,
+      "output_tokens": 1651,
+      "cost": 0.005928,
+      "timestamp": "2025-12-24T22:58:13.404598",
+      "llm_type": "child",
+      "call_id": "f08f319b-e397-4cef-b848-18bc47ae4353",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 4553,
+      "output_tokens": 1351,
+      "cost": 0.0063295,
+      "timestamp": "2025-12-24T22:58:13.404606",
+      "llm_type": "child",
+      "call_id": "fbb51bf4-a63b-4ff6-af7c-6283fb0b9811",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 4415,
+      "output_tokens": 1259,
+      "cost": 0.0059845,
+      "timestamp": "2025-12-24T22:58:13.404616",
+      "llm_type": "child",
+      "call_id": "02a321b3-d6fd-40e2-9641-6582cc530e27",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3344,
+      "output_tokens": 1564,
+      "cost": 0.006364,
+      "timestamp": "2025-12-24T22:58:13.404626",
+      "llm_type": "child",
+      "call_id": "a482f377-53f1-4301-9fab-2f4692674ba7",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1756,
+      "output_tokens": 1358,
+      "cost": 0.004952000000000001,
+      "timestamp": "2025-12-24T22:58:13.404632",
+      "llm_type": "child",
+      "call_id": "a67699b6-456c-4ad3-a93c-bfc4f11d0ae1",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 15365,
+      "output_tokens": 413,
+      "cost": 0.008921499999999999,
+      "timestamp": "2025-12-24T22:58:17.246475",
+      "llm_type": "root",
+      "call_id": "d84763cb-1da0-453a-8e26-c6096790faba",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 12631,
+      "output_tokens": 2294,
+      "cost": 0.013197500000000001,
+      "timestamp": "2025-12-24T22:58:31.425539",
+      "llm_type": "root",
+      "call_id": "7a0584aa-8769-4596-9c0b-027653402f01",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3345,
+      "output_tokens": 1571,
+      "cost": 0.0063855000000000006,
+      "timestamp": "2025-12-24T23:00:13.199901",
+      "llm_type": "child",
+      "call_id": "40fedf2e-ed49-4c0f-8659-174c43e0219b",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3336,
+      "output_tokens": 1870,
+      "cost": 0.007278000000000001,
+      "timestamp": "2025-12-24T23:00:13.200063",
+      "llm_type": "child",
+      "call_id": "4a15f7a9-a62a-40af-8ab4-b6806d55ce38",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2003,
+      "output_tokens": 1664,
+      "cost": 0.0059935,
+      "timestamp": "2025-12-24T23:00:13.200076",
+      "llm_type": "child",
+      "call_id": "1ebb7a92-0189-4400-b828-e5498baf9839",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2009,
+      "output_tokens": 1605,
+      "cost": 0.0058195,
+      "timestamp": "2025-12-24T23:00:13.200084",
+      "llm_type": "child",
+      "call_id": "546dbc93-8862-4fd5-92bb-29f7cb568c95",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2021,
+      "output_tokens": 1379,
+      "cost": 0.0051475,
+      "timestamp": "2025-12-24T23:00:13.200090",
+      "llm_type": "child",
+      "call_id": "4631d1eb-765b-420a-9c88-bf35b00e1f21",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1999,
+      "output_tokens": 1102,
+      "cost": 0.0043055,
+      "timestamp": "2025-12-24T23:00:13.200097",
+      "llm_type": "child",
+      "call_id": "27d215b7-00a3-4648-8951-02ee838d6199",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1976,
+      "output_tokens": 1164,
+      "cost": 0.00448,
+      "timestamp": "2025-12-24T23:00:13.200109",
+      "llm_type": "child",
+      "call_id": "625d5762-d890-48f3-a3de-0b02aec80faa",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1999,
+      "output_tokens": 1827,
+      "cost": 0.0064805,
+      "timestamp": "2025-12-24T23:00:13.200116",
+      "llm_type": "child",
+      "call_id": "9d7a0636-87cf-45a0-bf8f-f77793f8357a",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1980,
+      "output_tokens": 1447,
+      "cost": 0.005331000000000001,
+      "timestamp": "2025-12-24T23:00:13.200124",
+      "llm_type": "child",
+      "call_id": "895fc7ae-476b-4bdf-b3db-ec24eda1188c",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1967,
+      "output_tokens": 1350,
+      "cost": 0.0050335,
+      "timestamp": "2025-12-24T23:00:13.200132",
+      "llm_type": "child",
+      "call_id": "b92e34eb-ebe1-46d4-b457-4e8d5ebbac03",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3336,
+      "output_tokens": 1467,
+      "cost": 0.006069000000000001,
+      "timestamp": "2025-12-24T23:00:13.200137",
+      "llm_type": "child",
+      "call_id": "13430343-7fde-4274-ab7d-99ce0d528de0",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1958,
+      "output_tokens": 1791,
+      "cost": 0.006352,
+      "timestamp": "2025-12-24T23:00:13.200145",
+      "llm_type": "child",
+      "call_id": "003fe5bb-ffad-4713-a46b-64dc8cd2ef88",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1956,
+      "output_tokens": 1300,
+      "cost": 0.004878,
+      "timestamp": "2025-12-24T23:00:13.200158",
+      "llm_type": "child",
+      "call_id": "9874320e-8665-463f-99a6-df4a8dd336a8",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 4573,
+      "output_tokens": 1303,
+      "cost": 0.0061955,
+      "timestamp": "2025-12-24T23:00:13.200164",
+      "llm_type": "child",
+      "call_id": "29834665-2c62-4d47-abb3-1f2671dde955",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1756,
+      "output_tokens": 1468,
+      "cost": 0.005282,
+      "timestamp": "2025-12-24T23:00:13.200170",
+      "llm_type": "child",
+      "call_id": "1a87c9e7-a66e-4a47-8f0b-d7732122d6a0",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 15656,
+      "output_tokens": 428,
+      "cost": 0.009112,
+      "timestamp": "2025-12-24T23:00:16.881250",
+      "llm_type": "root",
+      "call_id": "315667cf-640b-483d-b929-bc6cfb7cb31c",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 12861,
+      "output_tokens": 2379,
+      "cost": 0.0135675,
+      "timestamp": "2025-12-24T23:00:33.087832",
+      "llm_type": "root",
+      "call_id": "c8fcfd91-b9a5-464d-99aa-b4dda17eb0d4",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 5069,
+      "output_tokens": 1408,
+      "cost": 0.006758500000000001,
+      "timestamp": "2025-12-24T23:00:54.191385",
+      "llm_type": "child",
+      "call_id": "cc28317a-e62e-4977-bccb-a2459f4420c0",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3866,
+      "output_tokens": 1837,
+      "cost": 0.007444,
+      "timestamp": "2025-12-24T23:00:54.191508",
+      "llm_type": "child",
+      "call_id": "55b9acac-5794-4752-9cb3-b7d2d850e70c",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1982,
+      "output_tokens": 1382,
+      "cost": 0.005137,
+      "timestamp": "2025-12-24T23:00:54.191523",
+      "llm_type": "child",
+      "call_id": "d16345f1-df3d-4ff6-97c8-40f3eb3cd0ec",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1976,
+      "output_tokens": 1535,
+      "cost": 0.005593,
+      "timestamp": "2025-12-24T23:00:54.191533",
+      "llm_type": "child",
+      "call_id": "67653c25-8915-4641-af72-63c7957a9fa1",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 1967,
+      "output_tokens": 1234,
+      "cost": 0.0046855,
+      "timestamp": "2025-12-24T23:00:54.191538",
+      "llm_type": "child",
+      "call_id": "5458dced-e295-44bd-99f6-4f12954b7a02",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 6300,
+      "output_tokens": 1475,
+      "cost": 0.007575,
+      "timestamp": "2025-12-24T23:00:54.191544",
+      "llm_type": "child",
+      "call_id": "d4de2c4e-4165-4748-8c25-1b04f23665d5",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3159,
+      "output_tokens": 1358,
+      "cost": 0.0056535000000000005,
+      "timestamp": "2025-12-24T23:00:54.191549",
+      "llm_type": "child",
+      "call_id": "790feb3d-5bbb-4e4e-8623-1350666b7ebb",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2102,
+      "output_tokens": 1385,
+      "cost": 0.005206,
+      "timestamp": "2025-12-24T23:00:54.191554",
+      "llm_type": "child",
+      "call_id": "6dba9db6-54d9-4d31-bd01-cd13286058f2",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3069,
+      "output_tokens": 1490,
+      "cost": 0.006004499999999999,
+      "timestamp": "2025-12-24T23:00:54.191559",
+      "llm_type": "child",
+      "call_id": "438f3bd3-a0db-4be3-a161-4f8ba6ddc7fe",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2309,
+      "output_tokens": 1529,
+      "cost": 0.0057415,
+      "timestamp": "2025-12-24T23:00:54.191564",
+      "llm_type": "child",
+      "call_id": "6544f00c-7e54-4108-9382-9434c5e7b47e",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 2315,
+      "output_tokens": 1460,
+      "cost": 0.0055375,
+      "timestamp": "2025-12-24T23:00:54.191568",
+      "llm_type": "child",
+      "call_id": "031912b8-b24c-4654-bc26-519da95bee2d",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 4750,
+      "output_tokens": 1434,
+      "cost": 0.006677000000000001,
+      "timestamp": "2025-12-24T23:00:54.191575",
+      "llm_type": "child",
+      "call_id": "fac2799b-e53a-475e-a143-3873a30404b5",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3780,
+      "output_tokens": 1764,
+      "cost": 0.007182,
+      "timestamp": "2025-12-24T23:00:54.191580",
+      "llm_type": "child",
+      "call_id": "4b989f18-b2e1-4d0a-9b97-1857ef8cbeec",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3368,
+      "output_tokens": 1309,
+      "cost": 0.005611,
+      "timestamp": "2025-12-24T23:00:54.191584",
+      "llm_type": "child",
+      "call_id": "0410fa08-04cb-4d95-90ee-a5935053533f",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 3416,
+      "output_tokens": 1334,
+      "cost": 0.00571,
+      "timestamp": "2025-12-24T23:00:54.191589",
+      "llm_type": "child",
+      "call_id": "c870b860-97fd-427d-a9af-8aac2e4de086",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    },
+    {
+      "input_tokens": 15901,
+      "output_tokens": 444,
+      "cost": 0.009282499999999999,
+      "timestamp": "2025-12-24T23:00:58.162337",
+      "llm_type": "root",
+      "call_id": "2dcfe482-ebe8-4dbc-b348-dc9797997a7f",
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0
+    }
+  ]
+}
