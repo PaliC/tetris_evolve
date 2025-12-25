@@ -1,5 +1,5 @@
 """
-Root LLM Orchestrator for tetris_evolve.
+Root LLM Orchestrator for mango_evolve.
 
 Main orchestrator that runs the Root LLM evolution loop, executing REPL
 code blocks and managing the conversation with the Root LLM.

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tetris_evolve.main import main, parse_args
+from mango_evolve.main import main, parse_args
 
 
 class TestParseArgs:
@@ -19,7 +19,7 @@ class TestParseArgs:
 
         assert exc_info.value.code == 0
         captured = capsys.readouterr()
-        assert "tetris_evolve" in captured.out
+        assert "mango_evolve" in captured.out
         assert "--config" in captured.out
 
     def test_cli_config_required(self, capsys):
@@ -88,7 +88,7 @@ class TestMain:
             yaml.dump(sample_config_dict, f)
 
         # Mock the orchestrator to avoid actual LLM calls
-        with patch("tetris_evolve.main.RootLLMOrchestrator") as mock_orch:
+        with patch("mango_evolve.main.RootLLMOrchestrator") as mock_orch:
             mock_instance = MagicMock()
             mock_instance.run.return_value = MagicMock(
                 reason="test",
@@ -116,7 +116,7 @@ class TestMain:
         with open(config_path, "w") as f:
             yaml.dump(sample_config_dict, f)
 
-        with patch("tetris_evolve.main.RootLLMOrchestrator") as mock_orch:
+        with patch("mango_evolve.main.RootLLMOrchestrator") as mock_orch:
             mock_instance = MagicMock()
             mock_instance.run.return_value = MagicMock(
                 reason="test",
@@ -147,7 +147,7 @@ class TestMain:
         with open(config_path, "w") as f:
             yaml.dump(sample_config_dict, f)
 
-        with patch("tetris_evolve.main.RootLLMOrchestrator") as mock_orch:
+        with patch("mango_evolve.main.RootLLMOrchestrator") as mock_orch:
             mock_instance = MagicMock()
             mock_instance.run.return_value = MagicMock(
                 reason="test",
@@ -178,7 +178,7 @@ class TestMain:
         with open(config_path, "w") as f:
             yaml.dump(sample_config_dict, f)
 
-        with patch("tetris_evolve.main.RootLLMOrchestrator") as mock_orch:
+        with patch("mango_evolve.main.RootLLMOrchestrator") as mock_orch:
             mock_instance = MagicMock()
             mock_instance.run.return_value = MagicMock(
                 reason="completed",
@@ -206,7 +206,7 @@ class TestMain:
         with open(config_path, "w") as f:
             yaml.dump(sample_config_dict, f)
 
-        with patch("tetris_evolve.main.RootLLMOrchestrator") as mock_orch:
+        with patch("mango_evolve.main.RootLLMOrchestrator") as mock_orch:
             mock_instance = MagicMock()
             mock_instance.run.return_value = MagicMock(
                 reason="max_iterations_reached",
@@ -244,7 +244,7 @@ class TestMainModule:
             yaml.dump(sample_config_dict, f)
 
         # Just verify the module structure is correct
-        from tetris_evolve import main as main_module
+        from mango_evolve import main as main_module
 
         assert hasattr(main_module, "main")
         assert callable(main_module.main)

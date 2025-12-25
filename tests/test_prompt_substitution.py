@@ -7,8 +7,8 @@ Root LLM to reference code from previous trials in child LLM prompts.
 
 import json
 
-from tetris_evolve.evolution_api import TrialResult
-from tetris_evolve.utils.prompt_substitution import (
+from mango_evolve.evolution_api import TrialResult
+from mango_evolve.utils.prompt_substitution import (
     TRIAL_CODE_PATTERN,
     find_trial_code_tokens,
     get_trial_code,

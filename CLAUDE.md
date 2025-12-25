@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-LLM-Evolve is an evolutionary code generation system that uses LLMs to iteratively develop optimization algorithms. A "Root LLM" orchestrates the evolution process via a REPL environment, spawning "Child LLMs" to generate candidate programs, evaluating them, and selecting the best to inform future generations.
+MangoEvolve is an evolutionary code generation system that uses LLMs to iteratively develop optimization algorithms. A "Root LLM" orchestrates the evolution process via a REPL environment, spawning "Child LLMs" to generate candidate programs, evaluating them, and selecting the best to inform future generations.
 
 **Current target**: Circle Packing - pack 26 circles into a unit square to maximize the sum of their radii (AlphaEvolve benchmark: 2.635).
 
@@ -15,7 +15,7 @@ LLM-Evolve is an evolutionary code generation system that uses LLMs to iterative
 uv sync
 
 # Run evolution with a config
-uv run python -m tetris_evolve --config configs/example_config_sonnet.yaml
+uv run python -m mango_evolve --config configs/example_config_sonnet.yaml
 
 # Run all tests
 uv run pytest
@@ -69,11 +69,11 @@ OpenRouter configs can use different models for root and child LLMs.
 
 ### Adding a New Evaluator
 
-Create a class with an `evaluate(code: str) -> dict` method in `src/tetris_evolve/evaluation/`, then reference it in config:
+Create a class with an `evaluate(code: str) -> dict` method in `src/mango_evolve/evaluation/`, then reference it in config:
 
 ```yaml
 evaluation:
-  evaluator_fn: "tetris_evolve.evaluation.my_module:MyEvaluator"
+  evaluator_fn: "mango_evolve.evaluation.my_module:MyEvaluator"
   evaluator_kwargs:
     param1: value1
 ```

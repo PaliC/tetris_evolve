@@ -1,8 +1,8 @@
 """
-Tests for tetris_evolve.repl module.
+Tests for mango_evolve.repl module.
 """
 
-from tetris_evolve import REPLEnvironment
+from mango_evolve import REPLEnvironment
 
 
 class TestREPLEnvironment:

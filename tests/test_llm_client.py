@@ -6,11 +6,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tetris_evolve import (
+from mango_evolve import (
     BudgetExceededError,
     CostTracker,
 )
-from tetris_evolve.llm import LLMClient, LLMResponse, MockLLMClient
+from mango_evolve.llm import LLMClient, LLMResponse, MockLLMClient
 
 
 class TestMockLLMClient:
@@ -206,7 +206,7 @@ class TestLLMClient:
                 messages=[{"role": "user", "content": "Test"}],
             )
 
-    @patch("tetris_evolve.llm.providers.anthropic.anthropic.Anthropic")
+    @patch("mango_evolve.llm.providers.anthropic.anthropic.Anthropic")
     def test_generate_with_mock(self, mock_anthropic_class, sample_config):
         """Test generate with mocked Anthropic API."""
         # Set up mock
@@ -239,7 +239,7 @@ class TestLLMClient:
         assert response.output_tokens == 5
         assert len(cost_tracker.usage_log) == 1
 
-    @patch("tetris_evolve.llm.providers.anthropic.anthropic.Anthropic")
+    @patch("mango_evolve.llm.providers.anthropic.anthropic.Anthropic")
     def test_cost_recorded_correctly(self, mock_anthropic_class, sample_config):
         """Test that cost is computed correctly."""
         mock_client = MagicMock()

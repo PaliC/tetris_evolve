@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tetris-evolve"
+name = "mango-evolve"
 version = "0.1.0"
-description = "LLM-driven evolutionary code generation for Tetris"
+description = "LLM-driven evolutionary code generation for optimization problems"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -68,7 +68,7 @@ ignore = [
 "experiments/*" = ["ARG001", "ARG002"]  # unused arguments in experimental code
 
 [tool.ruff.lint.isort]
-known-first-party = ["tetris_evolve"]
+known-first-party = ["mango_evolve"]
 
 [tool.ty.environment]
 python-version = "3.10"

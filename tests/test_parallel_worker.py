@@ -1,10 +1,10 @@
 """
-Tests for tetris_evolve.parallel_worker module.
+Tests for mango_evolve.parallel_worker module.
 """
 
 import json
 
-from tetris_evolve.parallel_worker import _write_trial_file
+from mango_evolve.parallel_worker import _write_trial_file
 
 
 class TestWriteTrialFile:

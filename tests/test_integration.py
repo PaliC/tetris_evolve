@@ -1,5 +1,5 @@
 """
-Integration tests for tetris_evolve.
+Integration tests for mango_evolve.
 
 These tests verify that multiple components work together correctly.
 All tests use mock LLMs for reproducibility and speed.
@@ -9,15 +9,15 @@ import json
 
 import pytest
 
-from tetris_evolve import (
+from mango_evolve import (
     CostTracker,
     ExperimentLogger,
     MockLLMClient,
     config_from_dict,
 )
-from tetris_evolve.evaluation.circle_packing import CirclePackingEvaluator
-from tetris_evolve.evolution_api import EvolutionAPI
-from tetris_evolve.root_llm import RootLLMOrchestrator
+from mango_evolve.evaluation.circle_packing import CirclePackingEvaluator
+from mango_evolve.evolution_api import EvolutionAPI
+from mango_evolve.root_llm import RootLLMOrchestrator
 
 
 @pytest.fixture
@@ -251,7 +251,7 @@ class TestBudgetStopsEvolution:
 
     def test_spawn_fails_on_budget_exceeded(self, integration_config):
         """Test that spawn_child_llm raises when budget exceeded."""
-        from tetris_evolve.exceptions import BudgetExceededError
+        from mango_evolve.exceptions import BudgetExceededError
 
         evaluator = CirclePackingEvaluator()
         cost_tracker = CostTracker(integration_config)

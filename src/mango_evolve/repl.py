@@ -1,5 +1,5 @@
 """
-REPL (Read-Eval-Print Loop) environment for tetris_evolve.
+REPL (Read-Eval-Print Loop) environment for mango_evolve.
 
 Provides a sandboxed Python execution environment for the Root LLM.
 """

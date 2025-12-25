@@ -1,10 +1,10 @@
 """
-Tests for tetris_evolve.logger module.
+Tests for mango_evolve.logger module.
 """
 
 import json
 
-from tetris_evolve import ExperimentLogger
+from mango_evolve import ExperimentLogger
 
 
 class TestExperimentLogger:

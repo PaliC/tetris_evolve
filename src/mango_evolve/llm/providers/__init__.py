@@ -1,4 +1,4 @@
-"""LLM providers for tetris_evolve."""
+"""LLM providers for mango_evolve."""
 
 from .anthropic import AnthropicProvider
 from .base import BaseLLMProvider, LLMResponse

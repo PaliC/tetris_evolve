@@ -1,15 +1,15 @@
 """
-Tests for tetris_evolve.exceptions module.
+Tests for mango_evolve.exceptions module.
 """
 
 import pytest
 
-from tetris_evolve.exceptions import (
+from mango_evolve.exceptions import (
     BudgetExceededError,
     CodeExtractionError,
     ConfigValidationError,
     EvaluationError,
-    LLMEvolveError,
+    MangoEvolveError,
 )
 
 
@@ -17,7 +17,7 @@ class TestExceptions:
     """Tests for exception classes."""
 
     def test_all_exceptions_inherit_from_base(self):
-        """All exceptions should inherit from LLMEvolveError."""
+        """All exceptions should inherit from MangoEvolveError."""
         exceptions = [
             BudgetExceededError,
             ConfigValidationError,
@@ -25,7 +25,7 @@ class TestExceptions:
             EvaluationError,
         ]
         for exc_class in exceptions:
-            assert issubclass(exc_class, LLMEvolveError)
+            assert issubclass(exc_class, MangoEvolveError)
 
     def test_exceptions_can_be_raised(self):
         """Exceptions can be raised and caught."""
@@ -49,18 +49,18 @@ class TestExceptions:
 
     def test_catch_base_exception(self):
         """All exceptions can be caught with base exception."""
-        with pytest.raises(LLMEvolveError):
+        with pytest.raises(MangoEvolveError):
             raise BudgetExceededError("Test")
 
-        with pytest.raises(LLMEvolveError):
+        with pytest.raises(MangoEvolveError):
             raise ConfigValidationError("Test")
 
     def test_import_from_package(self):
         """Exceptions can be imported from main package."""
-        from tetris_evolve import (
+        from mango_evolve import (
             BudgetExceededError,
-            LLMEvolveError,
+            MangoEvolveError,
         )
 
-        assert LLMEvolveError is not None
+        assert MangoEvolveError is not None
         assert BudgetExceededError is not None

@@ -1,11 +1,11 @@
 """
-Tests for tetris_evolve.cost_tracker module.
+Tests for mango_evolve.cost_tracker module.
 """
 
 import pytest
 
-from tetris_evolve import CostTracker, config_from_dict
-from tetris_evolve.exceptions import BudgetExceededError
+from mango_evolve import CostTracker, config_from_dict
+from mango_evolve.exceptions import BudgetExceededError
 
 
 class TestCostTracker:

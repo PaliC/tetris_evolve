@@ -1,5 +1,5 @@
 """
-LLM client and prompt modules for tetris_evolve.
+LLM client and prompt modules for mango_evolve.
 """
 
 from .client import LLMClient, LLMResponse, MockLLMClient

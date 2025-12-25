@@ -1,5 +1,5 @@
 """
-LLM Client for tetris_evolve.
+LLM Client for mango_evolve.
 
 Provides a factory function to create LLM clients for different providers.
 Supports Anthropic Claude (with prompt caching) and OpenRouter (100+ models).

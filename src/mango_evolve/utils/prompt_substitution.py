@@ -1,5 +1,5 @@
 """
-Prompt substitution utilities for tetris_evolve.
+Prompt substitution utilities for mango_evolve.
 
 Handles substitution of trial code tokens in prompts before sending to child LLMs.
 This allows the Root LLM to reference code from previous trials using tokens like

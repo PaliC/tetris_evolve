@@ -1,7 +1,7 @@
 """
-CLI entry point for tetris_evolve.
+CLI entry point for mango_evolve.
 
-Runs evolutionary experiments for circle packing optimization.
+Runs evolutionary experiments for optimization problems.
 """
 
 import argparse
@@ -21,8 +21,8 @@ from .root_llm import RootLLMOrchestrator  # noqa: E402
 def parse_args(args=None):
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        prog="tetris_evolve",
-        description="LLM-driven evolutionary code generation for circle packing",
+        prog="mango_evolve",
+        description="LLM-driven evolutionary code generation for optimization problems",
     )
 
     parser.add_argument(

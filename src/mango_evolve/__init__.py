@@ -1,8 +1,8 @@
 """
-tetris_evolve: LLM-driven evolutionary code generation.
+mango_evolve: LLM-driven evolutionary code generation.
 
 This package implements an evolutionary system for generating and optimizing
-circle packing algorithms using LLMs.
+algorithms using LLMs.
 """
 
 from .config import (
@@ -23,7 +23,7 @@ from .exceptions import (
     CodeExtractionError,
     ConfigValidationError,
     EvaluationError,
-    LLMEvolveError,
+    MangoEvolveError,
 )
 from .llm import (
     ROOT_LLM_SYSTEM_PROMPT_DYNAMIC,
@@ -39,7 +39,7 @@ from .root_llm import OrchestratorResult, RootLLMOrchestrator
 
 __all__ = [
     # Exceptions
-    "LLMEvolveError",
+    "MangoEvolveError",
     "BudgetExceededError",
     "ConfigValidationError",
     "CodeExtractionError",
