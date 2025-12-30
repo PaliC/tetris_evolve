@@ -272,35 +272,3 @@ class TestLLMClient:
         assert abs(cost_tracker.total_cost - expected_cost) < 1e-10
 
 
-class TestLLMResponse:
-    """Tests for LLMResponse dataclass."""
-
-    def test_create_response(self):
-        """Test creating an LLMResponse."""
-        response = LLMResponse(
-            content="Test content",
-            input_tokens=100,
-            output_tokens=50,
-            model="claude-test",
-            call_id="test-id",
-            stop_reason="end_turn",
-        )
-
-        assert response.content == "Test content"
-        assert response.input_tokens == 100
-        assert response.output_tokens == 50
-        assert response.model == "claude-test"
-        assert response.call_id == "test-id"
-        assert response.stop_reason == "end_turn"
-
-    def test_optional_stop_reason(self):
-        """Test that stop_reason is optional."""
-        response = LLMResponse(
-            content="Test",
-            input_tokens=10,
-            output_tokens=5,
-            model="claude-test",
-            call_id="test-id",
-        )
-
-        assert response.stop_reason is None

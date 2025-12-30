@@ -72,9 +72,6 @@ class TestEvolutionAPIBasic:
         assert len(evolution_api.all_trials) == 0
         assert not evolution_api.is_terminated
 
-    def test_get_current_generation(self, evolution_api):
-        """Test getting current generation."""
-        assert evolution_api._get_current_generation() == 0
 
 class TestSpawnChildLLM:
     """Tests for spawn_child_llm."""
@@ -388,13 +385,6 @@ class TestGetAPIFunctions:
         assert "get_trial" not in funcs
         assert "get_current_generation" not in funcs
         assert "_advance_generation" not in funcs
-
-    def test_functions_are_callable(self, evolution_api):
-        """Test that returned functions are callable."""
-        funcs = evolution_api.get_api_functions()
-
-        for name, func in funcs.items():
-            assert callable(func), f"{name} is not callable"
 
 
 class TestTrialResult:

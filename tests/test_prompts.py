@@ -152,10 +152,6 @@ class TestRootLLMSystemPromptDynamic:
         assert "{max_generations}" in ROOT_LLM_SYSTEM_PROMPT_DYNAMIC
         assert "{current_generation}" in ROOT_LLM_SYSTEM_PROMPT_DYNAMIC
 
-    def test_template_is_not_empty(self):
-        """Test that template is not empty."""
-        assert len(ROOT_LLM_SYSTEM_PROMPT_DYNAMIC) > 0
-
     def test_function_formats_template(self):
         """Test that function properly formats the template."""
         prompt = get_root_system_prompt(

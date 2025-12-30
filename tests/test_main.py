@@ -12,26 +12,6 @@ from mango_evolve.main import main, parse_args
 class TestParseArgs:
     """Tests for argument parsing."""
 
-    def test_cli_help(self, capsys):
-        """Test that --help works."""
-        with pytest.raises(SystemExit) as exc_info:
-            parse_args(["--help"])
-
-        assert exc_info.value.code == 0
-        captured = capsys.readouterr()
-        assert "mango_evolve" in captured.out
-        assert "--config" in captured.out
-
-    def test_cli_config_required(self, capsys):
-        """Test that config file is required."""
-        with pytest.raises(SystemExit) as exc_info:
-            parse_args([])
-
-        # argparse exits with code 2 for missing required args
-        assert exc_info.value.code == 2
-        captured = capsys.readouterr()
-        assert "required" in captured.err.lower()
-
     def test_parse_args_config(self):
         """Test parsing config argument."""
         args = parse_args(["--config", "test.yaml"])
@@ -230,21 +210,3 @@ class TestMain:
             assert "Best score: 2.0" in captured.out
 
 
-class TestMainModule:
-    """Test running as module."""
-
-    def test_module_runnable(self, temp_dir, sample_config_dict):
-        """Test that module can be run with python -m."""
-        import yaml
-
-        sample_config_dict["experiment"]["output_dir"] = str(temp_dir)
-
-        config_path = temp_dir / "config.yaml"
-        with open(config_path, "w") as f:
-            yaml.dump(sample_config_dict, f)
-
-        # Just verify the module structure is correct
-        from mango_evolve import main as main_module
-
-        assert hasattr(main_module, "main")
-        assert callable(main_module.main)

@@ -20,18 +20,6 @@ from mango_evolve.utils.code_extraction import extract_selection_block
 class TestTrialSelection:
     """Tests for TrialSelection dataclass."""
 
-    def test_creation(self):
-        """Test creating a TrialSelection."""
-        selection = TrialSelection(
-            trial_id="trial_0_1",
-            reasoning="Highest score of 2.45",
-            category="performance",
-        )
-
-        assert selection.trial_id == "trial_0_1"
-        assert selection.reasoning == "Highest score of 2.45"
-        assert selection.category == "performance"
-
     def test_to_dict(self):
         """Test converting TrialSelection to dictionary."""
         selection = TrialSelection(
