@@ -130,10 +130,14 @@ class RootLLMOrchestrator:
         Returns:
             List of content blocks with cache_control on the static portion.
         """
+        # Get timeout from evaluator kwargs
+        timeout_seconds = self.evolution_api.evaluator_kwargs.get("timeout_seconds")
+
         return get_root_system_prompt_parts(
             max_children_per_generation=self.evolution_api.max_children_per_generation,
             max_generations=self.evolution_api.max_generations,
             current_generation=self.evolution_api.current_generation,
+            timeout_seconds=timeout_seconds,
         )
 
     def build_initial_messages(self) -> list[dict[str, str]]:

@@ -94,6 +94,11 @@ ROOT_LLM_SYSTEM_PROMPT_DYNAMIC = '''
 - **Current generation**: {current_generation}/{max_generations}
 '''
 
+# Timeout constraint - simple exposure of the limit
+ROOT_LLM_TIMEOUT_CONSTRAINT = '''
+- **Timeout per trial**: {timeout_seconds}s
+'''
+
 # Child LLM System Prompt - Static (cacheable)
 # Minimal prompt to give child LLMs freedom to explore.
 CHILD_LLM_SYSTEM_PROMPT = '''You are an expert algorithm designer.
@@ -129,10 +134,27 @@ You may use numpy, scipy, or any standard library. No plotting or printing.
 '''
 
 
+def _format_timeout_constraint(timeout_seconds: int | None) -> str:
+    """
+    Format timeout constraint for the system prompt.
+
+    Args:
+        timeout_seconds: Timeout limit in seconds, or None to omit
+
+    Returns:
+        Formatted timeout constraint string, or empty string if None
+    """
+    if timeout_seconds is None:
+        return ""
+
+    return ROOT_LLM_TIMEOUT_CONSTRAINT.format(timeout_seconds=timeout_seconds)
+
+
 def get_root_system_prompt(
     max_children_per_generation: int = 10,
     max_generations: int = 10,
     current_generation: int = 0,
+    timeout_seconds: int | None = None,
 ) -> str:
     """
     Get the Root LLM system prompt with configuration values.
@@ -141,6 +163,7 @@ def get_root_system_prompt(
         max_children_per_generation: Maximum children that can be spawned per generation
         max_generations: Maximum number of generations
         current_generation: Current generation number (0-indexed)
+        timeout_seconds: Optional timeout limit per trial in seconds
 
     Returns:
         Formatted system prompt string (static + dynamic parts combined)
@@ -150,24 +173,27 @@ def get_root_system_prompt(
         max_generations=max_generations,
         current_generation=current_generation,
     )
-    return ROOT_LLM_SYSTEM_PROMPT_STATIC + dynamic_part
+    timeout_part = _format_timeout_constraint(timeout_seconds)
+    return ROOT_LLM_SYSTEM_PROMPT_STATIC + dynamic_part + timeout_part
 
 
 def get_root_system_prompt_parts(
     max_children_per_generation: int = 10,
     max_generations: int = 10,
     current_generation: int = 0,
+    timeout_seconds: int | None = None,
 ) -> list[dict]:
     """
     Get the Root LLM system prompt as structured content blocks for caching.
 
     The static prefix is marked with cache_control for prompt caching.
-    The dynamic suffix contains run-specific parameters.
+    The dynamic suffix contains run-specific parameters and timeout constraint.
 
     Args:
         max_children_per_generation: Maximum children that can be spawned per generation
         max_generations: Maximum number of generations
         current_generation: Current generation number (0-indexed)
+        timeout_seconds: Optional timeout limit per trial in seconds
 
     Returns:
         List of content blocks suitable for Anthropic API system parameter.
@@ -178,6 +204,7 @@ def get_root_system_prompt_parts(
         max_generations=max_generations,
         current_generation=current_generation,
     )
+    timeout_part = _format_timeout_constraint(timeout_seconds)
 
     return [
         {
@@ -187,7 +214,7 @@ def get_root_system_prompt_parts(
         },
         {
             "type": "text",
-            "text": dynamic_part,
+            "text": dynamic_part + timeout_part,
         },
     ]
 
