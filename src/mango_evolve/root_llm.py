@@ -118,6 +118,11 @@ class RootLLMOrchestrator:
         # Initialize REPL with Evolution API functions
         self.repl = REPLEnvironment(api_functions=self.evolution_api.get_api_functions())
 
+        # Inject data objects into REPL for custom analysis functions
+        # These are references, so they stay current as trials are added
+        self.repl.globals["all_trials"] = self.evolution_api.all_trials
+        self.repl.globals["generations"] = self.evolution_api.generations
+
         # Conversation state
         self.messages: list[dict[str, str]] = []
         self.turn_number = 0

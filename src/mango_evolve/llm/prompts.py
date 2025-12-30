@@ -252,6 +252,46 @@ When asked to select trials, respond with a ```selection``` block:
 
 Write Python code in ```repl``` blocks. The code will be executed and results returned to you.
 
+**The REPL persists across executions** - variables and functions you define are available in later code blocks.
+
+### Available Data Objects
+
+These are automatically available in the REPL:
+
+- **`all_trials`**: `dict[str, TrialResult]` - All trials from all generations, keyed by trial_id
+- **`generations`**: `list[GenerationSummary]` - Summary of each generation
+
+**TrialResult structure:**
+```python
+trial.trial_id      # str: e.g., "trial_0_3"
+trial.code          # str: The Python code
+trial.metrics       # dict: {"valid": bool, "score": float, "eval_time": float, "error": str|None}
+trial.reasoning     # str: Approach description from child LLM
+trial.success       # bool: Whether trial produced valid output
+trial.parent_id     # str|None: Parent trial ID if this was a mutation
+trial.generation    # int: Which generation this trial belongs to
+```
+
+### Custom Analysis Functions
+
+You can define functions for analysis that persist across the session:
+
+```repl
+def compute_diversity(trial_ids):
+    """Example: Score trials by unique imports."""
+    import re
+    results = []
+    for tid in trial_ids:
+        trial = all_trials.get(tid)
+        if trial and trial.code:
+            imports = set(re.findall(r'^import (\\w+)', trial.code, re.M))
+            results.append((tid, len(imports), trial.metrics.get('score', 0)))
+    return sorted(results, key=lambda x: -x[1])
+
+# Use it
+diversity = compute_diversity(["trial_0_1", "trial_0_2", "trial_0_3"])
+```
+
 Example workflow for a generation:
 ```repl
 # Spawn a full generation of children exploring different strategies
