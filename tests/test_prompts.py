@@ -6,6 +6,7 @@ from mango_evolve.llm.prompts import (
     ROOT_LLM_SYSTEM_PROMPT_DYNAMIC,
     format_child_mutation_prompt,
     get_root_system_prompt,
+    get_root_system_prompt_parts,
 )
 
 
@@ -166,3 +167,46 @@ class TestRootLLMSystemPromptDynamic:
         # Values should appear
         assert "7" in prompt
         assert "5" in prompt
+
+
+class TestTimeoutConstraint:
+    """Tests for timeout constraint in prompts."""
+
+    def test_prompt_includes_timeout_when_provided(self):
+        """Test that timeout is included when provided."""
+        prompt = get_root_system_prompt(
+            max_children_per_generation=15,
+            max_generations=10,
+            current_generation=3,
+            timeout_seconds=300,
+        )
+
+        assert "Timeout per trial" in prompt
+        assert "300s" in prompt
+
+    def test_prompt_excludes_timeout_when_none(self):
+        """Test that timeout is excluded when None."""
+        prompt = get_root_system_prompt(
+            max_children_per_generation=15,
+            max_generations=10,
+            current_generation=3,
+            timeout_seconds=None,
+        )
+
+        assert "Timeout" not in prompt
+
+    def test_prompt_parts_include_timeout(self):
+        """Test that get_root_system_prompt_parts includes timeout."""
+        parts = get_root_system_prompt_parts(
+            max_children_per_generation=15,
+            max_generations=10,
+            current_generation=3,
+            timeout_seconds=300,
+        )
+
+        # Should have 2 parts
+        assert len(parts) == 2
+
+        # The dynamic part should include timeout
+        dynamic_part = parts[1]["text"]
+        assert "300s" in dynamic_part
