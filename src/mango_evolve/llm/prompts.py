@@ -18,7 +18,7 @@ Pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their ra
 - No two circles may overlap
 - All radii must be non-negative
 
-**Target**: 2.635 (best known)
+**Target**: 2.635983099011548 (best known)
 
 ## Code Format
 
@@ -107,7 +107,7 @@ Constraints:
 - No overlaps (distance between centers ≥ sum of radii)
 - All radii ≥ 0
 
-Target: sum of radii ≈ 2.635
+Target: sum of radii ≈ 2.635983099011548
 
 ## Output
 
@@ -211,7 +211,7 @@ def format_child_mutation_prompt(
     Returns:
         Formatted prompt string
     """
-    prompt = f"""Improve this circle packing (current score: {parent_score:.16f}, target: 2.635).
+    prompt = f"""Improve this circle packing (current score: {parent_score:.16f}, target: 2.635983099011548).
 
 ```python
 {parent_code}
