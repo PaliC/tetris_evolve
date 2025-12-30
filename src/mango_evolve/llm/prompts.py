@@ -211,7 +211,7 @@ def format_child_mutation_prompt(
     Returns:
         Formatted prompt string
     """
-    prompt = f"""Improve this circle packing (current score: {parent_score:.4f}, target: 2.635).
+    prompt = f"""Improve this circle packing (current score: {parent_score:.16f}, target: 2.635).
 
 ```python
 {parent_code}

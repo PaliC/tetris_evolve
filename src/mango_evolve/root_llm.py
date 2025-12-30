@@ -223,7 +223,7 @@ class RootLLMOrchestrator:
                 selected = ", ".join(gen.selected_trial_ids) if gen.selected_trial_ids else "N/A"
                 summary = (
                     f"Gen {gen_num}: {len(gen.trials)} trials, "
-                    f"best={best_score:.4f} ({best_trial}), "
+                    f"best={best_score:.16f} ({best_trial}), "
                     f"selected=[{selected}]"
                 )
                 old_gen_summaries.append(summary)
@@ -419,7 +419,7 @@ class RootLLMOrchestrator:
             gen_num, trial_num = parts[1], parts[2]
             code_ref = f"{{{{CODE_TRIAL_{gen_num}_{trial_num}}}}}"
 
-            lines.append(f"  - **{trial.trial_id}** [{valid}] score={score:.4f}")
+            lines.append(f"  - **{trial.trial_id}** [{valid}] score={score:.16f}")
             lines.append(f"    Code ref: {code_ref}")
             if trial.reasoning:
                 # Truncate reasoning to first 150 chars
@@ -465,7 +465,7 @@ class RootLLMOrchestrator:
             score = trial.metrics.get("score", 0) if trial.success else 0
             valid_str = "valid" if trial.success else "INVALID"
             lines.append(f"{i}. **{trial.trial_id}** [{valid_str}]")
-            lines.append(f"   Score: {score:.4f}")
+            lines.append(f"   Score: {score:.16f}")
             reasoning_short = (trial.reasoning or "No reasoning")[:200]
             lines.append(f"   Reasoning: {reasoning_short}...")
             if not trial.success:
@@ -581,7 +581,7 @@ class RootLLMOrchestrator:
             gen_pbar.set_postfix(
                 trials=trials,
                 ok=successes,
-                best=f"{best_score:.3f}" if best_score else "N/A",
+                best=f"{best_score:.16f}" if best_score else "N/A",
                 cost=f"${cost_summary.total_cost:.2f}",
             )
 

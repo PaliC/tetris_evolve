@@ -354,7 +354,7 @@ class EvolutionAPI:
 
         # Show trial result
         if trial.success:
-            tqdm.write(f"       ✓ {trial.trial_id}: score={score:.4f}")
+            tqdm.write(f"       ✓ {trial.trial_id}: score={score:.16f}")
         else:
             error_short = (trial.error or "unknown error")[:50]
             tqdm.write(f"       ✗ {trial.trial_id}: {error_short}")
@@ -622,7 +622,7 @@ class EvolutionAPI:
         num_success = sum(1 for t in gen.trials if t.success)
         tqdm.write(
             f"\n  ═══ Generation {self.current_generation} complete: "
-            f"{num_success}/{num_trials} successful, best={gen.best_score:.4f} ═══"
+            f"{num_success}/{num_trials} successful, best={gen.best_score:.16f} ═══"
         )
         if gen.trial_selections:
             tqdm.write(f"  Selected trials: {', '.join(gen.selected_trial_ids)}")
@@ -695,7 +695,7 @@ class EvolutionAPI:
         tqdm.write(f"  EVOLUTION TERMINATED: {reason}")
         tqdm.write(f"  Total trials: {total_trials} ({successful_trials} successful)")
         tqdm.write(f"  Generations: {self.current_generation + 1}")
-        tqdm.write(f"  Best score: {best_score:.4f}")
+        tqdm.write(f"  Best score: {best_score:.16f}")
         cost_summary = self.cost_tracker.get_summary()
         tqdm.write(f"  Total cost: ${cost_summary.total_cost:.4f}")
         tqdm.write(f"{'=' * 60}\n")
@@ -869,7 +869,7 @@ class EvolutionAPI:
             # Format score
             if trial.success:
                 score = trial.metrics.get("score", 0)
-                score_str = f"{score:.4f}"
+                score_str = f"{score:.16f}"
             else:
                 score_str = "INVALID"
 
