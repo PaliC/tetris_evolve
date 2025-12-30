@@ -1,18 +1,23 @@
 """OpenRouter API provider."""
 
+import logging
 import os
 import uuid
 from typing import TYPE_CHECKING, Any
 
 from openai import APIConnectionError, OpenAI, RateLimitError
 from tenacity import (
+    RetryCallState,
     retry,
     retry_if_exception_type,
+    retry_if_result,
     stop_after_attempt,
     wait_exponential,
 )
 
 from .base import BaseLLMProvider, LLMResponse
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ...cost_tracker import CostTracker
@@ -170,12 +175,41 @@ class OpenRouterProvider(BaseLLMProvider):
         max_tokens: int,
         temperature: float,
     ):
-        """Make API call with retry logic."""
+        """Make API call with retry logic for errors and empty responses."""
+
+        def _is_empty_response(response) -> bool:
+            """Check if response content is empty (triggers retry)."""
+            if not response.choices:
+                return True
+            content = response.choices[0].message.content
+            return not content or not content.strip()
+
+        def _log_retry(retry_state: RetryCallState) -> None:
+            """Log retry attempts with appropriate context."""
+            if retry_state.outcome.failed:
+                logger.warning(
+                    "API error for %s, retrying (attempt %d/%d): %s",
+                    self.model,
+                    retry_state.attempt_number,
+                    self.max_retries + 1,
+                    retry_state.outcome.exception(),
+                )
+            else:
+                logger.warning(
+                    "Empty response from %s, retrying (attempt %d/%d)",
+                    self.model,
+                    retry_state.attempt_number,
+                    self.max_retries + 1,
+                )
 
         @retry(
             stop=stop_after_attempt(self.max_retries + 1),
             wait=wait_exponential(multiplier=1, min=1, max=10),
-            retry=retry_if_exception_type((RateLimitError, APIConnectionError)),
+            retry=(
+                retry_if_exception_type((RateLimitError, APIConnectionError))
+                | retry_if_result(_is_empty_response)
+            ),
+            before_sleep=_log_retry,
             reraise=True,
         )
         def _make_call():
