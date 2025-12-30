@@ -844,8 +844,11 @@ class EvolutionAPI:
                 children_map[parent] = []
             children_map[parent].append(trial_id)
 
-        # Find root trials (no parent)
-        roots = children_map.get(None, [])
+        # Find root trials (no parent or parent doesn't exist)
+        roots = list(children_map.get(None, []))
+        for parent_id in children_map:
+            if parent_id is not None and parent_id not in self.all_trials:
+                roots.extend(children_map[parent_id])
 
         # Find the global best trial
         best_trial_id = None
