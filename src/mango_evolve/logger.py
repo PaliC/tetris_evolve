@@ -257,7 +257,28 @@ class ExperimentLogger:
         # Save scratchpad (with final lineage map for this generation)
         self.save_scratchpad(generation, scratchpad, lineage_map)
 
+        # Save experiment state after each generation for incremental progress tracking
+        self._save_experiment_state()
+
         return summary_path
+
+    def _save_experiment_state(self) -> Path:
+        """
+        Save the current experiment state to experiment.json.
+
+        This is called after each generation to provide incremental progress
+        tracking and crash recovery capability.
+
+        Returns:
+            Path to the experiment JSON file
+        """
+        self._experiment_data["generations"] = self._generation_data
+
+        experiment_path = self.base_dir / "experiment.json"
+        with open(experiment_path, "w") as f:
+            json.dump(self._experiment_data, f, indent=2)
+
+        return experiment_path
 
     def log_root_turn(
         self,
@@ -314,7 +335,10 @@ class ExperimentLogger:
         self, termination_reason: str | None = None, scratchpad: str = ""
     ) -> Path:
         """
-        Save the full experiment state.
+        Save the full experiment state with finalization data.
+
+        This is called at the end of an experiment to save the final state
+        including termination reason and end time.
 
         Args:
             termination_reason: Why the experiment ended
@@ -327,14 +351,9 @@ class ExperimentLogger:
 
         self._experiment_data["end_time"] = datetime.now().isoformat()
         self._experiment_data["termination_reason"] = termination_reason
-        self._experiment_data["generations"] = self._generation_data
         self._experiment_data["scratchpad"] = scratchpad
 
-        experiment_path = self.base_dir / "experiment.json"
-        with open(experiment_path, "w") as f:
-            json.dump(self._experiment_data, f, indent=2)
-
-        return experiment_path
+        return self._save_experiment_state()
 
     def load_experiment(self) -> dict[str, Any]:
         """
