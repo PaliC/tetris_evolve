@@ -45,3 +45,9 @@ class ChildrenLimitError(MangoEvolveError):
     """Raised when attempting to exceed max_children_per_generation limit."""
 
     pass
+
+
+class CalibrationBudgetError(MangoEvolveError):
+    """Raised when calibration call budget is exhausted for a model."""
+
+    pass

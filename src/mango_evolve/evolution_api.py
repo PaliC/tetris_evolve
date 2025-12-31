@@ -11,8 +11,9 @@ from typing import Any, Protocol
 
 from tqdm import tqdm
 
+from .config import ChildLLMConfig
 from .cost_tracker import CostTracker
-from .exceptions import ChildrenLimitError, GenerationLimitError
+from .exceptions import CalibrationBudgetError, ChildrenLimitError, GenerationLimitError
 from .llm.prompts import CHILD_LLM_SYSTEM_PROMPT
 from .logger import ExperimentLogger
 from .parallel_worker import child_worker
@@ -56,6 +57,7 @@ class TrialResult:
     parent_id: str | None = None
     error: str | None = None
     generation: int = 0
+    model_alias: str | None = None  # Which child LLM was used
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -70,6 +72,7 @@ class TrialResult:
             "parent_id": self.parent_id,
             "error": self.error,
             "generation": self.generation,
+            "model_alias": self.model_alias,
         }
 
 
@@ -135,13 +138,12 @@ class EvolutionAPI:
     def __init__(
         self,
         evaluator: Evaluator,
-        child_llm: LLMClientProtocol,
+        child_llm_configs: dict[str, ChildLLMConfig],
         cost_tracker: CostTracker,
         logger: ExperimentLogger,
         max_generations: int = 10,
         max_children_per_generation: int = 10,
-        child_llm_model: str | None = None,
-        child_llm_provider: str = "anthropic",
+        default_child_llm_alias: str | None = None,
         evaluator_kwargs: dict[str, Any] | None = None,
     ):
         """
@@ -149,24 +151,32 @@ class EvolutionAPI:
 
         Args:
             evaluator: Evaluator instance for scoring programs
-            child_llm: LLM client for spawning child LLMs
+            child_llm_configs: Dict mapping effective_alias -> ChildLLMConfig
             cost_tracker: CostTracker for budget management
             logger: ExperimentLogger for logging
             max_generations: Maximum number of generations
             max_children_per_generation: Maximum children per generation
-            child_llm_model: Model name for child LLM (for parallel spawning)
-            child_llm_provider: Provider name for child LLM ("anthropic" or "openrouter")
+            default_child_llm_alias: Default model alias to use if none specified
             evaluator_kwargs: Kwargs for creating evaluator in worker processes
         """
         self.evaluator = evaluator
-        self.child_llm = child_llm
+        self.child_llm_configs = child_llm_configs
         self.cost_tracker = cost_tracker
         self.logger = logger
         self._max_generations = max_generations  # Read-only after init
         self._max_children_per_generation = max_children_per_generation  # Read-only after init
-        self.child_llm_model = child_llm_model
-        self.child_llm_provider = child_llm_provider
+        self.default_child_llm_alias = default_child_llm_alias
         self.evaluator_kwargs = evaluator_kwargs or {}
+
+        # Child LLM clients - created lazily per model
+        self.child_llm_clients: dict[str, LLMClientProtocol] = {}
+
+        # Calibration phase tracking
+        self.in_calibration_phase: bool = True
+        self.calibration_calls_remaining: dict[str, int] = {
+            alias: cfg.calibration_calls
+            for alias, cfg in child_llm_configs.items()
+        }
 
         self.current_generation = 0
         self.generations: list[GenerationSummary] = [GenerationSummary(generation_num=0, trials=[])]
@@ -192,10 +202,44 @@ class EvolutionAPI:
         """Check if evolution has been terminated."""
         return self._terminated
 
+    def _resolve_model_alias(self, model: str | None) -> str:
+        """Resolve a model alias to an effective alias, validating it exists."""
+        if model is None:
+            if self.default_child_llm_alias is None:
+                raise ValueError(
+                    "No model specified and no default_child_llm_alias configured. "
+                    f"Available models: {list(self.child_llm_configs.keys())}"
+                )
+            model = self.default_child_llm_alias
+
+        if model not in self.child_llm_configs:
+            raise ValueError(
+                f"Unknown model alias '{model}'. "
+                f"Available: {list(self.child_llm_configs.keys())}"
+            )
+        return model
+
+    def _get_or_create_child_llm_client(self, alias: str) -> LLMClientProtocol:
+        """Get or create an LLM client for the specified model alias."""
+        if alias not in self.child_llm_clients:
+            # Import here to avoid circular imports
+            from .llm.client import create_llm_client
+
+            config = self.child_llm_configs[alias]
+            self.child_llm_clients[alias] = create_llm_client(
+                provider=config.provider,
+                model=config.model,
+                cost_tracker=self.cost_tracker,
+                llm_type=f"child:{alias}",
+            )
+        return self.child_llm_clients[alias]
+
     def spawn_child_llm(
         self,
         prompt: str,
         parent_id: str | None = None,
+        model: str | None = None,
+        temperature: float = 0.7,
     ) -> dict[str, Any]:
         """
         Spawn a child LLM to generate a program.
@@ -207,6 +251,8 @@ class EvolutionAPI:
         Args:
             prompt: Complete prompt to send to the child LLM
             parent_id: Optional trial ID of parent (for mutation tracking)
+            model: Alias of the child LLM to use (from config). If None, uses default.
+            temperature: Sampling temperature (default 0.7)
 
         Returns:
             Dictionary with trial result:
@@ -216,31 +262,55 @@ class EvolutionAPI:
                 'metrics': dict,
                 'reasoning': str,
                 'success': bool,
-                'error': Optional[str]
+                'error': Optional[str],
+                'model_alias': str
             }
 
         Raises:
             ChildrenLimitError: If max_children_per_generation limit is reached
+            CalibrationBudgetError: If in calibration phase and budget exhausted for model
         """
+        # Resolve model alias
+        model_alias = self._resolve_model_alias(model)
+
+        # Check calibration budget if in calibration phase
+        if self.in_calibration_phase:
+            if self.calibration_calls_remaining[model_alias] <= 0:
+                raise CalibrationBudgetError(
+                    f"Calibration budget exhausted for model '{model_alias}'. "
+                    f"Remaining calls: {self.calibration_calls_remaining}. "
+                    "Use a different model or call end_calibration_phase()."
+                )
+            self.calibration_calls_remaining[model_alias] -= 1
+
         # Check budget
         self.cost_tracker.raise_if_over_budget()
 
-        # Check children limit
-        trial_num = len(self.generations[self.current_generation].trials)
-        if trial_num >= self.max_children_per_generation:
-            raise ChildrenLimitError(
-                f"Cannot spawn more children in generation {self.current_generation}. "
-                f"Limit of {self.max_children_per_generation} children reached."
-            )
+        # Determine trial generation (-1 for calibration, else current_generation)
+        trial_generation = -1 if self.in_calibration_phase else self.current_generation
+
+        # Check children limit (only during evolution, not calibration)
+        if not self.in_calibration_phase:
+            trial_num = len(self.generations[self.current_generation].trials)
+            if trial_num >= self.max_children_per_generation:
+                raise ChildrenLimitError(
+                    f"Cannot spawn more children in generation {self.current_generation}. "
+                    f"Limit of {self.max_children_per_generation} children reached."
+                )
+        else:
+            # During calibration, use a separate counter
+            trial_num = len([t for t in self.all_trials.values() if t.generation == -1])
 
         # Generate trial ID
-        trial_id = f"trial_{self.current_generation}_{trial_num}"
+        trial_id = f"trial_{trial_generation}_{trial_num}"
 
         # Show progress for child LLM spawn
+        phase_str = "calibration" if self.in_calibration_phase else f"gen {self.current_generation}"
         tqdm.write(
-            f"  └─ Spawning child LLM: gen {self.current_generation}, "
-            f"trial {trial_num + 1}/{self.max_children_per_generation}"
+            f"  └─ Spawning child LLM ({model_alias}): {phase_str}, "
+            f"trial {trial_num + 1}"
             + (f" (parent: {parent_id})" if parent_id else "")
+            + f" [temp={temperature}]"
         )
 
         # Substitute {{CODE_TRIAL_X_Y}} tokens with actual code
@@ -258,12 +328,15 @@ class EvolutionAPI:
                 else:
                     tqdm.write(f"       ⚠ Failed to substitute {sub['token']}: {sub['error']}")
 
+        # Get or create LLM client for this model
+        child_llm = self._get_or_create_child_llm_client(model_alias)
+
         # Call child LLM
         try:
-            response = self.child_llm.generate(
+            response = child_llm.generate(
                 messages=[{"role": "user", "content": substituted_prompt}],
                 max_tokens=4096,
-                temperature=0.7,
+                temperature=temperature,
             )
             response_text = response.content
         except Exception as e:
@@ -278,7 +351,8 @@ class EvolutionAPI:
                 success=False,
                 parent_id=parent_id,
                 error=f"LLM call failed: {str(e)}",
-                generation=self.current_generation,
+                generation=trial_generation,
+                model_alias=model_alias,
             )
             self._record_trial(trial)
             return trial.to_dict()
@@ -299,7 +373,8 @@ class EvolutionAPI:
                 success=False,
                 parent_id=parent_id,
                 error="No Python code block found in response",
-                generation=self.current_generation,
+                generation=trial_generation,
+                model_alias=model_alias,
             )
             self._record_trial(trial)
             return trial.to_dict()
@@ -328,7 +403,8 @@ class EvolutionAPI:
             success=success,
             parent_id=parent_id,
             error=error_msg,
-            generation=self.current_generation,
+            generation=trial_generation,
+            model_alias=model_alias,
         )
 
         self._record_trial(trial)
@@ -342,17 +418,22 @@ class EvolutionAPI:
             skip_file_write: If True, skip writing the trial file (used when
                             file was already written by parallel worker)
         """
-        self.generations[self.current_generation].trials.append(trial)
+        # Record in all_trials
         self.all_trials[trial.trial_id] = trial
 
-        # Update best trial for generation
-        gen = self.generations[self.current_generation]
-        score = trial.metrics.get("score", 0) if trial.success else 0
-        if score > gen.best_score:
-            gen.best_score = score
-            gen.best_trial_id = trial.trial_id
+        # Only add to generations list if not a calibration trial
+        if trial.generation >= 0:
+            self.generations[self.current_generation].trials.append(trial)
+
+            # Update best trial for generation
+            gen = self.generations[self.current_generation]
+            score = trial.metrics.get("score", 0) if trial.success else 0
+            if score > gen.best_score:
+                gen.best_score = score
+                gen.best_trial_id = trial.trial_id
 
         # Show trial result
+        score = trial.metrics.get("score", 0) if trial.success else 0
         if trial.success:
             tqdm.write(f"       ✓ {trial.trial_id}: score={score:.16f}")
         else:
@@ -387,6 +468,8 @@ class EvolutionAPI:
             children: List of dicts with keys:
                 - 'prompt': Complete prompt to send to the child LLM
                 - 'parent_id': Optional trial ID of parent (for mutation tracking)
+                - 'model': Optional model alias (defaults to default_child_llm_alias)
+                - 'temperature': Optional temperature (defaults to 0.7)
             num_workers: Number of parallel workers (defaults to number of children)
 
         Returns:
@@ -394,40 +477,53 @@ class EvolutionAPI:
 
         Raises:
             ChildrenLimitError: If spawning would exceed max_children_per_generation
-            ValueError: If child_llm_model is not set (required for parallel spawning)
         """
-        if not self.child_llm_model:
-            raise ValueError(
-                "child_llm_model must be set for parallel spawning. "
-                "Ensure the EvolutionAPI is initialized with child_llm_model."
-            )
-
         # Check budget
         self.cost_tracker.raise_if_over_budget()
 
-        # Check children limit
-        current_count = len(self.generations[self.current_generation].trials)
-        if current_count + len(children) > self.max_children_per_generation:
-            raise ChildrenLimitError(
-                f"Cannot spawn {len(children)} children in generation {self.current_generation}. "
-                f"Current count: {current_count}, limit: {self.max_children_per_generation}."
-            )
+        # Check children limit (only during evolution, not calibration)
+        if not self.in_calibration_phase:
+            current_count = len(self.generations[self.current_generation].trials)
+            if current_count + len(children) > self.max_children_per_generation:
+                raise ChildrenLimitError(
+                    f"Cannot spawn {len(children)} children in generation {self.current_generation}. "
+                    f"Current count: {current_count}, limit: {self.max_children_per_generation}."
+                )
+
+        # Resolve model aliases for all children and check calibration budget
+        resolved_models: dict[int, tuple[str, ChildLLMConfig]] = {}
+        for i, child in enumerate(children):
+            model_alias = self._resolve_model_alias(child.get("model"))
+            config = self.child_llm_configs[model_alias]
+            resolved_models[i] = (model_alias, config)
+
+            # Check calibration budget if in calibration phase
+            if self.in_calibration_phase:
+                if self.calibration_calls_remaining[model_alias] <= 0:
+                    raise CalibrationBudgetError(
+                        f"Calibration budget exhausted for model '{model_alias}'. "
+                        f"Remaining calls: {self.calibration_calls_remaining}"
+                    )
+                self.calibration_calls_remaining[model_alias] -= 1
+
+        # Determine trial generation
+        trial_generation = -1 if self.in_calibration_phase else self.current_generation
 
         # Show progress
-        tqdm.write(
-            f"  └─ Spawning {len(children)} child LLMs in parallel: gen {self.current_generation}"
-        )
+        phase_str = "calibration" if self.in_calibration_phase else f"gen {self.current_generation}"
+        tqdm.write(f"  └─ Spawning {len(children)} child LLMs in parallel: {phase_str}")
 
         # Sort children by parent_id for better prompt cache hits
-        # Children with the same parent share code prefix, so processing them
-        # together improves cache utilization
         indexed_children = list(enumerate(children))
         indexed_children.sort(key=lambda x: x[1].get("parent_id") or "")
 
-        # Pre-assign trial IDs for each child (based on original order for consistency)
-        starting_trial_num = len(self.generations[self.current_generation].trials)
+        # Pre-assign trial IDs for each child
+        if self.in_calibration_phase:
+            starting_trial_num = len([t for t in self.all_trials.values() if t.generation == -1])
+        else:
+            starting_trial_num = len(self.generations[self.current_generation].trials)
         trial_ids = [
-            f"trial_{self.current_generation}_{starting_trial_num + i}"
+            f"trial_{trial_generation}_{starting_trial_num + i}"
             for i in range(len(children))
         ]
 
@@ -435,7 +531,6 @@ class EvolutionAPI:
         experiment_dir = str(self.logger.base_dir)
 
         # Substitute {{CODE_TRIAL_X_Y}} tokens in all prompts before passing to workers
-        # We do this in the main process where we have access to all_trials
         substituted_prompts: dict[int, str] = {}
         for orig_idx, child in indexed_children:
             prompt = child.get("prompt", "")
@@ -456,23 +551,28 @@ class EvolutionAPI:
 
         # Prepare worker arguments in sorted order (by parent_id) for cache optimization
         # Each worker gets: (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
-        #                    trial_id, generation, experiment_dir, system_prompt, provider)
+        #                    trial_id, generation, experiment_dir, system_prompt, provider, model_alias)
         worker_args = []
         result_order = []  # Track original indices for result ordering
         for orig_idx, child in indexed_children:
             parent_id = child.get("parent_id")
+            temperature = child.get("temperature", 0.7)
+            model_alias, config = resolved_models[orig_idx]
+
+            # Serialize model config for worker
             worker_args.append((
                 substituted_prompts[orig_idx],  # Use substituted prompt
                 parent_id,
-                self.child_llm_model,
+                config.model,  # Actual model name
                 self.evaluator_kwargs,
                 4096,  # max_tokens
-                0.7,   # temperature
+                temperature,
                 trial_ids[orig_idx],
-                self.current_generation,
+                trial_generation,
                 experiment_dir,
                 CHILD_LLM_SYSTEM_PROMPT,  # Cacheable system prompt
-                self.child_llm_provider,  # Provider for child LLM
+                config.provider,  # Provider for child LLM
+                model_alias,  # Model alias for tracking
             ))
             result_order.append(orig_idx)
 
@@ -493,13 +593,15 @@ class EvolutionAPI:
         for worker_result in worker_results:
             # Use pre-assigned trial ID from worker
             trial_id = worker_result["trial_id"]
+            model_alias = worker_result.get("model_alias")
 
             # Record token usage in cost tracker (including cache stats)
             if worker_result["input_tokens"] > 0 or worker_result["output_tokens"] > 0:
+                llm_type = f"child:{model_alias}" if model_alias else "child"
                 self.cost_tracker.record_usage(
                     input_tokens=worker_result["input_tokens"],
                     output_tokens=worker_result["output_tokens"],
-                    llm_type="child",
+                    llm_type=llm_type,
                     call_id=worker_result["call_id"],
                     cache_creation_input_tokens=worker_result.get("cache_creation_input_tokens", 0),
                     cache_read_input_tokens=worker_result.get("cache_read_input_tokens", 0),
@@ -516,7 +618,8 @@ class EvolutionAPI:
                 success=worker_result["success"],
                 parent_id=worker_result["parent_id"],
                 error=worker_result["error"],
-                generation=self.current_generation,
+                generation=trial_generation,
+                model_alias=model_alias,
             )
 
             self._record_trial(trial, skip_file_write=True)
@@ -826,6 +929,61 @@ class EvolutionAPI:
         tqdm.write(f"  📝 Scratchpad updated ({len(content)} chars)")
         return {"success": True, "length": len(content)}
 
+    def end_calibration_phase(self) -> dict[str, Any]:
+        """
+        End the calibration phase and transition to main evolution.
+
+        Call this after making test calls to learn about different models.
+        After calling this, calibration call limits no longer apply and
+        regular evolution begins.
+
+        Returns:
+            Summary of calibration phase including calls made per model.
+        """
+        if not self.in_calibration_phase:
+            return {"already_ended": True, "message": "Calibration phase already ended."}
+
+        self.in_calibration_phase = False
+
+        # Calculate calls made per model
+        calls_made = {
+            alias: config.calibration_calls - self.calibration_calls_remaining[alias]
+            for alias, config in self.child_llm_configs.items()
+        }
+
+        calibration_trials = [t for t in self.all_trials.values() if t.generation == -1]
+
+        tqdm.write("\n  ══════════════════════════════════════")
+        tqdm.write("  CALIBRATION PHASE COMPLETE")
+        tqdm.write(f"  Trials: {len(calibration_trials)}")
+        tqdm.write(f"  Calls per model: {calls_made}")
+        tqdm.write("  ══════════════════════════════════════\n")
+
+        return {
+            "calibration_ended": True,
+            "calls_made": calls_made,
+            "total_calibration_trials": len(calibration_trials),
+            "message": "Calibration complete. Evolution will now begin.",
+        }
+
+    def get_calibration_status(self) -> dict[str, Any]:
+        """
+        Get current calibration phase status.
+
+        Use this to check how many calibration calls remain for each model
+        and whether you're still in the calibration phase.
+
+        Returns:
+            Dictionary with calibration status and remaining calls per model.
+        """
+        calibration_trials = [t for t in self.all_trials.values() if t.generation == -1]
+        return {
+            "in_calibration_phase": self.in_calibration_phase,
+            "calls_remaining": dict(self.calibration_calls_remaining),
+            "total_calibration_trials": len(calibration_trials),
+            "available_models": list(self.child_llm_configs.keys()),
+        }
+
     def _build_lineage_map(self) -> str:
         """
         Build a visual lineage map from parent_id relationships.
@@ -920,13 +1078,15 @@ class EvolutionAPI:
         """
         Get a dictionary of API functions to inject into the REPL.
 
-        The 6 core evolution functions are exposed:
+        Core evolution functions exposed:
         - spawn_child_llm: Generate new programs via child LLM (sequential)
         - spawn_children_parallel: Generate multiple programs in parallel
         - evaluate_program: Evaluate code directly
         - terminate_evolution: End the evolution process
         - get_trial_code: Retrieve code from specific trials on demand
         - update_scratchpad: Update persistent notes across generations
+        - end_calibration_phase: End calibration and start evolution
+        - get_calibration_status: Check calibration phase status
 
         Note: advance_generation is no longer exposed - it happens automatically.
 
@@ -940,4 +1100,6 @@ class EvolutionAPI:
             "terminate_evolution": self.terminate_evolution,
             "get_trial_code": self.get_trial_code,
             "update_scratchpad": self.update_scratchpad,
+            "end_calibration_phase": self.end_calibration_phase,
+            "get_calibration_status": self.get_calibration_status,
         }

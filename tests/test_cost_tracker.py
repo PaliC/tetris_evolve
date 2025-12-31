@@ -45,8 +45,8 @@ class TestCostTracker:
     def test_different_pricing_root_child(self, sample_config_dict):
         """Root and child use different pricing."""
         # Set different pricing for child
-        sample_config_dict["child_llm"]["cost_per_million_input_tokens"] = 1.0
-        sample_config_dict["child_llm"]["cost_per_million_output_tokens"] = 5.0
+        sample_config_dict["child_llms"][0]["cost_per_million_input_tokens"] = 1.0
+        sample_config_dict["child_llms"][0]["cost_per_million_output_tokens"] = 5.0
         config = config_from_dict(sample_config_dict)
 
         tracker = CostTracker(config)
@@ -57,10 +57,11 @@ class TestCostTracker:
             llm_type="root",
         )
 
+        # Use the alias format: "child:<alias>"
         child_usage = tracker.record_usage(
             input_tokens=1000,
             output_tokens=1000,
-            llm_type="child",
+            llm_type="child:default",
         )
 
         # Root should cost more with the default pricing
@@ -116,7 +117,7 @@ class TestCostTracker:
         tracker = CostTracker(sample_config)
 
         tracker.record_usage(1000, 500, "root")
-        tracker.record_usage(2000, 1000, "child")
+        tracker.record_usage(2000, 1000, "child:default")
 
         summary = tracker.get_summary()
 
@@ -125,9 +126,9 @@ class TestCostTracker:
         assert summary.total_input_tokens == 3000
         assert summary.total_output_tokens == 1500
         assert summary.root_cost > 0
-        assert summary.child_cost > 0
+        assert summary.total_child_cost > 0  # Changed to total_child_cost
         assert summary.root_calls == 1
-        assert summary.child_calls == 1
+        assert summary.total_child_calls == 1  # Changed to total_child_calls
 
     def test_remaining_budget(self, sample_config):
         """Remaining budget decreases correctly."""

@@ -1,5 +1,5 @@
-# Mixed provider config: Claude for root (better reasoning), Gemini for children (cost savings)
-# Best of both worlds - smart orchestration with cheap exploration
+# Mixed provider config: Claude for root (better reasoning), multiple child options
+# Best of both worlds - smart orchestration with flexible exploration
 #
 # Requires: ANTHROPIC_API_KEY and OPENROUTER_API_KEY environment variables
 
@@ -15,12 +15,25 @@ root_llm:
   cost_per_million_output_tokens: 15.0
   max_iterations: 30
 
-# Use Gemini Flash for children (cheap, fast exploration)
-child_llm:
-  provider: "openrouter"
-  model: "google/gemini-2.0-flash-001"
-  cost_per_million_input_tokens: 0.10
-  cost_per_million_output_tokens: 0.40
+# Multiple child LLMs - root can choose which to use
+child_llms:
+  # Fast, cheap exploration
+  - alias: "fast"
+    model: "google/gemini-2.0-flash-001"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 0.10
+    cost_per_million_output_tokens: 0.40
+    calibration_calls: 3
+
+  # Higher quality for refinement
+  - alias: "quality"
+    model: "claude-sonnet-4-20250514"
+    provider: "anthropic"
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
+    calibration_calls: 2
+
+default_child_llm_alias: "fast"
 
 evaluation:
   evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"

@@ -214,16 +214,19 @@ def child_worker(args: tuple) -> dict[str, Any]:
 
     Args:
         args: Tuple of (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
-                        trial_id, generation, experiment_dir, system_prompt, provider)
-              system_prompt and provider are optional for backwards compatibility
+                        trial_id, generation, experiment_dir, system_prompt, provider, model_alias)
+              system_prompt, provider, and model_alias are optional for backwards compatibility
 
     Returns:
         Dictionary with all results needed to record the trial
     """
     # Handle different arg formats for backwards compatibility
-    # 9 args: original format (no system_prompt, no provider)
-    # 10 args: with system_prompt (no provider)
-    # 11 args: with system_prompt and provider
+    # 9 args: original format (no system_prompt, no provider, no model_alias)
+    # 10 args: with system_prompt (no provider, no model_alias)
+    # 11 args: with system_prompt and provider (no model_alias)
+    # 12 args: with system_prompt, provider, and model_alias
+    model_alias: str | None = None
+
     if len(args) == 9:
         (
             prompt,
@@ -252,7 +255,7 @@ def child_worker(args: tuple) -> dict[str, Any]:
             system_prompt,
         ) = args
         provider = "anthropic"
-    else:
+    elif len(args) == 11:
         (
             prompt,
             parent_id,
@@ -265,6 +268,22 @@ def child_worker(args: tuple) -> dict[str, Any]:
             experiment_dir,
             system_prompt,
             provider,
+        ) = args
+    else:
+        # 12 args: full new format with model_alias
+        (
+            prompt,
+            parent_id,
+            model,
+            evaluator_kwargs,
+            max_tokens,
+            temperature,
+            trial_id,
+            generation,
+            experiment_dir,
+            system_prompt,
+            provider,
+            model_alias,
         ) = args
 
     call_id = str(uuid.uuid4())
@@ -369,6 +388,7 @@ def child_worker(args: tuple) -> dict[str, Any]:
                 "call_id": call_id,
                 "cache_creation_input_tokens": cache_creation_input_tokens,
                 "cache_read_input_tokens": cache_read_input_tokens,
+                "model_alias": model_alias,
             }
 
         # Create evaluator and evaluate the code
@@ -418,4 +438,5 @@ def child_worker(args: tuple) -> dict[str, Any]:
         "call_id": call_id,
         "cache_creation_input_tokens": cache_creation_input_tokens,
         "cache_read_input_tokens": cache_read_input_tokens,
+        "model_alias": model_alias,
     }

@@ -8,10 +8,15 @@ root_llm:
   cost_per_million_output_tokens: 5.0
   max_iterations: 30
 
-child_llm:
-  model: "claude-haiku-4-5-20251001"
-  cost_per_million_input_tokens: 1.0
-  cost_per_million_output_tokens: 5.0
+child_llms:
+  - alias: "haiku"
+    model: "claude-haiku-4-5-20251001"
+    provider: "anthropic"
+    cost_per_million_input_tokens: 1.0
+    cost_per_million_output_tokens: 5.0
+    calibration_calls: 2
+
+default_child_llm_alias: "haiku"
 
 # Evaluation config points to an evaluator function/class
 # The evaluator is loaded dynamically at runtime

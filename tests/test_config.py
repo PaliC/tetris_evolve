@@ -25,7 +25,9 @@ class TestConfigFromDict:
         assert config.experiment.name == "test_experiment"
         assert config.experiment.output_dir == "./test_experiments"
         assert config.root_llm.model == "claude-sonnet-4-20250514"
-        assert config.child_llm.model == "claude-sonnet-4-20250514"
+        assert len(config.child_llms) == 1
+        assert config.child_llms[0].model == "claude-sonnet-4-20250514"
+        assert config.default_child_llm_alias == "default"
         assert config.budget.max_total_cost == 10.0
         assert (
             config.evaluation.evaluator_fn

@@ -26,11 +26,17 @@ def sample_config_dict():
             "cost_per_million_output_tokens": 15.0,
             "max_iterations": 30,
         },
-        "child_llm": {
-            "model": "claude-sonnet-4-20250514",
-            "cost_per_million_input_tokens": 3.0,
-            "cost_per_million_output_tokens": 15.0,
-        },
+        "child_llms": [
+            {
+                "alias": "default",
+                "model": "claude-sonnet-4-20250514",
+                "provider": "anthropic",
+                "cost_per_million_input_tokens": 3.0,
+                "cost_per_million_output_tokens": 15.0,
+                "calibration_calls": 0,  # No calibration in tests
+            }
+        ],
+        "default_child_llm_alias": "default",
         "evaluation": {
             "evaluator_fn": "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator",
             "evaluator_kwargs": {

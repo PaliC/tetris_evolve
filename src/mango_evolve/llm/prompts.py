@@ -5,6 +5,11 @@ Contains the Root LLM system prompt that documents available functions
 and guides the evolution process. Structured for optimal prompt caching.
 """
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..config import ChildLLMConfig
+
 # Root LLM System Prompt - Static Prefix (cacheable)
 # This contains all the stable content that doesn't change between calls.
 # Dynamic values (generation counts) are appended separately.
@@ -40,8 +45,17 @@ def run_packing():
 
 ## Available Functions
 
+### spawn_child_llm(prompt, parent_id=None, model=None, temperature=0.7) -> dict
+Spawn a single child LLM. Returns `{trial_id, code, metrics, reasoning, success, error}`.
+- `model`: Child LLM alias from available models (see below). Uses default if None.
+- `temperature`: Sampling temperature (0.0-1.0). Higher = more creative.
+
 ### spawn_children_parallel(children: list[dict]) -> list[dict]
-Spawn child LLMs in parallel. Each child dict has `prompt` (str) and optional `parent_id` (str).
+Spawn child LLMs in parallel. Each child dict has:
+- `prompt` (str, required)
+- `parent_id` (str, optional)
+- `model` (str, optional) - alias from available child LLMs
+- `temperature` (float, optional, default 0.7)
 Returns: `[{trial_id, code, metrics, reasoning, success, error}, ...]`
 
 ### get_trial_code(trial_ids: list[str]) -> dict[str, str | None]
@@ -92,6 +106,15 @@ ROOT_LLM_SYSTEM_PROMPT_DYNAMIC = '''
 - **Max children per generation**: {max_children_per_generation}
 - **Max generations**: {max_generations}
 - **Current generation**: {current_generation}/{max_generations}
+'''
+
+# Available child LLMs template - inserted after dynamic parameters
+ROOT_LLM_CHILD_MODELS_TEMPLATE = '''
+## Available Child LLMs
+
+{child_llm_list}
+
+**Default model**: {default_child_llm}
 '''
 
 # Timeout constraint - simple exposure of the limit
@@ -247,3 +270,153 @@ def format_child_mutation_prompt(
 {guidance if guidance else "Find a way to improve the score."}
 """
     return prompt
+
+
+def _format_child_llm_list(child_llm_configs: dict[str, "ChildLLMConfig"]) -> str:
+    """Format the list of available child LLMs for the system prompt."""
+    lines = []
+    for alias, cfg in child_llm_configs.items():
+        lines.append(
+            f"- **{alias}**: `{cfg.model}` ({cfg.provider}) - "
+            f"${cfg.cost_per_million_input_tokens:.2f}/M in, "
+            f"${cfg.cost_per_million_output_tokens:.2f}/M out"
+        )
+    return "\n".join(lines)
+
+
+def get_root_system_prompt_parts_with_models(
+    child_llm_configs: dict[str, "ChildLLMConfig"],
+    default_child_llm_alias: str | None = None,
+    max_children_per_generation: int = 10,
+    max_generations: int = 10,
+    current_generation: int = 0,
+    timeout_seconds: int | None = None,
+) -> list[dict]:
+    """
+    Get the Root LLM system prompt with child LLM info as structured content blocks.
+
+    Args:
+        child_llm_configs: Dict of alias -> ChildLLMConfig
+        default_child_llm_alias: Default model alias
+        max_children_per_generation: Maximum children that can be spawned per generation
+        max_generations: Maximum number of generations
+        current_generation: Current generation number (0-indexed)
+        timeout_seconds: Optional timeout limit per trial in seconds
+
+    Returns:
+        List of content blocks suitable for Anthropic API system parameter.
+    """
+    dynamic_part = ROOT_LLM_SYSTEM_PROMPT_DYNAMIC.format(
+        max_children_per_generation=max_children_per_generation,
+        max_generations=max_generations,
+        current_generation=current_generation,
+    )
+    timeout_part = _format_timeout_constraint(timeout_seconds)
+
+    # Build child LLM info
+    child_llm_list = _format_child_llm_list(child_llm_configs)
+    default_llm = default_child_llm_alias or (
+        list(child_llm_configs.keys())[0] if child_llm_configs else "none"
+    )
+    child_models_part = ROOT_LLM_CHILD_MODELS_TEMPLATE.format(
+        child_llm_list=child_llm_list,
+        default_child_llm=default_llm,
+    )
+
+    return [
+        {
+            "type": "text",
+            "text": ROOT_LLM_SYSTEM_PROMPT_STATIC,
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "text",
+            "text": dynamic_part + timeout_part + child_models_part,
+        },
+    ]
+
+
+# Calibration system prompt - used during calibration phase
+CALIBRATION_SYSTEM_PROMPT_STATIC = '''You are orchestrating a calibration phase for an evolutionary optimization process.
+
+## Purpose
+
+Before evolution begins, you have the opportunity to test the available child LLMs to understand their:
+- Output quality and code style
+- Performance on the circle packing problem
+- Optimal temperature settings
+- Response patterns and reasoning depth
+
+## Problem
+
+Pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their radii.
+- All circles must be entirely inside the unit square
+- No two circles may overlap
+- All radii must be non-negative
+
+**Target**: 2.635983099011548 (best known)
+
+## Available Functions
+
+### spawn_child_llm(prompt, parent_id=None, model=None, temperature=0.7) -> dict
+Spawn a child LLM to test. Returns `{trial_id, code, metrics, reasoning, success, error}`.
+- `model`: Child LLM alias (see available models below)
+- `temperature`: Sampling temperature (0.0-1.0). Higher = more creative.
+
+### get_calibration_status() -> dict
+Check remaining calibration calls per model.
+
+### update_scratchpad(content: str) -> dict
+Record your observations about each model's behavior. These notes will persist into evolution.
+
+### end_calibration_phase() -> dict
+Finish calibration and begin the evolution phase. Call this when you've learned enough.
+
+## Guidelines
+
+1. **Test each model** at least once if budget allows
+2. **Experiment with temperatures**: Try 0.3 (focused), 0.7 (balanced), 1.0 (creative)
+3. **Record observations**: Note which models produce cleaner code, better reasoning, etc.
+4. **Be efficient**: You have limited calibration calls - use them wisely
+5. **Write useful notes**: Your scratchpad observations will guide model selection during evolution
+'''
+
+
+def get_calibration_system_prompt_parts(
+    child_llm_configs: dict[str, "ChildLLMConfig"],
+) -> list[dict]:
+    """
+    Get the calibration system prompt as structured content blocks.
+
+    Args:
+        child_llm_configs: Dict of alias -> ChildLLMConfig
+
+    Returns:
+        List of content blocks suitable for Anthropic API system parameter.
+    """
+    # Build child LLM info with calibration budgets
+    lines = ["## Available Child LLMs", ""]
+    for alias, cfg in child_llm_configs.items():
+        lines.extend([
+            f"### {alias}",
+            f"- **Model**: `{cfg.model}`",
+            f"- **Provider**: {cfg.provider}",
+            f"- **Calibration budget**: {cfg.calibration_calls} calls",
+            f"- **Cost**: ${cfg.cost_per_million_input_tokens:.2f}/M input, "
+            f"${cfg.cost_per_million_output_tokens:.2f}/M output",
+            "",
+        ])
+
+    child_models_part = "\n".join(lines)
+
+    return [
+        {
+            "type": "text",
+            "text": CALIBRATION_SYSTEM_PROMPT_STATIC,
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "text",
+            "text": child_models_part,
+        },
+    ]

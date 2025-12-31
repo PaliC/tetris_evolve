@@ -10,12 +10,12 @@ from typing import Any
 
 from tqdm import tqdm
 
-from .config import Config, load_evaluator
+from .config import ChildLLMConfig, Config, load_evaluator, save_calibration_notes, load_calibration_notes
 from .cost_tracker import CostTracker
 from .evolution_api import EvolutionAPI
 from .exceptions import BudgetExceededError, GenerationLimitError
 from .llm.client import LLMClient, MockLLMClient, create_llm_client
-from .llm.prompts import get_root_system_prompt_parts
+from .llm.prompts import get_root_system_prompt_parts_with_models, get_calibration_system_prompt_parts
 from .logger import ExperimentLogger
 from .repl import REPLEnvironment
 from .utils.code_extraction import extract_repl_blocks, extract_selection_block
@@ -52,7 +52,7 @@ class RootLLMOrchestrator:
         self,
         config: Config,
         root_llm: LLMClient | MockLLMClient | None = None,
-        child_llm: LLMClient | MockLLMClient | None = None,
+        child_llm_clients: dict[str, LLMClient | MockLLMClient] | None = None,
         logger: ExperimentLogger | None = None,
     ):
         """
@@ -61,7 +61,7 @@ class RootLLMOrchestrator:
         Args:
             config: Experiment configuration
             root_llm: Optional pre-configured root LLM client (for testing)
-            child_llm: Optional pre-configured child LLM client (for testing)
+            child_llm_clients: Optional pre-configured child LLM clients by alias (for testing)
             logger: Optional pre-configured logger (for testing)
         """
         self.config = config
@@ -75,7 +75,7 @@ class RootLLMOrchestrator:
         self.logger = logger or ExperimentLogger(config)
         self.logger.create_experiment_directory()
 
-        # Initialize LLM clients
+        # Initialize Root LLM client
         if root_llm is not None:
             self.root_llm = root_llm
         else:
@@ -87,16 +87,13 @@ class RootLLMOrchestrator:
                 reasoning_config=asdict(config.root_llm.reasoning) if config.root_llm.reasoning else None,
             )
 
-        if child_llm is not None:
-            self.child_llm = child_llm
-        else:
-            self.child_llm = create_llm_client(
-                provider=config.child_llm.provider,
-                model=config.child_llm.model,
-                cost_tracker=self.cost_tracker,
-                llm_type="child",
-                reasoning_config=asdict(config.child_llm.reasoning) if config.child_llm.reasoning else None,
-            )
+        # Build child LLM configs dict keyed by effective_alias
+        self.child_llm_configs: dict[str, ChildLLMConfig] = {
+            cfg.effective_alias: cfg for cfg in config.child_llms
+        }
+
+        # Store pre-configured child clients (for testing) or empty dict (lazy init)
+        self.child_llm_clients = child_llm_clients or {}
 
         # Load evaluator
         self.evaluator = load_evaluator(config.evaluation)
@@ -104,16 +101,15 @@ class RootLLMOrchestrator:
         # Get evaluator kwargs for parallel workers
         evaluator_kwargs = config.evaluation.evaluator_kwargs or {}
 
-        # Initialize Evolution API
+        # Initialize Evolution API with multi-model support
         self.evolution_api = EvolutionAPI(
             evaluator=self.evaluator,
-            child_llm=self.child_llm,
+            child_llm_configs=self.child_llm_configs,
             cost_tracker=self.cost_tracker,
             logger=self.logger,
             max_generations=config.evolution.max_generations,
             max_children_per_generation=config.evolution.max_children_per_generation,
-            child_llm_model=config.child_llm.model,
-            child_llm_provider=config.child_llm.provider,
+            default_child_llm_alias=config.default_child_llm_alias,
             evaluator_kwargs=evaluator_kwargs,
         )
 
@@ -124,6 +120,195 @@ class RootLLMOrchestrator:
         self.messages: list[dict[str, str]] = []
         self.turn_number = 0
 
+        # Calibration state
+        self._calibration_messages: list[dict[str, str]] = []
+        self._calibration_turn_number = 0
+
+    def _has_calibration_budget(self) -> bool:
+        """Check if any model has calibration calls remaining."""
+        return any(
+            cfg.calibration_calls > 0
+            for cfg in self.child_llm_configs.values()
+        )
+
+    def _build_calibration_prompt(self) -> str:
+        """Build the calibration phase prompt with model info."""
+        lines = [
+            "# Calibration Phase",
+            "",
+            "Before evolution begins, you can test the available child LLMs to understand their "
+            "capabilities and find optimal settings. Each model has a limited calibration budget.",
+            "",
+            "## Available Child LLMs",
+            "",
+        ]
+
+        for alias, cfg in self.child_llm_configs.items():
+            lines.extend([
+                f"### {alias}",
+                f"- **Model**: {cfg.model}",
+                f"- **Provider**: {cfg.provider}",
+                f"- **Calibration calls**: {cfg.calibration_calls}",
+                f"- **Cost**: ${cfg.cost_per_million_input_tokens:.2f}/M input, "
+                f"${cfg.cost_per_million_output_tokens:.2f}/M output",
+                "",
+            ])
+
+        lines.extend([
+            "## Your Task",
+            "",
+            "Use the available calibration calls to:",
+            "1. Test each model with simple circle packing prompts",
+            "2. Experiment with different temperature settings (0.0-1.0)",
+            "3. Observe output quality, code style, and reasoning depth",
+            "4. Update your scratchpad with observations about each model",
+            "",
+            "Use `spawn_child_llm(prompt, model=alias, temperature=T)` to test models.",
+            "Use `update_scratchpad(content)` to record your observations.",
+            "Use `get_calibration_status()` to check remaining calibration calls.",
+            "",
+            "When done calibrating, call `end_calibration_phase()` to begin evolution.",
+            "",
+        ])
+
+        return "\n".join(lines)
+
+    def _get_calibration_system_prompt(self) -> list[dict]:
+        """Get the calibration system prompt as structured content blocks."""
+        return get_calibration_system_prompt_parts(
+            child_llm_configs=self.child_llm_configs,
+        )
+
+    def _run_calibration_phase(self) -> None:
+        """Run the calibration phase before evolution begins."""
+        tqdm.write("📊 Starting calibration phase...")
+
+        # Build initial calibration message
+        calibration_prompt = self._build_calibration_prompt()
+        self._calibration_messages = [
+            {"role": "user", "content": calibration_prompt}
+        ]
+
+        # Get system prompt for calibration
+        system_prompt = self._get_calibration_system_prompt()
+
+        max_calibration_turns = 20  # Prevent infinite loops
+
+        for turn in range(max_calibration_turns):
+            # Check if calibration is complete
+            if not self.evolution_api.in_calibration_phase:
+                break
+
+            # Check budget
+            try:
+                self.cost_tracker.raise_if_over_budget()
+            except BudgetExceededError as e:
+                tqdm.write(f"⚠️ Budget exceeded during calibration: {e}")
+                break
+
+            # Call Root LLM
+            response = self.root_llm.generate(
+                messages=self._calibration_messages,
+                system=system_prompt,
+                max_tokens=4096,
+                temperature=0.7,
+                enable_caching=False,
+            )
+
+            assistant_message = response.content
+            self._calibration_messages.append({"role": "assistant", "content": assistant_message})
+
+            # Log the calibration turn
+            self.logger.log_root_turn(
+                turn_number=self._calibration_turn_number,
+                role="assistant",
+                content=f"[CALIBRATION] {assistant_message}",
+            )
+            self._calibration_turn_number += 1
+
+            # Extract and execute code blocks
+            code_blocks = self.extract_code_blocks(assistant_message)
+            execution_results = []
+
+            for code in code_blocks:
+                result = self.execute_code_in_repl(code)
+                execution_results.append(f"```\n{code}\n```\n\nResult:\n{result}")
+
+                # Log execution
+                self.logger.log_root_turn(
+                    turn_number=self._calibration_turn_number,
+                    role="system",
+                    content="[CALIBRATION] REPL execution",
+                    code_executed=code,
+                    execution_result=result,
+                )
+                self._calibration_turn_number += 1
+
+            # Check if end_calibration_phase was called
+            if not self.evolution_api.in_calibration_phase:
+                tqdm.write("✅ Calibration phase complete.")
+                break
+
+            # Build user message with execution results and status
+            status = self.evolution_api.get_calibration_status()
+            remaining = status.get("remaining_calls", {})
+            remaining_str = ", ".join(f"{k}: {v}" for k, v in remaining.items())
+
+            if execution_results:
+                user_content = (
+                    "Execution results:\n\n"
+                    + "\n\n---\n\n".join(execution_results)
+                    + f"\n\nRemaining calibration calls: {remaining_str}"
+                )
+            else:
+                user_content = (
+                    f"No code executed. Remaining calibration calls: {remaining_str}\n\n"
+                    "Use `spawn_child_llm(prompt, model=alias, temperature=T)` to test models, "
+                    "or call `end_calibration_phase()` when done."
+                )
+
+            self._calibration_messages.append({"role": "user", "content": user_content})
+
+            self.logger.log_root_turn(
+                turn_number=self._calibration_turn_number,
+                role="user",
+                content=f"[CALIBRATION] {user_content}",
+            )
+            self._calibration_turn_number += 1
+
+        # Ensure calibration is ended if we hit max turns
+        if self.evolution_api.in_calibration_phase:
+            tqdm.write("⚠️ Max calibration turns reached, ending calibration.")
+            self.evolution_api.end_calibration_phase()
+
+    def _save_calibration_notes(self) -> str:
+        """Save calibration notes to a file and return the path."""
+        notes_path = self.logger.experiment_dir / "calibration_notes.yaml"
+
+        save_calibration_notes(
+            path=str(notes_path),
+            notes=self.evolution_api.scratchpad,
+            child_llm_configs=list(self.child_llm_configs.values()),
+            experiment_name=self.config.experiment.name,
+        )
+
+        tqdm.write(f"📝 Calibration notes saved to: {notes_path}")
+        return str(notes_path)
+
+    def _load_calibration_notes(self, path: str) -> None:
+        """Load calibration notes from a file and inject into scratchpad."""
+        tqdm.write(f"📖 Loading calibration notes from: {path}")
+
+        cal_notes = load_calibration_notes(path)
+
+        # Inject notes into scratchpad (not metadata)
+        self.evolution_api.update_scratchpad(cal_notes.notes)
+
+        # Skip calibration phase since we have pre-existing notes
+        self.evolution_api.end_calibration_phase()
+
+        tqdm.write("✅ Calibration notes loaded, skipping calibration phase.")
+
     def _get_system_prompt(self) -> list[dict]:
         """Get the system prompt as structured content blocks for caching.
 
@@ -133,7 +318,9 @@ class RootLLMOrchestrator:
         # Get timeout from evaluator kwargs
         timeout_seconds = self.evolution_api.evaluator_kwargs.get("timeout_seconds")
 
-        return get_root_system_prompt_parts(
+        return get_root_system_prompt_parts_with_models(
+            child_llm_configs=self.child_llm_configs,
+            default_child_llm_alias=self.config.default_child_llm_alias,
             max_children_per_generation=self.evolution_api.max_children_per_generation,
             max_generations=self.evolution_api.max_generations,
             current_generation=self.evolution_api.current_generation,
@@ -531,6 +718,7 @@ class RootLLMOrchestrator:
         Run the Root LLM evolution loop.
 
         The loop is generation-driven:
+        0. Calibration phase (optional): Root LLM tests child models
         1. Root LLM is called once per generation
         2. Children are spawned via REPL execution
         3. Generation advances automatically after spawning
@@ -539,7 +727,20 @@ class RootLLMOrchestrator:
         Returns:
             OrchestratorResult with final statistics
         """
-        # Build initial messages
+        # Calibration phase (before generation 0)
+        if self.config.calibration_notes_file:
+            # Load pre-existing notes - skip calibration
+            self._load_calibration_notes(self.config.calibration_notes_file)
+        elif self._has_calibration_budget():
+            # Run calibration phase
+            self._run_calibration_phase()
+            # Save notes for potential reuse
+            self._save_calibration_notes()
+        else:
+            # No calibration budget configured, skip calibration
+            self.evolution_api.end_calibration_phase()
+
+        # Build initial messages for evolution
         self.build_initial_messages()
 
         termination_reason = "max_generations_reached"
