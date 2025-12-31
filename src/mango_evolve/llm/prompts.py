@@ -23,7 +23,7 @@ Pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their ra
 - No two circles may overlap
 - All radii must be non-negative
 
-**Target**: 2.635983099011548 (best known)
+The best known solution is 2.6359831208890547. Aim to achieve as high of a score as possible.
 
 ## Code Format
 
@@ -135,7 +135,7 @@ Constraints:
 - No overlaps (distance between centers ≥ sum of radii)
 - All radii ≥ 0
 
-Target: sum of radii ≈ 2.635983099011548
+The best known solution is 2.6359831208890547. Aim to achieve as high of a score as possible.
 
 ## Output
 
@@ -261,7 +261,7 @@ def format_child_mutation_prompt(
     Returns:
         Formatted prompt string
     """
-    prompt = f"""Improve this circle packing (current score: {parent_score:.16f}, target: 2.635983099011548).
+    prompt = f"""Improve this circle packing (current score: {parent_score:.16f}. It is possible to achieve a score of at least2.6359831208890547).
 
 ```python
 {parent_code}
@@ -355,7 +355,7 @@ The goal is to understand what each model is good at so you can use them strateg
 ## Problem (for reference)
 
 The main task is packing 26 circles into a unit square [0,1] x [0,1] to maximize the sum of radii.
-- **Target**: 2.635983099011548 (best known)
+- The best known solution is 2.6359831208890547. Aim to achieve as high of a score as possible.
 
 ## Available Functions
 
