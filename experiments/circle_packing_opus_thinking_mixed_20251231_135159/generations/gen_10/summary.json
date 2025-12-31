@@ -1,0 +1,25 @@
+{
+  "generation_num": 10,
+  "num_trials": 16,
+  "num_successful_trials": 7,
+  "best_trial_id": "trial_10_6",
+  "best_score": 2.6006318774789845,
+  "selected_trial_ids": [
+    "trial_10_6",
+    "trial_10_9"
+  ],
+  "selection_reasoning": "Gen 10 CATASTROPHIC FAILURE. All 16 trials worse than best. Best new trial (2.6006) is 0.03 WORSE than trial_8_4. 56% invalid rate. LESSON: The 4-4-4-14 structure with corners=0.14, diags=0.28 is remarkably good. Radical structural changes hurt badly. Gen 11 must return to careful refinement of proven approach - maybe finer grid search, longer optimization, or hybrid approach combining best code with extended search.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_10_6",
+      "reasoning": "Best of Gen 10 at 2.6006 with 3x3 grid. Shows even best alternative is 0.03 worse.",
+      "category": "diversity"
+    },
+    {
+      "trial_id": "trial_10_9",
+      "reasoning": "Opus analysis at 2.5893. Different perspective on the problem, may have useful insights.",
+      "category": "potential"
+    }
+  ],
+  "timestamp": "2025-12-31T14:45:30.164749"
+}

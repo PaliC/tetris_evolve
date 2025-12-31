@@ -8,10 +8,15 @@ root_llm:
   cost_per_million_output_tokens: 15.0
   max_iterations: 30
 
-child_llm:
-  model: "claude-sonnet-4-5-20250929"
-  cost_per_million_input_tokens: 3.0
-  cost_per_million_output_tokens: 15.0
+child_llms:
+  - alias: "sonnet"
+    model: "claude-sonnet-4-5-20250929"
+    provider: "anthropic"
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
+    calibration_calls: 2
+
+default_child_llm_alias: "sonnet"
 
 # Evaluation config points to an evaluator function/class
 # The evaluator is loaded dynamically at runtime

@@ -1,0 +1,25 @@
+{
+  "generation_num": 11,
+  "num_trials": 16,
+  "num_successful_trials": 11,
+  "best_trial_id": "trial_11_0",
+  "best_score": 2.6359830849177834,
+  "selected_trial_ids": [
+    "trial_11_0",
+    "trial_11_1"
+  ],
+  "selection_reasoning": "PROBLEM ESSENTIALLY SOLVED! trial_11_0 achieved 2.6359830849177834 - only 0.00000014 (0.0000005%) from target 2.635983099011548. The winning change was simply increasing niter from 15 to 50. Extended search found the optimal basin. Gen 12 should try niter=100+ or fine-tune from trial_11_0's solution to close the remaining microscopic gap.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_11_0",
+      "reasoning": "BREAKTHROUGH! Score 2.6359830849 is only 0.00000014 from target 2.635983099! Gap reduced from 0.0050 to 0.00000014 - a 35,000x improvement! This was the niter=50 variant.",
+      "category": "performance"
+    },
+    {
+      "trial_id": "trial_11_1",
+      "reasoning": "Second best at 2.6244. Different path but much worse than trial_11_0.",
+      "category": "diversity"
+    }
+  ],
+  "timestamp": "2025-12-31T14:46:57.717921"
+}

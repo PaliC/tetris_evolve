@@ -22,7 +22,7 @@ class TestMockLLMClient:
         client = MockLLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
             responses=["Hello, world!"],
         )
 
@@ -40,7 +40,7 @@ class TestMockLLMClient:
         client = MockLLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
             responses=["First", "Second", "Third"],
         )
 
@@ -58,7 +58,7 @@ class TestMockLLMClient:
         client = MockLLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
             responses=["Response with some tokens"],
         )
 
@@ -67,7 +67,7 @@ class TestMockLLMClient:
         )
 
         assert len(cost_tracker.usage_log) == 1
-        assert cost_tracker.usage_log[0].llm_type == "child"
+        assert cost_tracker.usage_log[0].llm_type == "child:default"
         assert cost_tracker.total_cost > 0
 
     def test_budget_exceeded_raises(self, sample_config):
@@ -76,7 +76,7 @@ class TestMockLLMClient:
         client = MockLLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
             responses=["Response"],
         )
 
@@ -94,7 +94,7 @@ class TestMockLLMClient:
         client = MockLLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
         )
 
         client.add_response("Dynamic response")
@@ -110,7 +110,7 @@ class TestMockLLMClient:
         client = MockLLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
             responses=["Old response"],
         )
 
@@ -127,7 +127,7 @@ class TestMockLLMClient:
         client = MockLLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
             responses=["Response"],
         )
 
@@ -151,7 +151,7 @@ class TestMockLLMClient:
         client = MockLLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
             responses=["Only one"],
         )
 
@@ -174,7 +174,7 @@ class TestMockLLMClient:
         child_client = MockLLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
             responses=["Child response"],
         )
 
@@ -183,7 +183,7 @@ class TestMockLLMClient:
 
         assert len(cost_tracker.usage_log) == 2
         assert cost_tracker.usage_log[0].llm_type == "root"
-        assert cost_tracker.usage_log[1].llm_type == "child"
+        assert cost_tracker.usage_log[1].llm_type == "child:default"
 
 
 class TestLLMClient:
@@ -195,7 +195,7 @@ class TestLLMClient:
         client = LLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
         )
 
         # Exceed budget
@@ -227,7 +227,7 @@ class TestLLMClient:
         client = LLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
         )
 
         response = client.generate(
@@ -259,15 +259,16 @@ class TestLLMClient:
         client = LLMClient(
             model="claude-test",
             cost_tracker=cost_tracker,
-            llm_type="child",
+            llm_type="child:default",
         )
 
         client.generate(messages=[{"role": "user", "content": "Test"}])
 
         # Verify cost calculation
+        child_config = sample_config.child_llms[0]
         expected_cost = (
-            1000 * sample_config.child_llm.cost_per_million_input_tokens / 1_000_000
-            + 500 * sample_config.child_llm.cost_per_million_output_tokens / 1_000_000
+            1000 * child_config.cost_per_million_input_tokens / 1_000_000
+            + 500 * child_config.cost_per_million_output_tokens / 1_000_000
         )
         assert abs(cost_tracker.total_cost - expected_cost) < 1e-10
 

@@ -17,13 +17,17 @@ root_llm:
   reasoning:
     enabled: true
 
-child_llm:
-  provider: "openrouter"
-  model: "google/gemini-3-flash-preview"
-  cost_per_million_input_tokens: 0.50
-  cost_per_million_output_tokens: 3.00
-  reasoning:
-    enabled: true
+child_llms:
+  - alias: "gemini-flash"
+    model: "google/gemini-3-flash-preview"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 0.50
+    cost_per_million_output_tokens: 3.00
+    calibration_calls: 2
+    reasoning:
+      enabled: true
+
+default_child_llm_alias: "gemini-flash"
 
 evaluation:
   evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"

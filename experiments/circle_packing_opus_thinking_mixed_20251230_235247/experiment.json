@@ -1,0 +1,244 @@
+{
+  "experiment_id": "circle_packing_opus_thinking_mixed_20251230_235247",
+  "config": {
+    "experiment": {
+      "name": "circle_packing_opus_thinking_mixed",
+      "output_dir": "./experiments",
+      "seed": null
+    },
+    "root_llm": {
+      "model": "anthropic/claude-opus-4.5",
+      "cost_per_million_input_tokens": 5.0,
+      "cost_per_million_output_tokens": 25.0,
+      "provider": "openrouter",
+      "max_iterations": 100,
+      "reasoning": {
+        "enabled": true,
+        "effort": "high",
+        "max_tokens": null,
+        "exclude": false
+      }
+    },
+    "child_llms": [
+      {
+        "model": "anthropic/claude-opus-4.5",
+        "cost_per_million_input_tokens": 5.0,
+        "cost_per_million_output_tokens": 25.0,
+        "alias": "opus",
+        "provider": "openrouter",
+        "calibration_calls": 5,
+        "reasoning": {
+          "enabled": true,
+          "effort": "high",
+          "max_tokens": null,
+          "exclude": false
+        }
+      },
+      {
+        "model": "anthropic/claude-sonnet-4.5",
+        "cost_per_million_input_tokens": 3.0,
+        "cost_per_million_output_tokens": 15.0,
+        "alias": "sonnet",
+        "provider": "openrouter",
+        "calibration_calls": 5,
+        "reasoning": {
+          "enabled": true,
+          "effort": "high",
+          "max_tokens": null,
+          "exclude": false
+        }
+      },
+      {
+        "model": "google/gemini-3-flash-preview",
+        "cost_per_million_input_tokens": 0.5,
+        "cost_per_million_output_tokens": 3.0,
+        "alias": "gemini-flash",
+        "provider": "openrouter",
+        "calibration_calls": 5,
+        "reasoning": {
+          "enabled": true,
+          "effort": null,
+          "max_tokens": null,
+          "exclude": false
+        }
+      }
+    ],
+    "evaluation": {
+      "evaluator_fn": "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+      "evaluator_kwargs": {
+        "n_circles": 26,
+        "timeout_seconds": 300
+      }
+    },
+    "evolution": {
+      "max_generations": 10,
+      "max_children_per_generation": 16
+    },
+    "budget": {
+      "max_total_cost": 50.0
+    },
+    "default_child_llm_alias": "gemini-flash",
+    "calibration_notes_file": "./experiments/circle_packing_opus_thinking_mixed_20251230_193401/calibration_notes.yaml"
+  },
+  "start_time": "2025-12-30T23:52:47.238492",
+  "end_time": "2025-12-31T00:16:02.445936",
+  "termination_reason": "max_generations_reached (with errors: gen2: ```\n# Always validate before returning:\nradii = np.maximum(radii, 0)  # No negative radii\nfor i in range(n):\n    max_r = min(centers[i,0], 1-centers[i,0], centers[i,1], 1-centers[i,1])\n    radii[i] = ; gen4: ```\nradii = np.maximum(radii, 0)\nfor i in range(n):\n    max_r = min(centers[i,0], 1-centers[i,0], centers[i,1], 1-centers[i,1])\n    radii[i] = min(radii[i], max_r)\n```\n\nResult:\nError:\nTraceback (most )",
+  "num_generations": 4,
+  "total_trials": 0,
+  "best_trial": {
+    "trial_id": "trial_3_6",
+    "score": 2.635328412488807,
+    "generation": 3
+  },
+  "scratchpad": "\n## EVOLUTION PROGRESS\n\n### Score Progression\n- Gen 0: 2.595 (trial_0_9)\n- Gen 1: 2.630 (trial_1_1) \n- Gen 2: 2.6342 (trial_2_1)\n- Gen 3: 2.6353 (trial_3_6) \u2190 BEST\n- Target: 2.6360 (gap: 0.00068, only 0.026%!)\n\n### Winning Approaches\n1. **trial_3_6 (2.6353)** - Analytical hexagonal with exact spacing\n   - Uses precise geometric calculations\n   - Multiple row patterns tested systematically\n   - NEW LINEAGE (not from trial_2_1)\n\n2. **trial_3_11 (2.6323)** - Exhaustive row configuration search\n   - Child of trial_2_1\n   - Systematic iteration over all 5-row patterns\n\n3. **trial_2_1\u2192trial_3_* lineage** - Various refinements\n   - Most children degraded (trust-constr, SHGO didn't help)\n   - Coordinate descent (trial_3_2) at 2.616 - concept useful\n\n### Key Insights\n- Analytical hexagonal approach (trial_3_6) beat optimization-heavy approaches\n- Exact geometric positioning matters more than optimizer iterations\n- Row configuration [pattern] significantly affects outcome\n- Target 2.636 / 26 = 0.101384 average radius\n\n### What DOESN'T Work\n- Trust-constr optimizer (trial_3_1: 2.620 < parent)\n- SHGO global optimizer (trial_3_9: 2.584)\n- Too many iterations \u2192 timeout (trial_3_0)\n- Micro-perturbations alone (trial_3_5: 2.592)\n\n### Generation 4 Strategy - FINAL PUSH\n1. Get trial_3_6 code and INTENSIVELY refine:\n   - More row configurations\n   - Finer tolerance (ftol=1e-18)\n   - More restarts (100+)\n   - Coordinate descent after SLSQP\n\n2. Combine trial_3_6's analytical approach with trial_2_1's restart strategy\n\n3. Try exact known configurations from literature if any\n\n### Constraint Validation (CRITICAL)\n```python\nradii = np.maximum(radii, 0)\nfor i in range(n):\n    max_r = min(centers[i,0], 1-centers[i,0], centers[i,1], 1-centers[i,1])\n    radii[i] = min(radii[i], max_r)\n```\n",
+  "generations": [
+    {
+      "generation_num": 0,
+      "num_trials": 16,
+      "num_successful_trials": 5,
+      "best_trial_id": "trial_0_9",
+      "best_score": 2.595230700796148,
+      "selected_trial_ids": [
+        "trial_0_9",
+        "trial_0_14",
+        "trial_0_5",
+        "trial_0_11"
+      ],
+      "selection_reasoning": "Selected top 2 performers (Apollonian at 2.595, iterative at 2.4) plus 2 diverse approaches (corner-first, PSO) for exploration. Notable that 11/16 trials failed validation - many due to overlap/boundary issues. Next generation should focus on: (1) refining the Apollonian approach to close the 0.04 gap to target, (2) improving constraint handling, (3) combining successful elements from different approaches.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_0_9",
+          "reasoning": "Best score at 2.595, very close to target 2.636. Apollonian-inspired approach with recursive gap-filling is proving effective. This is the foundation to build upon.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_0_14",
+          "reasoning": "Second best at 2.4. Iterative radius maximization is a clean, simple approach that produces valid solutions. Worth refining.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_0_5",
+          "reasoning": "Corner-first hierarchical approach scored 2.0. Different structural strategy than top performers - places large circles in corners first. Could combine with other techniques.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_0_11",
+          "reasoning": "PSO approach at 1.5 is lower but represents a fundamentally different optimization paradigm (swarm intelligence). The metaheuristic search could find different basins.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-30T23:59:57.125766"
+    },
+    {
+      "generation_num": 1,
+      "num_trials": 16,
+      "num_successful_trials": 9,
+      "best_trial_id": "trial_1_1",
+      "best_score": 2.6298680523722298,
+      "selected_trial_ids": [
+        "trial_1_1",
+        "trial_1_11",
+        "trial_1_3",
+        "trial_1_7"
+      ],
+      "selection_reasoning": "Major improvement this generation: 2.595 \u2192 2.6298 (+1.3%). trial_1_1 is very close to target (gap now only 0.23%). Selected top 4 performers representing different optimization strategies: trial_1_1 (best, needs refinement focus), trial_1_11 (dual_annealing), trial_1_3 (greedy order), trial_1_7 (hybrid). Next gen should focus on: (1) fine-tuning trial_1_1's approach, (2) combining best elements from top solutions, (3) more aggressive local search around the best configuration found.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_1_1",
+          "reasoning": "Best score at 2.6298, only 0.006 from target 2.636. This is the breakthrough we need - must refine this further.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_1_11",
+          "reasoning": "Second best at 2.6091. Uses dual_annealing which is a different global optimizer than SLSQP. Worth exploring further.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_1_3",
+          "reasoning": "Score 2.6081 with greedy order variation. Different approach to circle placement order that showed promise.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_1_7",
+          "reasoning": "Score 2.6027 with hybrid force-directed + SLSQP. Combines multiple techniques effectively.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-31T00:04:17.565661"
+    },
+    {
+      "generation_num": 2,
+      "num_trials": 16,
+      "num_successful_trials": 11,
+      "best_trial_id": "trial_2_1",
+      "best_score": 2.6342924020713943,
+      "selected_trial_ids": [
+        "trial_2_1",
+        "trial_2_6",
+        "trial_2_15",
+        "trial_2_12"
+      ],
+      "selection_reasoning": "Major breakthrough: 2.6298 \u2192 2.6342 (gap now only 0.06% from target 2.636!). trial_2_1 is extremely close. Selected top 4: trial_2_1 (best, needs final push), trial_2_6 (DE approach at 2.628), trial_2_15 (Voronoi-guided at 2.627), trial_2_12 (basin hopping at 2.625). Next generation must focus INTENSIVELY on trial_2_1 - the remaining gap of 0.0017 suggests we need: (1) more optimization iterations, (2) tighter tolerances, (3) more restarts around current best, (4) possibly exact geometric calculation of optimal positions.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_2_1",
+          "reasoning": "Best score at 2.6342! Only 0.0017 from target 2.636. This is our breakthrough - child of trial_1_1 with better initial patterns. Must refine further.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_2_6",
+          "reasoning": "Score 2.628 using differential evolution. Different global optimizer that found good solution independently.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_2_15",
+          "reasoning": "Score 2.627 using Voronoi + Lloyd algorithm. Novel geometric approach for initial spacing that works well.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_2_12",
+          "reasoning": "Score 2.625 using basin hopping. Another global optimization method worth refining.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-31T00:08:47.051668"
+    },
+    {
+      "generation_num": 3,
+      "num_trials": 16,
+      "num_successful_trials": 13,
+      "best_trial_id": "trial_3_6",
+      "best_score": 2.635328412488807,
+      "selected_trial_ids": [
+        "trial_3_6",
+        "trial_3_11",
+        "trial_3_2",
+        "trial_3_1"
+      ],
+      "selection_reasoning": "Major progress: 2.6342 \u2192 2.6353 (gap now only 0.026% from target 2.636!). trial_3_6 uses analytical hexagonal calculation which is proving effective. trial_3_11's exhaustive row search also works well. Next generation should: (1) intensively refine trial_3_6's exact approach, (2) combine analytical positioning with more optimization passes, (3) try even more row configurations systematically, (4) micro-perturbations around current best.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_3_6",
+          "reasoning": "NEW BEST at 2.6353! Only 0.00068 from target 2.636. Analytical hexagonal approach with exact spacing calculations. Must refine further.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_3_11",
+          "reasoning": "Second best at 2.6323. Exhaustive search over row configurations - different approach that found good solution.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_3_2",
+          "reasoning": "Score 2.6161 with coordinate descent phase after SLSQP. The coordinate descent concept is valuable for fine-tuning.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_3_1",
+          "reasoning": "Score 2.6201 using trust-constr optimizer. Different optimizer worth combining with best solutions.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-31T00:15:45.897987"
+    }
+  ]
+}

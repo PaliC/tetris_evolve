@@ -1,0 +1,76 @@
+# Mixed provider config: Claude Opus with reasoning as root, multiple thinking-enabled children
+# All LLMs use extended thinking/reasoning for enhanced problem-solving
+#
+# Requires: OPENROUTER_API_KEY environment variable
+#
+# Models used:
+#   - Root: Claude Opus 4 with extended thinking
+#   - Children: Claude Opus 4, Claude Sonnet 4, Gemini Flash 2.5 (all with thinking)
+
+experiment:
+  name: "circle_packing_opus_thinking_mixed"
+  output_dir: "./experiments"
+
+# Root LLM: Claude Opus 4 with extended thinking for smart orchestration
+root_llm:
+  provider: "openrouter"
+  model: "anthropic/claude-opus-4.5"
+  cost_per_million_input_tokens: 5.0
+  cost_per_million_output_tokens: 25.0
+  max_iterations: 500
+  reasoning:
+    enabled: true
+    effort: "xhigh"  # Strong reasoning for orchestration decisions
+
+# Multiple child LLMs with thinking enabled - root can choose based on task
+child_llms:
+  # Claude Opus - highest quality, deepest reasoning
+  - alias: "opus"
+    model: "anthropic/claude-opus-4.5"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 5.0
+    cost_per_million_output_tokens: 25.0
+    calibration_calls: 5
+    reasoning:
+      enabled: true
+      effort: "high"
+
+  # Claude Sonnet - great quality, more cost-effective
+  - alias: "sonnet"
+    model: "anthropic/claude-sonnet-4.5"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
+    calibration_calls: 5
+    reasoning:
+      enabled: true
+      effort: "high"
+
+  # Gemini Flash 3.0 - fast thinking, very cost-effective
+  - alias: "gemini-flash"
+    model: "google/gemini-3-flash-preview"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 0.50
+    cost_per_million_output_tokens: 3.00
+    calibration_calls: 5
+    reasoning:
+      enabled: true
+
+default_child_llm_alias: "gemini-flash"
+
+# Use pre-existing calibration notes (skips calibration phase)
+calibration_notes_file: "./experiments/circle_packing_opus_thinking_mixed_20251230_193401/calibration_notes.yaml"
+
+evaluation:
+  evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    timeout_seconds: 300
+
+evolution:
+  max_generations: 20
+  max_children_per_generation: 16
+
+budget:
+  max_total_cost: 50.0  # Higher budget due to Opus costs
+

@@ -1,0 +1,31 @@
+{
+  "generation_num": 8,
+  "num_trials": 16,
+  "num_successful_trials": 13,
+  "best_trial_id": "trial_8_4",
+  "best_score": 2.63095677049581,
+  "selected_trial_ids": [
+    "trial_8_4",
+    "trial_8_10",
+    "trial_8_8"
+  ],
+  "selection_reasoning": "PROGRESS! trial_8_4 (2.6309568) beats trial_7_7 (2.6307297) by +0.0002. Gap now 0.0050 (0.19%). Winning change: diagonals at 0.28 instead of 0.30. The systematic grid search on init parameters is proving effective. Gen 9 should continue exploring init variations - try combining multiple winning changes (corners 0.14 + diags 0.28 + other tweaks).",
+  "trial_selections": [
+    {
+      "trial_id": "trial_8_4",
+      "reasoning": "NEW BEST at 2.6309568! Diagonals moved closer (0.28 vs 0.30) found even better basin. Systematic init search is working!",
+      "category": "performance"
+    },
+    {
+      "trial_id": "trial_8_10",
+      "reasoning": "Score 2.6307003 with ensemble + new init hybrid. Close to best, different approach.",
+      "category": "diversity"
+    },
+    {
+      "trial_id": "trial_8_8",
+      "reasoning": "Score 2.6304187 with niter=25. More iterations didn't help - confirms init is key.",
+      "category": "potential"
+    }
+  ],
+  "timestamp": "2025-12-31T14:36:52.838730"
+}

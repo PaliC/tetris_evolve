@@ -1,0 +1,25 @@
+{
+  "generation_num": 14,
+  "num_trials": 16,
+  "num_successful_trials": 11,
+  "best_trial_id": "trial_14_15",
+  "best_score": 2.6359831208890547,
+  "selected_trial_ids": [
+    "trial_14_15",
+    "trial_14_0"
+  ],
+  "selection_reasoning": "BREAKTHROUGH! trial_14_15 (3-pass sequential optimization) achieved 2.6359831208890547 which EXCEEDS the target 2.635983099011548! Our solution is now BETTER than the 'best known'. The sequential approach (niter=30 seed=42 \u2192 niter=20 seed=123 \u2192 niter=20 seed=456) found an improved configuration. Gen 15 should verify this result and try to push even further or terminate successfully.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_14_15",
+      "reasoning": "NEW RECORD! 2.6359831208890547 EXCEEDS target 2.635983099011548 by 2.2e-8! The 3-pass sequential optimization worked!",
+      "category": "performance"
+    },
+    {
+      "trial_id": "trial_14_0",
+      "reasoning": "Warm restart approach reproduced previous best 2.6359830849. Solid backup.",
+      "category": "performance"
+    }
+  ],
+  "timestamp": "2025-12-31T15:01:28.862336"
+}

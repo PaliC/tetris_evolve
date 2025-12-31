@@ -1,0 +1,244 @@
+{
+  "experiment_id": "circle_packing_opus_thinking_mixed_20251230_222235",
+  "config": {
+    "experiment": {
+      "name": "circle_packing_opus_thinking_mixed",
+      "output_dir": "./experiments",
+      "seed": null
+    },
+    "root_llm": {
+      "model": "anthropic/claude-opus-4.5",
+      "cost_per_million_input_tokens": 5.0,
+      "cost_per_million_output_tokens": 25.0,
+      "provider": "openrouter",
+      "max_iterations": 100,
+      "reasoning": {
+        "enabled": true,
+        "effort": "high",
+        "max_tokens": null,
+        "exclude": false
+      }
+    },
+    "child_llms": [
+      {
+        "model": "anthropic/claude-opus-4.5",
+        "cost_per_million_input_tokens": 5.0,
+        "cost_per_million_output_tokens": 25.0,
+        "alias": "opus",
+        "provider": "openrouter",
+        "calibration_calls": 5,
+        "reasoning": {
+          "enabled": true,
+          "effort": "high",
+          "max_tokens": null,
+          "exclude": false
+        }
+      },
+      {
+        "model": "anthropic/claude-sonnet-4.5",
+        "cost_per_million_input_tokens": 3.0,
+        "cost_per_million_output_tokens": 15.0,
+        "alias": "sonnet",
+        "provider": "openrouter",
+        "calibration_calls": 5,
+        "reasoning": {
+          "enabled": true,
+          "effort": "high",
+          "max_tokens": null,
+          "exclude": false
+        }
+      },
+      {
+        "model": "google/gemini-3-flash-preview",
+        "cost_per_million_input_tokens": 0.5,
+        "cost_per_million_output_tokens": 3.0,
+        "alias": "gemini-flash",
+        "provider": "openrouter",
+        "calibration_calls": 5,
+        "reasoning": {
+          "enabled": true,
+          "effort": null,
+          "max_tokens": null,
+          "exclude": false
+        }
+      }
+    ],
+    "evaluation": {
+      "evaluator_fn": "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+      "evaluator_kwargs": {
+        "n_circles": 26,
+        "timeout_seconds": 300
+      }
+    },
+    "evolution": {
+      "max_generations": 10,
+      "max_children_per_generation": 15
+    },
+    "budget": {
+      "max_total_cost": 50.0
+    },
+    "default_child_llm_alias": "gemini-flash",
+    "calibration_notes_file": "./experiments/circle_packing_opus_thinking_mixed_20251230_193401/calibration_notes.yaml"
+  },
+  "start_time": "2025-12-30T22:22:35.255280",
+  "end_time": "2025-12-30T22:50:50.277969",
+  "termination_reason": "max_generations_reached",
+  "num_generations": 4,
+  "total_trials": 0,
+  "best_trial": {
+    "trial_id": "trial_3_4",
+    "score": 2.629092508103393,
+    "generation": 3
+  },
+  "scratchpad": "## EVOLUTION PROGRESS SUMMARY\n\n### Generation 0: Best = 2.290 (trial_0_6)\n### Generation 1: Best = 2.616 (trial_1_4) - +14%\n### Generation 2: Best = 2.627 (trial_2_7) - +0.4%\n### Generation 3: Best = 2.629 (trial_3_4) - +0.08%\n\n## GAP ANALYSIS\n- Target: 2.636\n- Current Best: 2.629\n- Gap: 0.007 (only 0.27% needed!)\n\n## BEST PERFORMERS BY GENERATION:\n- trial_3_4 (2.629): Hexagonal vs grid comparison\n- trial_3_11 (2.624): Multiple independent runs\n- trial_2_7 (2.627): Multi-restart SLSQP\n- trial_2_0 (2.622): Coordinate descent polish\n\n## KEY INSIGHTS FROM GEN 3:\n1. Hexagonal packing (trial_3_4) slightly beat grid\n2. opus models FAILED with formatting - use sonnet/gemini-flash only!\n3. Several boundary constraint errors - need careful initialization\n4. 1 timeout - keep complexity manageable\n\n## WHAT'S WORKING:\n- Hexagonal initial configurations\n- SLSQP with proper constraints\n- Multiple restarts (20-30)\n- Coordinate descent polish after SLSQP\n- High iterations (1000+)\n\n## STRATEGY FOR GEN 4 (Final push!):\n1. REFINE trial_3_4 (hexagonal) - best performer\n2. Even more restarts (40-50)\n3. Combine hex init + coordinate descent\n4. Vary hex spacing more systematically\n5. Use ONLY sonnet/gemini-flash (avoid opus formatting failures)\n6. Stay under timeout (300s)\n\n## CRITICAL: Only 0.007 gap - tiny refinements matter!\n",
+  "generations": [
+    {
+      "generation_num": 0,
+      "num_trials": 15,
+      "num_successful_trials": 6,
+      "best_trial_id": "trial_0_6",
+      "best_score": 2.290073279148365,
+      "selected_trial_ids": [
+        "trial_0_6",
+        "trial_0_3",
+        "trial_0_9",
+        "trial_0_2"
+      ],
+      "selection_reasoning": "Selected top 2 performers (Apollonian at 2.29, SA at 2.17) plus two diverse approaches (multistart, greedy) that represent different algorithmic paradigms. Many trials failed due to constraint violations - next generation should emphasize robust constraint handling. The gap between best (2.29) and target (2.636) suggests significant room for improvement through refinement and hybridization.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_0_6",
+          "reasoning": "Best score at 2.290 using Apollonian-inspired approach. Closest to target of 2.636. Strong foundation to build upon.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_0_3",
+          "reasoning": "Second best at 2.167 using Simulated Annealing. Different optimization paradigm that could be refined with better parameters or hybrid approaches.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_0_9",
+          "reasoning": "Random multistart scored 1.976. Simple approach with potential - may benefit from more restarts or better local optimization.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_0_2",
+          "reasoning": "Greedy approach scored 1.477. Fundamentally different constructive method that could be improved with better candidate position generation.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-30T22:29:43.852119"
+    },
+    {
+      "generation_num": 1,
+      "num_trials": 15,
+      "num_successful_trials": 7,
+      "best_trial_id": "trial_1_4",
+      "best_score": 2.615825463959711,
+      "selected_trial_ids": [
+        "trial_1_4",
+        "trial_1_10",
+        "trial_1_3",
+        "trial_1_5"
+      ],
+      "selection_reasoning": "Major breakthrough! Top 4 trials all above 2.59, with best at 2.616 (only 0.02 from target). The improved multistart (trial_1_4) and tangent calculations (trial_1_10) both work well. SLSQP with proper constraints (trial_1_3) is reliable. Physics simulation (trial_1_5) provides algorithmic diversity. Many failures were due to overlaps - the successful trials all have robust constraint handling. Next generation should focus on fine-tuning these top approaches to close the remaining 0.76% gap.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_1_4",
+          "reasoning": "Best score at 2.616! Improved multistart with structured starts and more iterations. Very close to target 2.636.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_1_10",
+          "reasoning": "Second best at 2.610 using tangent calculations. Different mathematical approach that could be refined.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_1_3",
+          "reasoning": "Third at 2.610 using SLSQP with proper constraints. Solid optimization approach worth refining.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_1_5",
+          "reasoning": "Fourth at 2.594 using physics simulation. Different paradigm that converged properly this time.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-30T22:36:29.597488"
+    },
+    {
+      "generation_num": 2,
+      "num_trials": 15,
+      "num_successful_trials": 10,
+      "best_trial_id": "trial_2_7",
+      "best_score": 2.627207261738212,
+      "selected_trial_ids": [
+        "trial_2_7",
+        "trial_2_0",
+        "trial_2_4",
+        "trial_2_14"
+      ],
+      "selection_reasoning": "Major progress! Best is now 2.627 (tangent construction), only 0.009 from target 2.636. The geometric/tangent approach (trial_2_7) is leading. SLSQP refinements also improved to 2.622. Several timeouts suggest we need to be careful about computational cost. Next generation should focus on: (1) refining the tangent construction further, (2) combining tangent initialization with aggressive SLSQP, (3) trying even more iterations/restarts within time budget.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_2_7",
+          "reasoning": "NEW BEST at 2.627! Exact tangent construction approach. Only 0.009 from target. This mathematical/geometric approach is working very well.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_2_0",
+          "reasoning": "Second best at 2.622. Refined SLSQP with more iterations. Opus model produced solid improvement.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_2_4",
+          "reasoning": "Third at 2.616. Post-optimization local search - different refinement strategy worth combining.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_2_14",
+          "reasoning": "Score 2.608 with uniform radius approach. Different paradigm - if uniform radii work well, may provide insight.",
+          "category": "diversity"
+        }
+      ],
+      "timestamp": "2025-12-30T22:43:15.348515"
+    },
+    {
+      "generation_num": 3,
+      "num_trials": 15,
+      "num_successful_trials": 9,
+      "best_trial_id": "trial_3_4",
+      "best_score": 2.629092508103393,
+      "selected_trial_ids": [
+        "trial_3_4",
+        "trial_3_11",
+        "trial_3_5",
+        "trial_3_9"
+      ],
+      "selection_reasoning": "Incremental progress: 2.627 -> 2.629. Gap now only 0.007 (0.27%). trial_3_4's hexagonal comparison approach is leading. Note: opus models failed with formatting errors (no code block) - stick to sonnet/gemini-flash for code generation. Several timeout/boundary issues. For Gen 4: focus on hexagonal packing refinement, more restarts, and combining best elements. We're very close!",
+      "trial_selections": [
+        {
+          "trial_id": "trial_3_4",
+          "reasoning": "NEW BEST at 2.629! Hexagonal vs grid comparison approach. Only 0.007 from target. Hexagonal packing proving effective.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_3_11",
+          "reasoning": "Second best at 2.624. Multiple independent runs approach - good for finding lucky optima.",
+          "category": "performance"
+        },
+        {
+          "trial_id": "trial_3_5",
+          "reasoning": "2.616 with aggressive local search (200+ iterations). Different polish strategy.",
+          "category": "diversity"
+        },
+        {
+          "trial_id": "trial_3_9",
+          "reasoning": "2.610 with perturbation strategy. Could help escape local optima.",
+          "category": "potential"
+        }
+      ],
+      "timestamp": "2025-12-30T22:49:46.481645"
+    }
+  ]
+}

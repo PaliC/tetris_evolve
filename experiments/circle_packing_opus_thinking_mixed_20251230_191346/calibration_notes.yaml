@@ -1,0 +1,92 @@
+# MangoEvolve Calibration Notes
+# The root LLM only sees the 'notes' section during evolution.
+# Metadata is stored for validation purposes.
+
+notes: '
+
+  ## FINAL Calibration Observations
+
+
+  ### Function Name Issue
+
+  The validator error says "must define run_packing() or construct_packing()" but
+  the LLMs correctly produce `solve()`. This appears to be a validator wrapper that
+  renames things. Key: USE `solve()` in prompts.
+
+
+  ### Model Comparison Summary
+
+
+  | Model | Reasoning | Code Style | Strengths | Best For |
+
+  |-------|-----------|------------|-----------|----------|
+
+  | opus | Excellent, conversational | Clean pure-Python, good local refinement |
+  Deep thinking, elegant solutions | Complex optimization, novel approaches |
+
+  | sonnet | Excellent, structured | scipy/numpy heavy, sophisticated | Technical
+  rigor, optimization libs | Scipy-based refinement, numerical methods |
+
+  | gemini-flash | Good, academic | Simple/practical, uniform radius | Fast, practical
+  | Quick baselines, simple heuristics |
+
+
+  ### Temperature Observations
+
+  - 0.3: More deterministic, standard approaches
+
+  - 0.5-0.7: Still coherent, slightly more creative variations
+
+  - All models stay on-task regardless of temperature
+
+
+  ### Algorithm Patterns Observed
+
+  1. **opus**: Grid search + local refinement, pure-Python
+
+  2. **sonnet**: L-BFGS-B optimization with scipy.optimize
+
+  3. **gemini-flash**: Uniform radius with hexagonal/grid arrangement
+
+
+  ### Recommended Strategy for Evolution
+
+  1. Start with **gemini-flash** for quick baseline solutions (cheap, fast)
+
+  2. Use **sonnet** for scipy-based optimization refinement
+
+  3. Use **opus** for creative/novel approaches when stuck
+
+  4. Use higher temperatures (0.6-0.8) for exploration, lower (0.2-0.4) for exploitation
+
+
+  ### Prompt Engineering Tips
+
+  - Always specify `solve()` function name explicitly
+
+  - Include exact constraint formulas (r <= x <= 1-r)
+
+  - Mention target score (2.636) for context
+
+  - For mutations, describe what to improve specifically
+
+  '
+metadata:
+  child_llms:
+  - alias: opus
+    model: anthropic/claude-opus-4.5
+    provider: openrouter
+    cost_per_million_input_tokens: 5.0
+    cost_per_million_output_tokens: 25.0
+  - alias: sonnet
+    model: anthropic/claude-sonnet-4.5
+    provider: openrouter
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
+  - alias: gemini-flash
+    model: google/gemini-3-flash-preview
+    provider: openrouter
+    cost_per_million_input_tokens: 0.5
+    cost_per_million_output_tokens: 3.0
+  created_at: '2025-12-31T03:16:58.739857+00:00'
+  experiment_name: circle_packing_opus_thinking_mixed

@@ -15,11 +15,15 @@ root_llm:
   cost_per_million_output_tokens: 0.28
   max_iterations: 30
 
-child_llm:
-  provider: "openrouter"
-  model: "deepseek/deepseek-chat"
-  cost_per_million_input_tokens: 0.14
-  cost_per_million_output_tokens: 0.28
+child_llms:
+  - alias: "deepseek"
+    model: "deepseek/deepseek-chat"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 0.14
+    cost_per_million_output_tokens: 0.28
+    calibration_calls: 2
+
+default_child_llm_alias: "deepseek"
 
 evaluation:
   evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"

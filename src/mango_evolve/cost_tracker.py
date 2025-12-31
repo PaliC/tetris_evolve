@@ -35,9 +35,13 @@ class CostSummary:
     total_input_tokens: int
     total_output_tokens: int
     root_cost: float
-    child_cost: float
     root_calls: int
-    child_calls: int
+    # Per-model child costs (alias -> cost/calls)
+    child_costs: dict[str, float]
+    child_calls: dict[str, int]
+    # Aggregate child stats
+    total_child_cost: float
+    total_child_calls: int
     # Cache statistics
     total_cache_creation_tokens: int = 0
     total_cache_read_tokens: int = 0
@@ -48,7 +52,7 @@ class CostTracker:
     """
     Tracks token usage and enforces budget limits.
 
-    Supports different pricing for root and child LLMs.
+    Supports different pricing for root and child LLMs (per-model).
     """
 
     def __init__(self, config: Config):
@@ -63,16 +67,24 @@ class CostTracker:
         self.total_cost: float = 0.0
 
         # Cache pricing info (convert from per-million to per-token)
-        self._pricing = {
+        # Root LLM pricing
+        self._pricing: dict[str, dict[str, float]] = {
             "root": {
                 "input": config.root_llm.cost_per_million_input_tokens / 1_000_000,
                 "output": config.root_llm.cost_per_million_output_tokens / 1_000_000,
             },
-            "child": {
-                "input": config.child_llm.cost_per_million_input_tokens / 1_000_000,
-                "output": config.child_llm.cost_per_million_output_tokens / 1_000_000,
-            },
         }
+
+        # Add pricing for each child LLM by alias (format: "child:<alias>")
+        self._child_aliases: list[str] = []
+        for child_config in config.child_llms:
+            alias = child_config.effective_alias
+            self._child_aliases.append(alias)
+            self._pricing[f"child:{alias}"] = {
+                "input": child_config.cost_per_million_input_tokens / 1_000_000,
+                "output": child_config.cost_per_million_output_tokens / 1_000_000,
+            }
+
         self._max_budget = config.budget.max_total_cost
 
     def record_usage(
@@ -90,7 +102,7 @@ class CostTracker:
         Args:
             input_tokens: Number of input tokens used
             output_tokens: Number of output tokens used
-            llm_type: Either "root" or "child"
+            llm_type: "root" or "child:<alias>" (e.g., "child:fast_model")
             call_id: Optional unique identifier for this call
             cache_creation_input_tokens: Tokens written to cache (25% markup)
             cache_read_input_tokens: Tokens read from cache (90% discount)
@@ -105,7 +117,10 @@ class CostTracker:
             - Regular input tokens: counted in input_tokens but excludes cached
         """
         if llm_type not in self._pricing:
-            raise ValueError(f"Invalid llm_type: {llm_type}. Must be 'root' or 'child'")
+            valid_types = ["root"] + [f"child:{alias}" for alias in self._child_aliases]
+            raise ValueError(
+                f"Invalid llm_type: {llm_type}. Must be one of: {', '.join(valid_types)}"
+            )
 
         pricing = self._pricing[llm_type]
 
@@ -183,7 +198,18 @@ class CostTracker:
             CostSummary with aggregated statistics
         """
         root_usage = [u for u in self.usage_log if u.llm_type == "root"]
-        child_usage = [u for u in self.usage_log if u.llm_type == "child"]
+
+        # Per-model child costs and calls
+        child_costs: dict[str, float] = {}
+        child_calls: dict[str, int] = {}
+        for alias in self._child_aliases:
+            llm_type = f"child:{alias}"
+            usage = [u for u in self.usage_log if u.llm_type == llm_type]
+            child_costs[alias] = sum(u.cost for u in usage)
+            child_calls[alias] = len(usage)
+
+        total_child_cost = sum(child_costs.values())
+        total_child_calls = sum(child_calls.values())
 
         # Calculate cache statistics
         total_cache_creation = sum(u.cache_creation_input_tokens for u in self.usage_log)
@@ -204,9 +230,11 @@ class CostTracker:
             total_input_tokens=sum(u.input_tokens for u in self.usage_log),
             total_output_tokens=sum(u.output_tokens for u in self.usage_log),
             root_cost=sum(u.cost for u in root_usage),
-            child_cost=sum(u.cost for u in child_usage),
             root_calls=len(root_usage),
-            child_calls=len(child_usage),
+            child_costs=child_costs,
+            child_calls=child_calls,
+            total_child_cost=total_child_cost,
+            total_child_calls=total_child_calls,
             total_cache_creation_tokens=total_cache_creation,
             total_cache_read_tokens=total_cache_read,
             cache_savings=cache_savings,
@@ -223,6 +251,12 @@ class CostTracker:
         return {
             "total_cost": self.total_cost,
             "max_budget": self._max_budget,
+            "root_cost": summary.root_cost,
+            "root_calls": summary.root_calls,
+            "child_costs": summary.child_costs,
+            "child_calls": summary.child_calls,
+            "total_child_cost": summary.total_child_cost,
+            "total_child_calls": summary.total_child_calls,
             "cache_savings": summary.cache_savings,
             "total_cache_creation_tokens": summary.total_cache_creation_tokens,
             "total_cache_read_tokens": summary.total_cache_read_tokens,

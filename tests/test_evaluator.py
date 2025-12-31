@@ -105,6 +105,18 @@ class TestCirclePackingEvaluator:
         assert result["error"] is not None
         assert "run_packing" in result["error"] or "construct_packing" in result["error"]
 
+    def test_evaluate_solve_function_gives_helpful_error(self, evaluator):
+        """Gives helpful error when code uses solve() instead of construct_packing()."""
+        code = """
+def solve():
+    return [(0.5, 0.5, 0.1)]
+"""
+        result = evaluator.evaluate(code)
+
+        assert result["valid"] is False
+        assert "solve()" in result["error"]
+        assert "construct_packing" in result["error"]
+
     def test_evaluate_syntax_error(self, evaluator):
         """Handles syntax errors."""
         code = """

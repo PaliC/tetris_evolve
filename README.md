@@ -170,7 +170,7 @@ budget:
 
 ### Evolution API Functions
 
-These functions are available to the Root LLM in ```repl``` code blocks:
+These functions are available to the Root LLM in ```python``` code blocks:
 
 #### `spawn_child_llm(prompt: str, parent_id: str = None) -> dict`
 

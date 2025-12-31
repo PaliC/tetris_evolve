@@ -60,6 +60,7 @@ def _write_trial_file(
     response: str,
     reasoning: str | None,
     parent_id: str | None,
+    model_config: dict[str, Any] | None = None,
 ) -> None:
     """Write trial JSON file to disk for real-time progress tracking."""
     gen_dir = Path(experiment_dir) / "generations" / f"gen_{generation}"
@@ -76,6 +77,7 @@ def _write_trial_file(
         "reasoning": reasoning,
         "timestamp": datetime.now().isoformat(),
         "cost_data": None,
+        "model_config": model_config,
     }
 
     trial_path = gen_dir / f"{trial_id}.json"
@@ -214,16 +216,19 @@ def child_worker(args: tuple) -> dict[str, Any]:
 
     Args:
         args: Tuple of (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
-                        trial_id, generation, experiment_dir, system_prompt, provider)
-              system_prompt and provider are optional for backwards compatibility
+                        trial_id, generation, experiment_dir, system_prompt, provider, model_alias)
+              system_prompt, provider, and model_alias are optional for backwards compatibility
 
     Returns:
         Dictionary with all results needed to record the trial
     """
     # Handle different arg formats for backwards compatibility
-    # 9 args: original format (no system_prompt, no provider)
-    # 10 args: with system_prompt (no provider)
-    # 11 args: with system_prompt and provider
+    # 9 args: original format (no system_prompt, no provider, no model_alias)
+    # 10 args: with system_prompt (no provider, no model_alias)
+    # 11 args: with system_prompt and provider (no model_alias)
+    # 12 args: with system_prompt, provider, and model_alias
+    model_alias: str | None = None
+
     if len(args) == 9:
         (
             prompt,
@@ -252,7 +257,7 @@ def child_worker(args: tuple) -> dict[str, Any]:
             system_prompt,
         ) = args
         provider = "anthropic"
-    else:
+    elif len(args) == 11:
         (
             prompt,
             parent_id,
@@ -266,6 +271,28 @@ def child_worker(args: tuple) -> dict[str, Any]:
             system_prompt,
             provider,
         ) = args
+    else:
+        # 12 args: full new format with model_alias
+        (
+            prompt,
+            parent_id,
+            model,
+            evaluator_kwargs,
+            max_tokens,
+            temperature,
+            trial_id,
+            generation,
+            experiment_dir,
+            system_prompt,
+            provider,
+            model_alias,
+        ) = args
+
+    # Build model config for trial metadata
+    model_config = {
+        "model": model,
+        "temperature": temperature,
+    }
 
     call_id = str(uuid.uuid4())
     response_text = ""
@@ -353,6 +380,7 @@ def child_worker(args: tuple) -> dict[str, Any]:
                 response=response_text,
                 reasoning=reasoning,
                 parent_id=parent_id,
+                model_config=model_config,
             )
             return {
                 "trial_id": trial_id,
@@ -369,6 +397,8 @@ def child_worker(args: tuple) -> dict[str, Any]:
                 "call_id": call_id,
                 "cache_creation_input_tokens": cache_creation_input_tokens,
                 "cache_read_input_tokens": cache_read_input_tokens,
+                "model_alias": model_alias,
+                "model_config": model_config,
             }
 
         # Create evaluator and evaluate the code
@@ -401,6 +431,7 @@ def child_worker(args: tuple) -> dict[str, Any]:
         response=response_text,
         reasoning=reasoning,
         parent_id=parent_id,
+        model_config=model_config,
     )
 
     return {
@@ -418,4 +449,6 @@ def child_worker(args: tuple) -> dict[str, Any]:
         "call_id": call_id,
         "cache_creation_input_tokens": cache_creation_input_tokens,
         "cache_read_input_tokens": cache_read_input_tokens,
+        "model_alias": model_alias,
+        "model_config": model_config,
     }

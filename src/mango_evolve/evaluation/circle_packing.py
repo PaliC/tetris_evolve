@@ -141,6 +141,12 @@ try:
     elif "construct_packing" in namespace:
         centers, radii, sum_radii = namespace["construct_packing"]()
     else:
+        # Check for common wrong function names to give helpful error
+        if "solve" in namespace:
+            raise ValueError(
+                "Code defines solve() but must define construct_packing() or run_packing(). "
+                "Rename 'def solve(' to 'def construct_packing(' in your prompt."
+            )
         raise ValueError("Code must define run_packing() or construct_packing()")
 
     # Convert to numpy arrays

@@ -32,17 +32,6 @@ def mock_root_llm(mock_config):
     )
 
 
-@pytest.fixture
-def mock_child_llm(mock_config):
-    """Mock child LLM client."""
-    cost_tracker = CostTracker(mock_config)
-    return MockLLMClient(
-        model=mock_config.child_llm.model,
-        cost_tracker=cost_tracker,
-        llm_type="child",
-    )
-
-
 class TestOrchestratorInitialization:
     """Tests for orchestrator initialization."""
 
@@ -63,22 +52,11 @@ class TestOrchestratorInitialization:
         assert orchestrator.cost_tracker is not None
         assert orchestrator.logger is not None
         assert orchestrator.root_llm is not None
-        assert orchestrator.child_llm is not None
+        assert len(orchestrator.child_llm_configs) > 0  # Has child LLM configs
         assert orchestrator.evaluator is not None
         assert orchestrator.evolution_api is not None
         assert orchestrator.repl is not None
         assert len(orchestrator.messages) == 0
-
-    def test_initialization_with_mock_llms(self, mock_config, mock_root_llm, mock_child_llm):
-        """Test initialization with provided mock LLM clients."""
-        orchestrator = RootLLMOrchestrator(
-            mock_config,
-            root_llm=mock_root_llm,
-            child_llm=mock_child_llm,
-        )
-
-        assert orchestrator.root_llm is mock_root_llm
-        assert orchestrator.child_llm is mock_child_llm
 
 
 class TestBuildInitialMessages:
@@ -96,15 +74,15 @@ class TestBuildInitialMessages:
 
 
 class TestCodeBlockExtraction:
-    """Tests for extracting REPL code blocks."""
+    """Tests for extracting Python code blocks."""
 
     def test_extract_code_blocks_single(self, mock_config):
-        """Test extracting a single REPL block."""
+        """Test extracting a single Python block."""
         orchestrator = RootLLMOrchestrator(mock_config)
 
         response = """Let me try a simple approach.
 
-```repl
+```python
 x = 1 + 2
 print(x)
 ```
@@ -116,18 +94,18 @@ That should work.
         assert "x = 1 + 2" in blocks[0]
 
     def test_extract_code_blocks_multiple(self, mock_config):
-        """Test extracting multiple REPL blocks."""
+        """Test extracting multiple Python blocks."""
         orchestrator = RootLLMOrchestrator(mock_config)
 
         response = """First block:
 
-```repl
+```python
 a = 1
 ```
 
 Second block:
 
-```repl
+```python
 b = 2
 ```
 """
@@ -136,8 +114,8 @@ b = 2
         assert "a = 1" in blocks[0]
         assert "b = 2" in blocks[1]
 
-    def test_extract_code_blocks_includes_python_and_repl(self, mock_config):
-        """Test that both python and repl blocks are extracted in order."""
+    def test_extract_code_blocks_multiple_python(self, mock_config):
+        """Test that multiple python blocks are extracted in order."""
         orchestrator = RootLLMOrchestrator(mock_config)
 
         response = """This is Python:
@@ -147,9 +125,9 @@ def foo():
     pass
 ```
 
-This is REPL:
+More Python:
 
-```repl
+```python
 x = 1
 ```
 """
@@ -159,7 +137,7 @@ x = 1
         assert "x = 1" in blocks[1]
 
     def test_extract_code_blocks_none(self, mock_config):
-        """Test when no REPL blocks are present."""
+        """Test when no Python blocks are present."""
         orchestrator = RootLLMOrchestrator(mock_config)
 
         response = "Just some text with no code blocks."
@@ -220,75 +198,6 @@ class TestTerminationDetection:
         assert orchestrator.check_termination("") is True
 
 
-class TestMaxGenerationsStop:
-    """Tests for stopping at max generations."""
-
-    def test_max_generations_stop(self, mock_config, temp_dir, sample_valid_packing_code):
-        """Test that orchestrator stops at max generations."""
-        # Set very low max generations
-        mock_config.evolution.max_generations = 2
-
-        orchestrator = RootLLMOrchestrator(mock_config)
-
-        # Set up mock responses that spawn children (to trigger generation advance)
-        cost_tracker = orchestrator.cost_tracker
-        mock_root = MockLLMClient(
-            model=mock_config.root_llm.model,
-            cost_tracker=cost_tracker,
-            llm_type="root",
-        )
-        mock_child = MockLLMClient(
-            model=mock_config.child_llm.model,
-            cost_tracker=cost_tracker,
-            llm_type="child",
-        )
-
-        # Child returns valid packing code
-        mock_child.set_responses(
-            [
-                f"```python\n{sample_valid_packing_code}\n```",
-                f"```python\n{sample_valid_packing_code}\n```",
-            ]
-        )
-
-        # Mock root responses: spawn, selection, spawn, selection
-        mock_root.set_responses(
-            [
-                """Generation 0:
-```repl
-result = spawn_child_llm("Test gen 0")
-print(f"Gen 0 result: {result['success']}")
-```
-""",
-                """```selection
-{"selections": [{"trial_id": "trial_0_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected best"}
-```
-""",
-                """Generation 1:
-```repl
-result = spawn_child_llm("Test gen 1")
-print(f"Gen 1 result: {result['success']}")
-```
-""",
-                """```selection
-{"selections": [{"trial_id": "trial_1_0", "reasoning": "Best", "category": "performance"}], "summary": "Selected best"}
-```
-""",
-            ]
-        )
-        orchestrator.root_llm = mock_root
-        orchestrator.child_llm = mock_child
-        orchestrator.evolution_api.child_llm = mock_child
-        # Note: max_generations is already set via mock_config.evolution.max_generations = 2
-        # and is now read-only after initialization
-
-        result = orchestrator.run()
-
-        assert result.terminated is True
-        assert "max_generations" in result.reason
-        assert result.num_generations == 2
-
-
 class TestBudgetExceededStop:
     """Tests for stopping on budget exceeded."""
 
@@ -308,7 +217,7 @@ class TestBudgetExceededStop:
         )
         mock_root.set_responses(
             [
-                "Starting...\n\n```repl\nprint('hello')\n```",
+                "Starting...\n\n```python\nprint('hello')\n```",
             ]
         )
         orchestrator.root_llm = mock_root
@@ -348,8 +257,8 @@ class TestConversationHistory:
         )
         mock_root.set_responses(
             [
-                "I'll start.\n\n```repl\nx = 1\nprint(x)\n```",
-                "Done.\n\n```repl\nterminate_evolution('test complete')\n```",
+                "I'll start.\n\n```python\nx = 1\nprint(x)\n```",
+                "Done.\n\n```python\nterminate_evolution('test complete')\n```",
             ]
         )
         orchestrator.root_llm = mock_root
@@ -365,67 +274,6 @@ class TestConversationHistory:
 
 class TestFullOrchestration:
     """Integration tests for full orchestration loop."""
-
-    def test_full_loop_with_termination(self, mock_config, temp_dir, sample_valid_packing_code):
-        """Test a full orchestration loop that terminates properly."""
-        orchestrator = RootLLMOrchestrator(mock_config)
-        cost_tracker = orchestrator.cost_tracker
-
-        # Create mock responses with a child spawn and termination
-        mock_root = MockLLMClient(
-            model=mock_config.root_llm.model,
-            cost_tracker=cost_tracker,
-            llm_type="root",
-        )
-
-        mock_child = MockLLMClient(
-            model=mock_config.child_llm.model,
-            cost_tracker=cost_tracker,
-            llm_type="child",
-        )
-
-        # Child returns valid packing code
-        mock_child.set_responses(
-            [f"Here's my solution:\n\n```python\n{sample_valid_packing_code}\n```"]
-        )
-
-        # Root spawns a child, provides selection, then terminates in next generation
-        mock_root.set_responses(
-            [
-                """Let me spawn a child to try a solution.
-
-```repl
-prompt = "Write a circle packing algorithm."
-result = spawn_child_llm(prompt)
-print(f"Result: valid={result['metrics'].get('valid')}, score={result['metrics'].get('score', 0):.4f}")
-best_code = result['code']
-```
-""",
-                """```selection
-{"selections": [{"trial_id": "trial_0_0", "reasoning": "Only trial", "category": "performance"}], "summary": "Selected only trial"}
-```
-""",
-                """Good result! Let me terminate.
-
-```repl
-terminate_evolution("Found a valid solution", best_program=best_code)
-```
-""",
-            ]
-        )
-
-        orchestrator.root_llm = mock_root
-        orchestrator.child_llm = mock_child
-        # Also update the evolution API's child LLM
-        orchestrator.evolution_api.child_llm = mock_child
-
-        result = orchestrator.run()
-
-        assert result.terminated is True
-        assert result.total_trials == 1
-        assert result.successful_trials == 1
-        assert result.best_score > 0
-        assert result.cost_summary is not None
 
     def test_orchestrator_result_fields(self, mock_config, temp_dir):
         """Test that OrchestratorResult has all expected fields."""

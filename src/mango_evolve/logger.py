@@ -62,6 +62,11 @@ class ExperimentLogger:
         self._generation_data: list[dict[str, Any]] = []
         self._initialized = False
 
+    @property
+    def experiment_dir(self) -> Path:
+        """Alias for base_dir for backwards compatibility."""
+        return self.base_dir
+
     def create_experiment_directory(self) -> Path:
         """
         Create the experiment directory structure.
@@ -102,6 +107,7 @@ class ExperimentLogger:
         reasoning: str,
         parent_id: str | None = None,
         cost_data: dict[str, Any] | None = None,
+        model_config: dict[str, Any] | None = None,
     ) -> Path:
         """
         Log a trial result.
@@ -116,6 +122,7 @@ class ExperimentLogger:
             reasoning: Extracted reasoning from response
             parent_id: Optional parent trial ID (for mutations)
             cost_data: Optional cost/token data for this trial
+            model_config: Optional model configuration (model, temperature, etc.)
 
         Returns:
             Path to the trial JSON file
@@ -133,6 +140,7 @@ class ExperimentLogger:
             "reasoning": reasoning,
             "timestamp": datetime.now().isoformat(),
             "cost_data": cost_data,
+            "model_config": model_config,
         }
 
         gen_dir = self._get_generation_dir(generation)

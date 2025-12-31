@@ -1,0 +1,43 @@
+# MangoEvolve Calibration Notes
+# The root LLM only sees the 'notes' section during evolution.
+# Metadata is stored for validation purposes.
+
+notes: "\n## Calibration Observations (Final)\n\n### Critical Discovery:\nThe \"too\
+  \ many values to unpack (expected 3, got 26)\" error occurs even with perfectly\
+  \ formatted code like:\n```python\ndef run_packing():\n    return [(0.09, 0.09,\
+  \ 0.085), (0.27, 0.09, 0.085), ...26 tuples...]\n```\n\nThis suggests the evaluation\
+  \ framework may be doing:\n`x, y, r = run_packing()` instead of iterating over the\
+  \ list.\n\n**Possible expected formats:**\n1. Return (xs_array, ys_array, rs_array)\
+  \ - three separate sequences\n2. Return numpy array of shape (26, 3)\n3. Some other\
+  \ structure\n\n### Model Comparison Summary:\n\n| Model | Temp | Code Quality |\
+  \ Math Reasoning | Following Instructions |\n|-------|------|--------------|----------------|----------------------|\n\
+  | Opus | 0.2-0.5 | Excellent, verbose | Strong, includes verification | Good but\
+  \ adds extra code |\n| Sonnet | 0.0-0.7 | Clean, well-commented | Good but counting\
+  \ errors | Follows format closely |\n| Gemini-Flash | 0.3-0.5 | Concise, practical\
+  \ | Adequate | Brief but functional |\n\n### Evolution Strategy:\n1. First trial:\
+  \ Debug the expected return format (maybe numpy array?)\n2. Use Sonnet at temp 0.3\
+  \ for clean baseline implementations\n3. Use Opus at temp 0.5 for complex optimization\
+  \ when format is known\n4. Use Gemini-Flash for quick iterations and variations\n\
+  5. All models need explicit format examples in prompts\n\n### Cost-Benefit:\n- Opus:\
+  \ Most expensive but best reasoning - use sparingly for breakthroughs\n- Sonnet:\
+  \ Good balance - main workhorse\n- Gemini-Flash: Cheapest - use for rapid prototyping\
+  \ and variations\n"
+metadata:
+  child_llms:
+  - alias: opus
+    model: anthropic/claude-opus-4.5
+    provider: openrouter
+    cost_per_million_input_tokens: 5.0
+    cost_per_million_output_tokens: 25.0
+  - alias: sonnet
+    model: anthropic/claude-sonnet-4.5
+    provider: openrouter
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
+  - alias: gemini-flash
+    model: google/gemini-3-flash-preview
+    provider: openrouter
+    cost_per_million_input_tokens: 0.5
+    cost_per_million_output_tokens: 3.0
+  created_at: '2025-12-31T03:08:15.419849+00:00'
+  experiment_name: circle_packing_opus_thinking_mixed

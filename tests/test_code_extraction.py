@@ -5,56 +5,56 @@ Tests for mango_evolve.utils.code_extraction module.
 from mango_evolve.utils import (
     extract_code_blocks,
     extract_python_code,
+    extract_python_blocks,
     extract_reasoning,
-    extract_repl_blocks,
 )
 
 
 class TestExtractCodeBlocks:
     """Tests for extract_code_blocks function."""
 
-    def test_extract_repl_block(self):
-        """Extract code from ```repl``` block."""
+    def test_extract_python_block(self):
+        """Extract code from ```python``` block."""
         text = """
 Here is some code:
 
-```repl
+```python
 x = spawn_child_llm("test")
 print(x)
 ```
 
 That's all.
 """
-        blocks = extract_code_blocks(text, language="repl")
+        blocks = extract_code_blocks(text, language="python")
 
         assert len(blocks) == 1
         assert "spawn_child_llm" in blocks[0].code
-        assert blocks[0].language == "repl"
+        assert blocks[0].language == "python"
 
-    def test_multiple_repl_blocks(self):
-        """Handle multiple repl code blocks."""
+    def test_multiple_python_blocks(self):
+        """Handle multiple python code blocks."""
         text = """
-```repl
+```python
 x = 1
 ```
 
 Some text
 
-```repl
+```python
 y = 2
 ```
 """
-        blocks = extract_code_blocks(text, language="repl")
+        blocks = extract_code_blocks(text, language="python")
 
         assert len(blocks) == 2
         assert "x = 1" in blocks[0].code
         assert "y = 2" in blocks[1].code
 
     def test_no_code_block(self):
-        """Return empty list when no repl blocks found."""
+        """Return empty list when no python blocks found."""
         text = "This is just plain text with no code."
 
-        blocks = extract_code_blocks(text, language="repl")
+        blocks = extract_code_blocks(text, language="python")
 
         assert len(blocks) == 0
 
@@ -62,10 +62,10 @@ y = 2
         """Handle edge cases gracefully."""
         # Unclosed block
         text = """
-```repl
+```python
 x = 5
 """
-        blocks = extract_code_blocks(text, language="repl")
+        blocks = extract_code_blocks(text, language="python")
         # Should not match unclosed blocks
         assert len(blocks) == 0
 
@@ -76,18 +76,14 @@ x = 5
 python_code()
 ```
 
-```repl
-repl_code()
-```
-
 ```javascript
 javascript_code();
 ```
 """
-        blocks = extract_code_blocks(text, language="repl")
+        blocks = extract_code_blocks(text, language="python")
 
         assert len(blocks) == 1
-        assert "repl_code" in blocks[0].code
+        assert "python_code" in blocks[0].code
 
     def test_custom_language(self):
         """Can extract blocks with custom language tag."""
@@ -102,53 +98,53 @@ x = 5
         assert "x = 5" in blocks[0].code
 
 
-class TestExtractReplBlocks:
-    """Tests for extract_repl_blocks function."""
+class TestExtractPythonBlocks:
+    """Tests for extract_python_blocks function."""
 
-    def test_extract_single_repl(self):
-        """Extract single REPL block."""
+    def test_extract_single_python(self):
+        """Extract single Python block."""
         text = """
-```repl
+```python
 spawn_child_llm("test")
 ```
 """
-        codes = extract_repl_blocks(text)
+        codes = extract_python_blocks(text)
 
         assert len(codes) == 1
         assert "spawn_child_llm" in codes[0]
 
-    def test_extract_multiple_repl(self):
-        """Extract multiple REPL blocks."""
+    def test_extract_multiple_python(self):
+        """Extract multiple Python blocks."""
         text = """
 First step:
-```repl
+```python
 result1 = spawn_child_llm("grid")
 ```
 
 Second step:
-```repl
+```python
 result2 = spawn_child_llm("hex")
 ```
 """
-        codes = extract_repl_blocks(text)
+        codes = extract_python_blocks(text)
 
         assert len(codes) == 2
         assert "result1" in codes[0]
         assert "result2" in codes[1]
 
-    def test_no_repl_block(self):
-        """Return empty list when no REPL or python block."""
+    def test_no_python_block(self):
+        """Return empty list when no python block."""
         text = """
 ```javascript
 x = 5
 ```
 """
-        codes = extract_repl_blocks(text)
+        codes = extract_python_blocks(text)
 
         assert len(codes) == 0
 
-    def test_extracts_both_python_and_repl_blocks(self):
-        """REPL extraction includes both python and repl blocks in order."""
+    def test_ignores_non_python_blocks(self):
+        """Extraction ignores non-python blocks."""
         text = """
 Here's some Python code for reference:
 ```python
@@ -156,16 +152,15 @@ def example():
     pass
 ```
 
-Now execute this:
-```repl
-spawn_child_llm("test")
+Ignore this:
+```javascript
+console.log("nope");
 ```
 """
-        codes = extract_repl_blocks(text)
+        codes = extract_python_blocks(text)
 
-        assert len(codes) == 2
+        assert len(codes) == 1
         assert "def example" in codes[0]
-        assert "spawn_child_llm" in codes[1]
 
 
 class TestExtractReasoning:
@@ -176,7 +171,7 @@ class TestExtractReasoning:
         text = """
 First, I'll explain my approach.
 
-```repl
+```python
 spawn_child_llm("test")
 ```
 
@@ -192,7 +187,7 @@ This implements the solution.
         """Handle multiple code blocks."""
         text = """
 Step 1:
-```repl
+```python
 x = 1
 ```
 
@@ -223,11 +218,11 @@ Done.
 class TestNestedCodeBlocks:
     """Tests for handling nested code blocks (code blocks inside code blocks)."""
 
-    def test_repl_block_with_nested_python(self):
-        """Extract REPL block containing nested ```python``` example."""
+    def test_python_block_with_nested_python(self):
+        """Extract python block containing nested ```python``` example."""
         text = '''Here's my approach:
 
-```repl
+```python
 # Strategy 1: Hexagonal lattice packing
 prompt1 = """
 Write a circle packing algorithm.
@@ -249,7 +244,7 @@ print(f"Trial {result1['trial_id']}")
 
 Now try another approach.
 '''
-        blocks = extract_code_blocks(text, language="repl")
+        blocks = extract_code_blocks(text, language="python")
 
         assert len(blocks) == 1
         # The extracted code should contain the nested ```python block
@@ -257,11 +252,11 @@ Now try another approach.
         assert "spawn_child_llm" in blocks[0].code
         assert "import numpy" in blocks[0].code
 
-    def test_repl_block_with_multiple_nested_blocks(self):
-        """Handle REPL block with multiple nested code blocks."""
+    def test_python_block_with_multiple_nested_blocks(self):
+        """Handle python block with multiple nested code blocks."""
         text = '''Explanation:
 
-```repl
+```python
 prompt = """
 Here are two approaches:
 
@@ -284,18 +279,18 @@ result = spawn_child_llm(prompt)
 
 Done.
 '''
-        blocks = extract_code_blocks(text, language="repl")
+        blocks = extract_code_blocks(text, language="python")
 
         assert len(blocks) == 1
         assert "method1" in blocks[0].code
         assert "method2" in blocks[0].code
         assert "spawn_child_llm" in blocks[0].code
 
-    def test_multiple_repl_blocks_with_nested(self):
-        """Handle multiple REPL blocks each with nested code."""
+    def test_multiple_python_blocks_with_nested(self):
+        """Handle multiple python blocks each with nested code."""
         text = '''First:
 
-```repl
+```python
 prompt1 = """
 ```python
 def foo():
@@ -307,7 +302,7 @@ result1 = spawn_child_llm(prompt1)
 
 Second:
 
-```repl
+```python
 prompt2 = """
 ```python
 def bar():
@@ -319,7 +314,7 @@ result2 = spawn_child_llm(prompt2)
 
 Done.
 '''
-        blocks = extract_code_blocks(text, language="repl")
+        blocks = extract_code_blocks(text, language="python")
 
         assert len(blocks) == 2
         assert "foo" in blocks[0].code
@@ -331,7 +326,7 @@ Done.
         """Reasoning extraction should remove entire blocks including nested ones."""
         text = '''First, I'll explain my approach.
 
-```repl
+```python
 prompt = """
 Example:
 ```python
@@ -360,7 +355,7 @@ This implements the solution.
         """
         text = '''Start:
 
-```repl
+```python
 prompt = """
 Example:
 ```
@@ -372,9 +367,9 @@ result = func(prompt)
 
 End.
 '''
-        blocks = extract_code_blocks(text, language="repl")
+        blocks = extract_code_blocks(text, language="python")
 
-        # The first unlabeled ``` closes the repl block early
+        # The first unlabeled ``` closes the python block early
         # This is a known limitation - use labeled blocks for nesting
         assert len(blocks) == 1
         # Only content up to the first ``` is captured
@@ -442,11 +437,11 @@ python_code()
 
         assert code is None
 
-    def test_ignores_repl_blocks(self):
-        """Only extract python or unlabeled blocks, not repl."""
+    def test_ignores_non_python_blocks(self):
+        """Only extract python or unlabeled blocks, not other languages."""
         text = """
-```repl
-spawn_child_llm("test")
+```javascript
+console.log("hello");
 ```
 """
         code = extract_python_code(text)
@@ -463,3 +458,64 @@ console.log("hello");
         code = extract_python_code(text)
 
         assert code is None
+
+
+class TestExtractPythonBlocksNesting:
+    """Tests for extract_python_blocks handling of nested blocks."""
+
+    def test_nested_python_block_not_extracted_separately(self):
+        """A python block inside a python block should NOT be extracted separately.
+
+        This is the scratchpad bug: when the Root LLM writes a scratchpad update
+        containing an example code block in a triple-quoted string, the inner
+        code block should not be extracted and executed separately.
+        """
+        text = '''```python
+update_scratchpad("""
+## Strategy
+
+### Constraint Validation (CRITICAL)
+```python
+radii = np.maximum(radii, 0)
+for i in range(n):
+    max_r = min(centers[i,0], 1-centers[i,0])
+    radii[i] = min(radii[i], max_r)
+```
+""")
+```'''
+        codes = extract_python_blocks(text)
+
+        # Should only extract ONE block - the outer python block
+        assert len(codes) == 1
+        # The extracted code should contain the scratchpad call
+        assert "update_scratchpad" in codes[0]
+        # The nested python block should be INSIDE the extracted code (as content)
+        assert "radii = np.maximum" in codes[0]
+
+    def test_multiple_python_blocks_with_nested_not_double_extracted(self):
+        """Multiple python blocks with nested code should each be extracted once."""
+        text = '''First block:
+```python
+prompt1 = """
+Example:
+```python
+def foo():
+    pass
+```
+"""
+spawn_child_llm(prompt1)
+```
+
+Second block:
+```python
+x = 5
+```
+'''
+        codes = extract_python_blocks(text)
+
+        # Should extract exactly 2 blocks - one for each python block
+        assert len(codes) == 2
+        assert "spawn_child_llm" in codes[0]
+        assert "x = 5" in codes[1]
+        # The nested python block should be in the first block's content
+        assert "def foo" in codes[0]

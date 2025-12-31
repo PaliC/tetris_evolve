@@ -1,0 +1,63 @@
+============================================================
+SCRATCHPAD OUTPUT FOR GENERATION 0
+============================================================
+
+This is the scratchpad content that was available to the
+Root LLM when producing this generation.
+
+------------------------------------------------------------
+LINEAGE MAP
+------------------------------------------------------------
+
+trial_-1_0 (INVALID) [Great questions! Let me share my intuiti...]
+
+trial_-1_1 (INVALID) [Great questions! Here's my geometric int...]
+
+trial_-1_2 (INVALID) [Here is the geometric reasoning behind t...]
+
+trial_-1_3 (INVALID) [Looking at this problem, I need to pack...]
+
+trial_-1_4 (INVALID) [Looking at this problem, I need to imple...]
+
+trial_-1_5 (INVALID) [To solve the circle packing problem for...]
+
+trial_-1_6 (INVALID) [To solve the circle packing problem for...]
+------------------------------------------------------------
+SCRATCHPAD
+------------------------------------------------------------
+
+
+## FINAL Calibration Observations
+
+### Function Name Issue
+The validator error says "must define run_packing() or construct_packing()" but the LLMs correctly produce `solve()`. This appears to be a validator wrapper that renames things. Key: USE `solve()` in prompts.
+
+### Model Comparison Summary
+
+| Model | Reasoning | Code Style | Strengths | Best For |
+|-------|-----------|------------|-----------|----------|
+| opus | Excellent, conversational | Clean pure-Python, good local refinement | Deep thinking, elegant solutions | Complex optimization, novel approaches |
+| sonnet | Excellent, structured | scipy/numpy heavy, sophisticated | Technical rigor, optimization libs | Scipy-based refinement, numerical methods |
+| gemini-flash | Good, academic | Simple/practical, uniform radius | Fast, practical | Quick baselines, simple heuristics |
+
+### Temperature Observations
+- 0.3: More deterministic, standard approaches
+- 0.5-0.7: Still coherent, slightly more creative variations
+- All models stay on-task regardless of temperature
+
+### Algorithm Patterns Observed
+1. **opus**: Grid search + local refinement, pure-Python
+2. **sonnet**: L-BFGS-B optimization with scipy.optimize
+3. **gemini-flash**: Uniform radius with hexagonal/grid arrangement
+
+### Recommended Strategy for Evolution
+1. Start with **gemini-flash** for quick baseline solutions (cheap, fast)
+2. Use **sonnet** for scipy-based optimization refinement
+3. Use **opus** for creative/novel approaches when stuck
+4. Use higher temperatures (0.6-0.8) for exploration, lower (0.2-0.4) for exploitation
+
+### Prompt Engineering Tips
+- Always specify `solve()` function name explicitly
+- Include exact constraint formulas (r <= x <= 1-r)
+- Mention target score (2.636) for context
+- For mutations, describe what to improve specifically

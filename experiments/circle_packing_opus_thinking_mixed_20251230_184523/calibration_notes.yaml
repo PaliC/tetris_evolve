@@ -1,0 +1,46 @@
+# MangoEvolve Calibration Notes
+# The root LLM only sees the 'notes' section during evolution.
+# Metadata is stored for validation purposes.
+
+notes: "# Calibration Observations (Final)\n\n## Model Capabilities:\n\n### opus (anthropic/claude-opus-4.5)\
+  \ - 2 calls used\n- Most sophisticated optimization: L-BFGS-B with penalty functions\n\
+  - Handles variable radii (essential for maximizing sum)\n- Post-processing to ensure\
+  \ constraint satisfaction\n- Multi-row hexagonal initial configuration\n- Best for:\
+  \ Complex optimization, novel approaches\n- Cost: $5/$25 per M tokens (expensive\
+  \ but powerful)\n\n### sonnet (anthropic/claude-sonnet-4.5) - 2 calls used  \n-\
+  \ Strong mathematical reasoning (solved 4-circle analytically)\n- Uses SLSQP with\
+  \ explicit constraints\n- Clean, well-documented code\n- Assumed identical radii\
+  \ (suboptimal)\n- Best for: Balanced solutions, good reasoning\n- Cost: $3/$15 per\
+  \ M tokens (mid-range)\n\n### gemini-flash (google/gemini-3-flash-preview) - 2 calls\
+  \ used\n- Simple grid-based approaches\n- Fast execution, less optimization\n- Clear\
+  \ mathematical explanations\n- Best for: Quick baselines, simple iterations\n- Cost:\
+  \ $0.50/$3 per M tokens (very cheap - use liberally)\n\n## Code Quality Patterns:\n\
+  - All models correctly return list of (x, y, r) tuples\n- opus/sonnet use scipy.optimize\
+  \ (better results)\n- gemini-flash uses analytical grid placement (faster but suboptimal)\n\
+  \n## Evaluation Issue:\nError \"too many values to unpack (expected 3, got 26)\"\
+  \ occurs for all models.\nThe harness may expect a different format. During evolution,\
+  \ I should:\n1. Check if function needs to yield instead of return\n2. Try returning\
+  \ numpy array instead of list\n3. Look for any hidden format requirements in prompts\n\
+  \n## Evolution Strategy:\n1. Start with gemini-flash for cheap baseline experiments\n\
+  2. Use opus for sophisticated optimization once format is figured out\n3. Use sonnet\
+  \ for refinements and analysis\n4. Vary temperature: 0.3 for focused, 0.7 for balanced,\
+  \ 0.9+ for creative\n\n## Best Known Target: 2.635983099011548\n"
+metadata:
+  child_llms:
+  - alias: opus
+    model: anthropic/claude-opus-4.5
+    provider: openrouter
+    cost_per_million_input_tokens: 5.0
+    cost_per_million_output_tokens: 25.0
+  - alias: sonnet
+    model: anthropic/claude-sonnet-4.5
+    provider: openrouter
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
+  - alias: gemini-flash
+    model: google/gemini-3-flash-preview
+    provider: openrouter
+    cost_per_million_input_tokens: 0.5
+    cost_per_million_output_tokens: 3.0
+  created_at: '2025-12-31T02:48:40.815778+00:00'
+  experiment_name: circle_packing_opus_thinking_mixed

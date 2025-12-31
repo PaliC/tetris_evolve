@@ -1,7 +1,7 @@
 """
 Code extraction utilities for mango_evolve.
 
-Extracts REPL code blocks from LLM responses. The Root LLM uses ```repl```
+Extracts Python code blocks from LLM responses. The Root LLM uses ```python```
 code blocks to indicate Python code that should be executed in the REPL.
 """
 
@@ -85,7 +85,7 @@ def _find_matching_fence(text: str, start_pos: int) -> int | None:
 
 def extract_code_blocks(
     text: str,
-    language: str = "repl",
+    language: str = "python",
 ) -> list[CodeBlock]:
     """
     Extract code blocks with a specific language tag from markdown-formatted text.
@@ -143,12 +143,16 @@ def extract_code_blocks(
     return blocks
 
 
-def extract_repl_blocks(text: str) -> list[str]:
+def extract_python_blocks(text: str) -> list[str]:
     """
-    Extract all REPL code blocks from text.
+    Extract all Python code blocks from text.
 
-    The Root LLM writes Python code in ```repl``` or ```python``` blocks
-    that should be executed in the REPL environment.
+    The Root LLM writes Python code in ```python``` blocks that should be
+    executed in the REPL environment.
+
+    This function filters out nested blocks - code blocks that appear inside
+    the content of other code blocks (e.g., a ```python block inside a
+    triple-quoted string within a ```python block).
 
     Args:
         text: The text to extract code from
@@ -156,10 +160,22 @@ def extract_repl_blocks(text: str) -> list[str]:
     Returns:
         List of code strings in order of appearance
     """
-    repl_blocks = extract_code_blocks(text, language="repl")
     python_blocks = extract_code_blocks(text, language="python")
-    all_blocks = sorted(repl_blocks + python_blocks, key=lambda b: b.start_pos)
-    return [block.code for block in all_blocks]
+    all_blocks = sorted(python_blocks, key=lambda b: b.start_pos)
+
+    # Filter out nested blocks - blocks that are contained within other blocks
+    def is_nested(block: CodeBlock, others: list[CodeBlock]) -> bool:
+        """Check if block is nested inside any of the others."""
+        for other in others:
+            if other is block:
+                continue
+            # Block is nested if it starts after other starts AND ends before other ends
+            if other.start_pos < block.start_pos < other.end_pos:
+                return True
+        return False
+
+    top_level_blocks = [b for b in all_blocks if not is_nested(b, all_blocks)]
+    return [block.code for block in top_level_blocks]
 
 
 def _find_all_top_level_blocks(text: str) -> list[tuple[int, int]]:

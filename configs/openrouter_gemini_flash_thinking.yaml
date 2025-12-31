@@ -25,14 +25,18 @@ root_llm:
     enabled: true
     effort: "xhigh"  # ultrathink mode - maximum reasoning
 
-child_llm:
-  provider: "openrouter"
-  model: "google/gemini-2.5-flash-preview-05-20"
-  cost_per_million_input_tokens: 0.15
-  cost_per_million_output_tokens: 0.60
-  reasoning:
-    enabled: true
-    effort: "high"  # high reasoning for code generation
+child_llms:
+  - alias: "gemini-thinking"
+    model: "google/gemini-2.5-flash-preview-05-20"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 0.15
+    cost_per_million_output_tokens: 0.60
+    calibration_calls: 2
+    reasoning:
+      enabled: true
+      effort: "high"  # high reasoning for code generation
+
+default_child_llm_alias: "gemini-thinking"
 
 evaluation:
   evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
