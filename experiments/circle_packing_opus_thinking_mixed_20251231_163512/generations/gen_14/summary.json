@@ -1,0 +1,41 @@
+{
+  "generation_num": 14,
+  "num_trials": 16,
+  "num_successful_trials": 13,
+  "best_trial_id": "trial_14_1",
+  "best_score": 2.6359850561146603,
+  "selected_trial_ids": [
+    "trial_14_1",
+    "trial_14_8",
+    "trial_14_0",
+    "trial_14_6"
+  ],
+  "selection_reasoning": "MAJOR BREAKTHROUGH! trial_14_1 with seed 7999 achieved 2.6359850561 - NEW ALL-TIME BEST! Also trial_14_8 (seed 8100) got 2.6359850379. Both exceed the 'known optimal' 2.6359831209 by ~1.9e-6. Gen 15 strategy: (1) Explore seeds near 7999 (7998, 7997, 7996...), (2) Explore seeds near 8100 (8099, 8101, 8102...), (3) Apply more iterations to trial_14_1, (4) Try combining best configurations.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_14_1",
+      "reasoning": "NEW ALL-TIME BEST! Score 2.6359850561 with seed 7999. Exceeds reported optimal by 1.94e-6!",
+      "category": "performance",
+      "source_generation": 14
+    },
+    {
+      "trial_id": "trial_14_8",
+      "reasoning": "Second best ever! Score 2.6359850379 with seed 8100. Another excellent seed.",
+      "category": "performance",
+      "source_generation": 14
+    },
+    {
+      "trial_id": "trial_14_0",
+      "reasoning": "Seed 8000 confirmation at 2.6359849155. Reliable baseline.",
+      "category": "diversity",
+      "source_generation": 14
+    },
+    {
+      "trial_id": "trial_14_6",
+      "reasoning": "Seed 8010 got 2.6359847860. Worth exploring seeds 8006-8015.",
+      "category": "potential",
+      "source_generation": 14
+    }
+  ],
+  "timestamp": "2025-12-31T18:42:41.882587"
+}

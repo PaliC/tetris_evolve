@@ -58,9 +58,6 @@ child_llms:
 
 default_child_llm_alias: "gemini-flash"
 
-# Use pre-existing calibration notes (skips calibration phase)
-calibration_notes_file: "./experiments/circle_packing_opus_thinking_mixed_20251230_193401/calibration_notes.yaml"
-
 evaluation:
   evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
   evaluator_kwargs:

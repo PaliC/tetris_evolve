@@ -1,0 +1,54 @@
+# MangoEvolve Calibration Notes
+# The root LLM only sees the 'notes' section during evolution.
+# Metadata is stored for validation purposes.
+
+notes: "\n## Model Calibration Observations\n\n### OPUS (anthropic/claude-opus-4.5)\n\
+  - **Math reasoning**: Excellent. Solved geometry problem with thorough step-by-step\
+  \ reasoning, verified answer, and explored \"can we do better?\" \n- **Code quality**:\
+  \ Very clean, well-documented. Added global restart function beyond what was asked.\
+  \ Uses docstrings, proper error handling, informative print statements.\n- **Thoroughness**:\
+  \ Goes above and beyond - checks alternative approaches, adds bonus functionality\n\
+  - **Best for**: Complex tasks requiring deep reasoning, code that needs to be production-quality,\
+  \ tasks where thoroughness matters\n- **Temperature notes**: temp=0.3-0.5 gives\
+  \ focused, high-quality output\n- **Cost**: Most expensive ($5/$25 per M tokens)\
+  \ - use strategically for important generations\n\n### SONNET (anthropic/claude-sonnet-4.5)\
+  \  \n- **Math reasoning**: Excellent. Very clear problem setup, systematic constraint\
+  \ analysis, clean verification\n- **Creative thinking**: Outstanding at temp=0.9\
+  \ - generated 5 diverse algorithm strategies with pros/cons, even suggested a hybrid!\n\
+  - **Structure**: Well-organized responses with clear headings and formatting\n-\
+  \ **Best for**: Brainstorming, strategic thinking, creative exploration at high\
+  \ temps. Solid math/code at low temps.\n- **Temperature notes**: Use high temp (0.7-0.9)\
+  \ for exploration/brainstorming, low temp (0.3) for precise math/code\n- **Cost**:\
+  \ Mid-range ($3/$15 per M tokens) - good balance of quality and cost\n\n### GEMINI-FLASH\
+  \ (google/gemini-3-flash-preview)\n- **Math reasoning**: Good. Solved problem correctly\
+  \ but showed some uncertainty (\"Wait...\"), then recovered\n- **Code quality**:\
+  \ More concise than Opus. Correct but less elaborate. Uses `random` module instead\
+  \ of numpy (minor style difference)\n- **Speed/value**: Much cheaper, potentially\
+  \ faster. Good for quick iterations\n- **Best for**: Rapid prototyping, simple variations,\
+  \ volume tasks where cost matters\n- **Temperature notes**: temp=0.7 still produced\
+  \ focused output\n- **Cost**: Cheapest ($0.50/$3 per M tokens) - good for exploration\
+  \ and mutations\n\n### Strategic Recommendations for Evolution:\n1. **Initial solutions**:\
+  \ Use Opus (low temp) for high-quality base solutions\n2. **Mutations/variations**:\
+  \ Use Gemini-flash (mid temp) for quick explorations - cheaper and faster\n3. **Creative\
+  \ exploration**: Use Sonnet (high temp) to brainstorm new approaches when stuck\n\
+  4. **Refinement**: Use Opus or Sonnet (low temp) to polish promising solutions\n\
+  5. **Debug/fix**: Any model at low temp, but Opus for tricky issues\n"
+metadata:
+  child_llms:
+  - alias: opus
+    model: anthropic/claude-opus-4.5
+    provider: openrouter
+    cost_per_million_input_tokens: 5.0
+    cost_per_million_output_tokens: 25.0
+  - alias: sonnet
+    model: anthropic/claude-sonnet-4.5
+    provider: openrouter
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
+  - alias: gemini-flash
+    model: google/gemini-3-flash-preview
+    provider: openrouter
+    cost_per_million_input_tokens: 0.5
+    cost_per_million_output_tokens: 3.0
+  created_at: '2026-01-01T00:37:57.075979+00:00'
+  experiment_name: circle_packing_opus_thinking_mixed

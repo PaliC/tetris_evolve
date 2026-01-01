@@ -1,0 +1,20 @@
+{
+  "generation_num": 15,
+  "num_trials": 16,
+  "num_successful_trials": 12,
+  "best_trial_id": "trial_15_0",
+  "best_score": 2.6359850561146603,
+  "selected_trial_ids": [
+    "trial_15_9"
+  ],
+  "selection_reasoning": "No improvement in Gen 15. Best remains trial_14_1 (seed 7999) at 2.6359850561. Seeds 7998, 7997, 7990 timed out - possibly more intensive optimization. Gen 16 strategy: (1) Try seeds in unexplored range 8001-8099, (2) Try systematic search of seeds 8010-8090, (3) Attempt faster versions that complete within timeout.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_15_9",
+      "reasoning": "Seed 8105 got 2.6359847639 - promising region near 8100.",
+      "category": "diversity",
+      "source_generation": 15
+    }
+  ],
+  "timestamp": "2025-12-31T18:52:11.694819"
+}
