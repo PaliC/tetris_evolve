@@ -1,0 +1,39 @@
+# OpenAI config example
+#
+# Requires: OPENAI_API_KEY environment variable
+# Optional: OPENAI_BASE_URL for OpenAI-compatible endpoints
+# Note: Update model ID and pricing to match current OpenAI rates.
+
+experiment:
+  name: "circle_packing_openai_gpt4o_mini"
+  output_dir: "./experiments"
+
+root_llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  cost_per_million_input_tokens: 1.00
+  cost_per_million_output_tokens: 1.00
+  max_iterations: 30
+
+child_llms:
+  - alias: "openai-fast"
+    provider: "openai"
+    model: "gpt-4o-mini"
+    cost_per_million_input_tokens: 1.00
+    cost_per_million_output_tokens: 1.00
+    calibration_calls: 2
+
+default_child_llm_alias: "openai-fast"
+
+evaluation:
+  evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    timeout_seconds: 300
+
+evolution:
+  max_generations: 8
+  max_children_per_generation: 50
+
+budget:
+  max_total_cost: 10.0

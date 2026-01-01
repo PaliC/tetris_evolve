@@ -26,10 +26,10 @@ class ExperimentConfig:
 
 @dataclass
 class ReasoningConfig:
-    """Configuration for reasoning/thinking tokens (OpenRouter only).
+    """Configuration for reasoning/thinking controls (OpenRouter/OpenAI).
 
-    Enables extended reasoning for models that support it like Gemini Flash,
-    DeepSeek, OpenAI o-series, etc.
+    Enables extended reasoning for models that support it (e.g., Gemini Flash
+    via OpenRouter, OpenAI o-series via OpenAI).
     """
 
     enabled: bool = False
@@ -45,9 +45,9 @@ class LLMConfig:
     model: str
     cost_per_million_input_tokens: float
     cost_per_million_output_tokens: float
-    provider: str = "anthropic"  # "anthropic" or "openrouter"
+    provider: str = "anthropic"  # "anthropic", "openai", "gemini", "google", or "openrouter"
     max_iterations: int | None = None  # Only used for root LLM
-    reasoning: ReasoningConfig | None = None  # OpenRouter reasoning config
+    reasoning: ReasoningConfig | None = None  # OpenRouter/OpenAI reasoning config
 
 
 @dataclass
@@ -58,9 +58,9 @@ class ChildLLMConfig:
     cost_per_million_input_tokens: float
     cost_per_million_output_tokens: float
     alias: str | None = None  # Optional, defaults to model name
-    provider: str = "anthropic"  # "anthropic" or "openrouter"
+    provider: str = "anthropic"  # "anthropic", "openai", "gemini", "google", or "openrouter"
     calibration_calls: int = 3  # Number of test calls during calibration phase
-    reasoning: ReasoningConfig | None = None  # OpenRouter reasoning config
+    reasoning: ReasoningConfig | None = None  # OpenRouter/OpenAI reasoning config
 
     @property
     def effective_alias(self) -> str:
@@ -127,6 +127,13 @@ class Config:
     def to_dict(self) -> dict[str, Any]:
         """Serialize config to dictionary."""
         return asdict(self)
+
+
+def _normalize_provider(provider: str | None) -> str:
+    """Normalize provider aliases to canonical values."""
+    provider = (provider or "anthropic").lower()
+    alias_map = {"google": "gemini"}
+    return alias_map.get(provider, provider)
 
 
 def _validate_required_fields(data: dict[str, Any], required: list[str], section: str) -> None:
@@ -224,12 +231,12 @@ def _parse_child_llm_config(data: dict[str, Any], index: int) -> ChildLLMConfig:
     )
 
     # Validate provider value
-    provider = data.get("provider", "anthropic")
-    valid_providers = {"anthropic", "openrouter"}
+    provider = _normalize_provider(data.get("provider", "anthropic"))
+    valid_providers = {"anthropic", "openai", "gemini", "openrouter"}
     if provider not in valid_providers:
         raise ConfigValidationError(
             f"Invalid provider '{provider}' in section '{section}'. "
-            f"Must be one of: {', '.join(sorted(valid_providers))}"
+            f"Must be one of: {', '.join(sorted(valid_providers))} (alias: google)"
         )
 
     # Parse reasoning config
@@ -292,12 +299,12 @@ def _parse_llm_config(data: dict[str, Any], section: str) -> LLMConfig:
         section,
     )
     # Validate provider value
-    provider = data.get("provider", "anthropic")
-    valid_providers = {"anthropic", "openrouter"}
+    provider = _normalize_provider(data.get("provider", "anthropic"))
+    valid_providers = {"anthropic", "openai", "gemini", "openrouter"}
     if provider not in valid_providers:
         raise ConfigValidationError(
             f"Invalid provider '{provider}' in section '{section}'. "
-            f"Must be one of: {', '.join(sorted(valid_providers))}"
+            f"Must be one of: {', '.join(sorted(valid_providers))} (alias: google)"
         )
 
     # Parse reasoning config

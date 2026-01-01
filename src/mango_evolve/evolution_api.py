@@ -6,7 +6,7 @@ Provides the core API exposed to the Root LLM for controlling the evolution proc
 
 import multiprocessing
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Protocol
 
 from tqdm import tqdm
@@ -236,6 +236,7 @@ class EvolutionAPI:
                 model=config.model,
                 cost_tracker=self.cost_tracker,
                 llm_type=f"child:{alias}",
+                reasoning_config=asdict(config.reasoning) if config.reasoning else None,
             )
         return self.child_llm_clients[alias]
 

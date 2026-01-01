@@ -38,10 +38,21 @@ uv sync
 
 ### Set up API Key
 
-To run with real LLMs, set your Anthropic API key:
+Set the API key for the provider you plan to use:
 
 ```bash
+# Anthropic (Claude)
 export ANTHROPIC_API_KEY=your_api_key_here
+
+# OpenAI
+export OPENAI_API_KEY=your_api_key_here
+
+# Google Gemini (direct)
+export GEMINI_API_KEY=your_api_key_here
+# or: export GOOGLE_API_KEY=your_api_key_here
+
+# OpenRouter
+export OPENROUTER_API_KEY=your_api_key_here
 ```
 
 ## Quick Start
@@ -153,11 +164,15 @@ budget:
 |---------|-------|------|-------------|
 | experiment | name | string | Experiment identifier |
 | experiment | output_dir | string | Output directory for logs |
-| root_llm | model | string | Anthropic model ID |
+| root_llm | model | string | Model ID |
+| root_llm | provider | string | Provider name (`anthropic`, `openai`, `gemini`, `google`, `openrouter`) |
+| root_llm | reasoning | dict | Reasoning controls (OpenRouter/OpenAI) |
 | root_llm | cost_per_million_input_tokens | float | Cost per million input tokens (USD) |
 | root_llm | cost_per_million_output_tokens | float | Cost per million output tokens (USD) |
 | root_llm | max_iterations | int | Max conversation turns |
-| child_llm | model | string | Anthropic model ID |
+| child_llm | model | string | Model ID |
+| child_llm | provider | string | Provider name (`anthropic`, `openai`, `gemini`, `google`, `openrouter`) |
+| child_llm | reasoning | dict | Reasoning controls (OpenRouter/OpenAI) |
 | child_llm | cost_per_million_input_tokens | float | Cost per million input tokens (USD) |
 | child_llm | cost_per_million_output_tokens | float | Cost per million output tokens (USD) |
 | evaluation | evaluator_fn | string | Module path to evaluator class |

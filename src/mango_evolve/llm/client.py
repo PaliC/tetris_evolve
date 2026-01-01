@@ -2,7 +2,7 @@
 LLM Client for mango_evolve.
 
 Provides a factory function to create LLM clients for different providers.
-Supports Anthropic Claude (with prompt caching) and OpenRouter (100+ models).
+Supports Anthropic Claude, OpenAI, Google Gemini, and OpenRouter (100+ models).
 """
 
 import uuid
@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any
 
 from .providers.anthropic import AnthropicProvider
 from .providers.base import BaseLLMProvider, LLMResponse
+from .providers.gemini import GeminiProvider
+from .providers.openai import OpenAIProvider
 from .providers.openrouter import OpenRouterProvider
 
 if TYPE_CHECKING:
@@ -17,6 +19,12 @@ if TYPE_CHECKING:
 
 # Re-export LLMResponse for backwards compatibility
 __all__ = ["LLMResponse", "LLMClient", "MockLLMClient", "create_llm_client", "BaseLLMProvider"]
+
+
+def _normalize_provider(provider: str) -> str:
+    """Normalize provider aliases to canonical values."""
+    provider = provider.lower()
+    return "gemini" if provider == "google" else provider
 
 
 def create_llm_client(
@@ -31,21 +39,25 @@ def create_llm_client(
     Factory function to create an LLM client for the specified provider.
 
     Args:
-        provider: Provider name ("anthropic" or "openrouter")
+        provider: Provider name ("anthropic", "openai", "gemini", "google", or "openrouter")
         model: Model identifier
         cost_tracker: CostTracker instance for budget enforcement
         llm_type: Either "root" or "child" - used for cost tracking
         max_retries: Maximum number of retries on transient errors
-        reasoning_config: Optional reasoning configuration (OpenRouter only)
+        reasoning_config: Optional reasoning configuration (OpenRouter/OpenAI)
 
     Returns:
-        LLM client instance (AnthropicProvider or OpenRouterProvider)
+        LLM client instance (AnthropicProvider, OpenAIProvider, GeminiProvider, or OpenRouterProvider)
 
     Raises:
         ValueError: If provider is unknown
     """
+    provider = _normalize_provider(provider)
+
     providers = {
         "anthropic": AnthropicProvider,
+        "openai": OpenAIProvider,
+        "gemini": GeminiProvider,
         "openrouter": OpenRouterProvider,
     }
 
@@ -57,6 +69,14 @@ def create_llm_client(
     # OpenRouter supports reasoning config
     if provider == "openrouter":
         return OpenRouterProvider(
+            model=model,
+            cost_tracker=cost_tracker,
+            llm_type=llm_type,
+            max_retries=max_retries,
+            reasoning_config=reasoning_config,
+        )
+    if provider == "openai":
+        return OpenAIProvider(
             model=model,
             cost_tracker=cost_tracker,
             llm_type=llm_type,

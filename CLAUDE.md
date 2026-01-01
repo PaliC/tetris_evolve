@@ -61,7 +61,7 @@ The system supports multiple LLM providers configured via YAML:
 
 ```yaml
 root_llm:
-  provider: "anthropic"  # or "openrouter"
+  provider: "anthropic"  # or "openai", "gemini", "google", "openrouter"
   model: "claude-sonnet-4-20250514"
 ```
 
@@ -82,6 +82,8 @@ evaluation:
 
 - `ANTHROPIC_API_KEY`: Required for Anthropic provider
 - `OPENROUTER_API_KEY`: Required for OpenRouter provider
+- `OPENAI_API_KEY`: Required for OpenAI provider
+- `GEMINI_API_KEY` or `GOOGLE_API_KEY`: Required for Gemini provider
 
 ## Test Patterns
 

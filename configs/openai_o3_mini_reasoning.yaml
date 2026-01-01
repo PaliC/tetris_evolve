@@ -1,0 +1,46 @@
+# OpenAI reasoning model config example
+#
+# Requires: OPENAI_API_KEY environment variable
+# Optional: OPENAI_BASE_URL for OpenAI-compatible endpoints
+# Note: Update model ID and pricing to match current OpenAI rates.
+# Reasoning controls map to the OpenAI Chat Completions `reasoning_effort` parameter.
+
+experiment:
+  name: "circle_packing_openai_o3_mini_reasoning"
+  output_dir: "./experiments"
+
+root_llm:
+  provider: "openai"
+  model: "o3-mini"
+  cost_per_million_input_tokens: 1.00
+  cost_per_million_output_tokens: 1.00
+  max_iterations: 30
+  reasoning:
+    enabled: true
+    effort: "high"
+
+child_llms:
+  - alias: "openai-reasoning"
+    provider: "openai"
+    model: "o3-mini"
+    cost_per_million_input_tokens: 1.00
+    cost_per_million_output_tokens: 1.00
+    calibration_calls: 2
+    reasoning:
+      enabled: true
+      effort: "high"
+
+default_child_llm_alias: "openai-reasoning"
+
+evaluation:
+  evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    timeout_seconds: 300
+
+evolution:
+  max_generations: 8
+  max_children_per_generation: 50
+
+budget:
+  max_total_cost: 10.0

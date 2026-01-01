@@ -4,7 +4,7 @@ Parallel worker for child LLM calls.
 This module contains the worker function that runs in a separate process
 to make LLM calls and evaluate the results.
 
-Supports multiple providers (Anthropic and OpenRouter).
+Supports multiple providers (Anthropic, OpenRouter, OpenAI, and Gemini).
 """
 
 import json
@@ -29,6 +29,8 @@ from tenacity import (
 
 from .evaluation.circle_packing import CirclePackingEvaluator
 from .utils.code_extraction import extract_python_code, extract_reasoning
+
+_OPENAI_COMPATIBLE_PROVIDERS = {"openrouter", "openai", "gemini"}
 
 
 @dataclass
@@ -143,15 +145,15 @@ def _make_anthropic_call_with_retry(
     return _call()
 
 
-def _is_empty_openrouter_response(response) -> bool:
-    """Check if OpenRouter response content is empty (triggers retry)."""
+def _is_empty_chat_response(response) -> bool:
+    """Check if chat response content is empty (triggers retry)."""
     if not response.choices:
         return True
     content = response.choices[0].message.content
     return not content or not content.strip()
 
 
-def _make_openrouter_call_with_retry(
+def _make_openai_compatible_call_with_retry(
     client: OpenAI,
     model: str,
     prompt: str,
@@ -160,11 +162,11 @@ def _make_openrouter_call_with_retry(
     system_prompt: str | None = None,
     max_retries: int = 3,
 ):
-    """Make an OpenRouter API call with retry logic.
+    """Make an OpenAI-compatible API call with retry logic.
 
     Args:
-        client: OpenAI client configured for OpenRouter
-        model: Model name (e.g., "google/gemini-2.0-flash-001")
+        client: OpenAI client configured for the provider
+        model: Model name
         prompt: User prompt
         max_tokens: Maximum tokens to generate
         temperature: Sampling temperature
@@ -180,7 +182,7 @@ def _make_openrouter_call_with_retry(
         wait=wait_exponential(multiplier=1, min=1, max=10),
         retry=(
             retry_if_exception_type((OpenAIRateLimitError, OpenAIAPIConnectionError))
-            | retry_if_result(_is_empty_openrouter_response)
+            | retry_if_result(_is_empty_chat_response)
         ),
         reraise=True,
     )
@@ -202,12 +204,44 @@ def _make_openrouter_call_with_retry(
     return _call()
 
 
+def _normalize_provider(provider: str) -> str:
+    """Normalize provider aliases to canonical values."""
+    provider = provider.lower()
+    return "gemini" if provider == "google" else provider
+
+
+def _get_openai_compatible_credentials(provider: str) -> tuple[str, str | None]:
+    """Resolve API key and base URL for OpenAI-compatible providers."""
+    if provider == "openrouter":
+        api_key = os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            raise ValueError("OPENROUTER_API_KEY environment variable not set")
+        return api_key, "https://openrouter.ai/api/v1"
+
+    if provider == "openai":
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable not set")
+        return api_key, os.environ.get("OPENAI_BASE_URL")
+
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY environment variable not set")
+
+    base_url = (
+        os.environ.get("GEMINI_BASE_URL")
+        or os.environ.get("GOOGLE_GEMINI_BASE_URL")
+        or "https://generativelanguage.googleapis.com/v1beta/openai/"
+    )
+    return api_key, base_url
+
+
 def child_worker(args: tuple) -> dict[str, Any]:
     """
     Worker function for parallel child LLM calls.
 
     This function runs in a separate process and:
-    1. Creates an LLM client (Anthropic or OpenRouter based on provider)
+    1. Creates an LLM client (Anthropic, OpenRouter, OpenAI, or Gemini based on provider)
     2. Makes the LLM call with optional cached system prompt
     3. Extracts code from the response
     4. Evaluates the code
@@ -288,6 +322,8 @@ def child_worker(args: tuple) -> dict[str, Any]:
             model_alias,
         ) = args
 
+    provider = _normalize_provider(provider)
+
     # Build model config for trial metadata
     model_config = {
         "model": model,
@@ -308,18 +344,15 @@ def child_worker(args: tuple) -> dict[str, Any]:
 
     try:
         # Make the LLM call based on provider
-        if provider == "openrouter":
-            # Create OpenRouter client (OpenAI SDK with custom base_url)
-            api_key = os.environ.get("OPENROUTER_API_KEY")
-            if not api_key:
-                raise ValueError("OPENROUTER_API_KEY environment variable not set")
+        if provider in _OPENAI_COMPATIBLE_PROVIDERS:
+            # OpenAI-compatible providers
+            api_key, base_url = _get_openai_compatible_credentials(provider)
+            if base_url:
+                client = OpenAI(base_url=base_url.rstrip("/"), api_key=api_key)
+            else:
+                client = OpenAI(api_key=api_key)
 
-            client = OpenAI(
-                base_url="https://openrouter.ai/api/v1",
-                api_key=api_key,
-            )
-
-            response = _make_openrouter_call_with_retry(
+            response = _make_openai_compatible_call_with_retry(
                 client=client,
                 model=model,
                 prompt=prompt,
@@ -333,7 +366,7 @@ def child_worker(args: tuple) -> dict[str, Any]:
             input_tokens = response.usage.prompt_tokens if response.usage else 0
             output_tokens = response.usage.completion_tokens if response.usage else 0
 
-            # OpenRouter doesn't support caching
+            # OpenAI-compatible providers don't support Anthropic caching
             cache_creation_input_tokens = 0
             cache_read_input_tokens = 0
         else:

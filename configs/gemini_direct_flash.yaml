@@ -1,0 +1,39 @@
+# Direct Gemini config (Google API)
+#
+# Requires: GEMINI_API_KEY or GOOGLE_API_KEY environment variable
+# Optional: GEMINI_BASE_URL or GOOGLE_GEMINI_BASE_URL for custom endpoints
+# Note: Update model ID and pricing to match current Google Gemini rates.
+
+experiment:
+  name: "circle_packing_gemini_direct"
+  output_dir: "./experiments"
+
+root_llm:
+  provider: "google"  # alias for gemini
+  model: "gemini-2.0-flash"
+  cost_per_million_input_tokens: 1.00
+  cost_per_million_output_tokens: 1.00
+  max_iterations: 30
+
+child_llms:
+  - alias: "gemini-direct"
+    provider: "google"
+    model: "gemini-2.0-flash"
+    cost_per_million_input_tokens: 1.00
+    cost_per_million_output_tokens: 1.00
+    calibration_calls: 2
+
+default_child_llm_alias: "gemini-direct"
+
+evaluation:
+  evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    timeout_seconds: 300
+
+evolution:
+  max_generations: 8
+  max_children_per_generation: 50
+
+budget:
+  max_total_cost: 10.0
