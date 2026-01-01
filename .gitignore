@@ -75,7 +75,9 @@ Thumbs.db
 runs/
 checkpoints/
 *.log
-# experiments/
-# logs/*.circles.json
+experiments/
+logs/*
 node_modules/
 node_modules/
+
+
