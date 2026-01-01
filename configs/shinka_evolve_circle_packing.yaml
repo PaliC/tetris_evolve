@@ -1,0 +1,86 @@
+# Shinka Evolve config: Claude Opus 4.5 as root, mixed OpenAI/Anthropic children
+# Uses models verified to work with OpenRouter
+#
+# Requires: OPENROUTER_API_KEY environment variable
+#
+# Models used:
+#   - Root: Claude Opus 4.5 with extended thinking
+#   - Children: Claude Sonnet 4, O4-mini, GPT-4.1, GPT-4.1-mini, GPT-4.1-nano
+
+experiment:
+  name: "shinka_evolve_circle_packing"
+  output_dir: "./experiments"
+
+# Root LLM: Claude Opus 4.5 with extended thinking for smart orchestration
+root_llm:
+  provider: "openrouter"
+  model: "anthropic/claude-opus-4.5"
+  cost_per_million_input_tokens: 5.0
+  cost_per_million_output_tokens: 25.0
+  max_iterations: 500
+  reasoning:
+    enabled: true
+    effort: "xhigh"
+
+# Multiple child LLMs - root can choose based on task
+child_llms:
+  # Claude Sonnet 4 - great quality, reliable
+  - alias: "sonnet"
+    model: "anthropic/claude-sonnet-4"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
+    calibration_calls: 5
+    reasoning:
+      enabled: true
+      effort: "high"
+
+  # O4-mini - OpenAI reasoning model, cost-effective
+  - alias: "o4-mini"
+    model: "openai/o4-mini"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 1.10
+    cost_per_million_output_tokens: 4.40
+    calibration_calls: 5
+    reasoning:
+      enabled: true
+      effort: "high"
+
+  # GPT-4.1 - high quality, versatile
+  - alias: "gpt41"
+    model: "openai/gpt-4.1"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 2.0
+    cost_per_million_output_tokens: 8.0
+    calibration_calls: 5
+
+  # GPT-4.1-mini - good quality, more cost-effective
+  - alias: "gpt41-mini"
+    model: "openai/gpt-4.1-mini"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 0.40
+    cost_per_million_output_tokens: 1.60
+    calibration_calls: 5
+
+  # GPT-4.1-nano - fastest, most cost-effective
+  - alias: "gpt41-nano"
+    model: "openai/gpt-4.1-nano"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 0.10
+    cost_per_million_output_tokens: 0.40
+    calibration_calls: 5
+
+default_child_llm_alias: "gpt41-mini"
+
+evaluation:
+  evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    timeout_seconds: 300
+
+evolution:
+  max_generations: 20
+  max_children_per_generation: 16
+
+budget:
+  max_total_cost: 50.0
