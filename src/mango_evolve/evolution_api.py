@@ -85,6 +85,7 @@ class TrialSelection:
     trial_id: str
     reasoning: str
     category: str  # "performance" | "diversity" | "potential"
+    source_generation: int = -1  # Which generation this trial came from (-1 = unknown)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -92,15 +93,17 @@ class TrialSelection:
             "trial_id": self.trial_id,
             "reasoning": self.reasoning,
             "category": self.category,
+            "source_generation": self.source_generation,
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "TrialSelection":
+    def from_dict(cls, data: dict[str, Any], source_generation: int = -1) -> "TrialSelection":
         """Create TrialSelection from dictionary."""
         return cls(
             trial_id=data["trial_id"],
             reasoning=data.get("reasoning", ""),
             category=data.get("category", "performance"),
+            source_generation=data.get("source_generation", source_generation),
         )
 
 
@@ -698,16 +701,18 @@ class EvolutionAPI:
 
         # Process selections: use LLM selections if provided, else auto-select
         if selections:
-            # Validate and filter selections to only include existing trials
+            # Validate and filter selections to only include existing trials from current generation
             valid_selections: list[TrialSelection] = []
             valid_trial_ids: list[str] = []
             current_gen_trial_ids = {t.trial_id for t in gen.trials}
 
             for sel in selections:
                 trial_id = sel.get("trial_id", "")
-                # Allow selection of trials from current generation
+                # Only allow selection of trials from current generation
                 if trial_id in current_gen_trial_ids:
-                    valid_selections.append(TrialSelection.from_dict(sel))
+                    valid_selections.append(
+                        TrialSelection.from_dict(sel, source_generation=self.current_generation)
+                    )
                     valid_trial_ids.append(trial_id)
 
             if valid_selections:
@@ -768,10 +773,28 @@ class EvolutionAPI:
 
     def _auto_select_trials(self, gen: GenerationSummary) -> None:
         """Auto-select best trials when no LLM selection provided."""
-        best_trials = self._get_best_trials(n=min(3, len(gen.trials)))
-        gen.selected_trial_ids = [t["trial_id"] for t in best_trials]
+        # Get best trials from current generation only
+        current_gen_trials = [
+            t for t in gen.trials
+            if t.success and t.metrics.get("score", 0) > 0
+        ]
+        sorted_trials = sorted(
+            current_gen_trials,
+            key=lambda t: t.metrics.get("score", 0),
+            reverse=True,
+        )[:3]
+
+        gen.selected_trial_ids = [t.trial_id for t in sorted_trials]
         gen.selection_reasoning = "Auto-selected top performing trials"
-        gen.trial_selections = []
+        gen.trial_selections = [
+            TrialSelection(
+                trial_id=t.trial_id,
+                reasoning="Auto-selected for high score",
+                category="performance",
+                source_generation=gen.generation_num,
+            )
+            for t in sorted_trials
+        ]
 
     def can_advance_generation(self) -> bool:
         """Check if we can advance to the next generation."""
@@ -1012,7 +1035,8 @@ class EvolutionAPI:
         Build a visual lineage map from parent_id relationships.
 
         Returns a formatted string showing how trials evolved from parents,
-        with scores and annotations.
+        with scores and annotations. Includes an All-Time Top 5 summary for
+        quick reference to the best candidates across all generations.
         """
         if not self.all_trials:
             return "(No trials yet)"
@@ -1043,6 +1067,26 @@ class EvolutionAPI:
 
         # Build tree representation
         lines: list[str] = []
+
+        # Add All-Time Top 5 summary at the top
+        top_trials = sorted(
+            [t for t in self.all_trials.values() if t.success and t.metrics.get("score", 0) > 0],
+            key=lambda t: t.metrics.get("score", 0),
+            reverse=True,
+        )[:5]
+
+        if top_trials:
+            lines.append("### All-Time Top 5 (cross-generation selection candidates)")
+            for i, trial in enumerate(top_trials, 1):
+                score = trial.metrics.get("score", 0)
+                gen = trial.generation
+                approach = (trial.reasoning or "")[:50].replace("\n", " ").strip()
+                lines.append(f"  {i}. {trial.trial_id} [Gen {gen}] = {score:.10f}")
+                if approach:
+                    lines.append(f"     {approach}...")
+            lines.append("")
+            lines.append("### Full Lineage Tree")
+            lines.append("")
 
         def format_trial(trial_id: str, indent: str = "", is_last: bool = True) -> None:
             """Recursively format a trial and its descendants."""

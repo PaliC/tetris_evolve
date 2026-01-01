@@ -643,6 +643,15 @@ class RootLLMOrchestrator:
                 lines.append(f"    Error: {error_short}")
             lines.append("")
 
+        # Show what was selected
+        if gen_summary.trial_selections:
+            lines.append("## Selected Trials for Mutation")
+            lines.append("")
+            for sel in gen_summary.trial_selections:
+                lines.append(f"  - **{sel.trial_id}** ({sel.category})")
+                lines.append(f"    Reason: {sel.reasoning[:100]}...")
+            lines.append("")
+
         # Add evolution memory at the end
         lines.append("")
         lines.append(self._build_evolution_memory())
@@ -693,6 +702,10 @@ class RootLLMOrchestrator:
                 "- **Performance**: Which trials achieved the best scores?",
                 "- **Diversity**: Which trials use different approaches worth exploring?",
                 "- **Potential**: Which trials might improve with refinement, even if current scores are lower?",
+                "",
+                "**Tip**: Use the All-Time Top 5 in the lineage map above to identify promising",
+                "historical trials. You can mutate any past trial using `{{CODE_TRIAL_X_Y}}` tokens",
+                "or `get_trial_code([trial_ids])` in your next generation's prompts.",
                 "",
                 "Respond with a ```selection``` block containing JSON:",
                 "```selection",

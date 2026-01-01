@@ -230,8 +230,8 @@ class TestInternalAdvanceGeneration:
         evolution_api._advance_generation()
 
         gen0 = evolution_api.generations[0]
-        # Auto-selects best performing trials
-        assert gen0.selection_reasoning == "Auto-selected top performing trials"
+        # Auto-selects best performing trials (across all generations)
+        assert "Auto-selected top performing trials" in gen0.selection_reasoning
 
     def test_can_advance_generation(self, evolution_api):
         """Test can_advance_generation helper."""
@@ -488,3 +488,162 @@ class TestLineageMap:
         """Test lineage map with no trials."""
         result = evolution_api._build_lineage_map()
         assert result == "(No trials yet)"
+
+    def test_lineage_map_includes_all_time_top_5(self, evolution_api):
+        """Test lineage map includes All-Time Top 5 summary."""
+        # Spawn some trials
+        evolution_api.spawn_child_llm(prompt="Test 1")
+        evolution_api.spawn_child_llm(prompt="Test 2")
+
+        result = evolution_api._build_lineage_map()
+
+        assert "All-Time Top 5" in result
+        assert "cross-generation selection candidates" in result
+
+
+class TestSelectionBehavior:
+    """Tests for selection functionality (Option A: current generation only)."""
+
+    def test_selection_filters_historical_trials(
+        self, sample_config, temp_dir, child_llm_configs
+    ):
+        """Test that _advance_generation only accepts trials from CURRENT generation."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        # Create evaluator that returns different scores
+        evaluator = MagicMock()
+        call_count = [0]
+        scores = [2.5, 2.3, 2.1, 2.6, 2.4]
+
+        def mock_evaluate(code):
+            score = scores[call_count[0] % len(scores)]
+            call_count[0] += 1
+            return {"valid": True, "score": score, "eval_time": 0.1, "error": None}
+
+        evaluator.evaluate.side_effect = mock_evaluate
+
+        api = EvolutionAPI(
+            evaluator=evaluator,
+            child_llm_configs=child_llm_configs,
+            cost_tracker=cost_tracker,
+            logger=logger,
+            max_generations=5,
+            max_children_per_generation=3,
+            default_child_llm_alias=sample_config.default_child_llm_alias,
+        )
+        api.end_calibration_phase()
+
+        mock_client = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child:default",
+            responses=["```python\ndef run_packing(): pass\n```"] * 10,
+        )
+        api.child_llm_clients["default"] = mock_client
+
+        # Spawn trials in Gen 0
+        api.spawn_child_llm(prompt="Gen 0 Trial 1")  # trial_0_0
+        api.spawn_child_llm(prompt="Gen 0 Trial 2")  # trial_0_1
+        api._advance_generation()
+
+        # Spawn trials in Gen 1
+        api.spawn_child_llm(prompt="Gen 1 Trial 1")  # trial_1_0
+        api.spawn_child_llm(prompt="Gen 1 Trial 2")  # trial_1_1
+
+        # Try to select with a mix of historical (Gen 0) and current (Gen 1) trials
+        selections = [
+            {"trial_id": "trial_1_0", "reasoning": "Current gen", "category": "performance"},
+            {"trial_id": "trial_0_0", "reasoning": "Historical (should be filtered)", "category": "diversity"},
+        ]
+
+        api._advance_generation(selections=selections, selection_summary="Test")
+
+        # Only current generation trial should be selected (historical filtered out)
+        gen1 = api.generations[1]
+        assert len(gen1.trial_selections) == 1
+        assert gen1.selected_trial_ids == ["trial_1_0"]
+        assert "trial_0_0" not in gen1.selected_trial_ids
+
+    def test_auto_select_from_current_generation_only(
+        self, sample_config, temp_dir, child_llm_configs
+    ):
+        """Test that auto-selection only selects from current generation."""
+        sample_config.experiment.output_dir = str(temp_dir)
+        cost_tracker = CostTracker(sample_config)
+        logger = ExperimentLogger(sample_config)
+        logger.create_experiment_directory()
+
+        # Gen 0 gets high score, Gen 1 gets lower scores
+        evaluator = MagicMock()
+        call_count = [0]
+        scores = [2.8, 2.1, 2.0]  # Gen 0 trial is best, but shouldn't be selected
+
+        def mock_evaluate(code):
+            score = scores[call_count[0] % len(scores)]
+            call_count[0] += 1
+            return {"valid": True, "score": score, "eval_time": 0.1, "error": None}
+
+        evaluator.evaluate.side_effect = mock_evaluate
+
+        api = EvolutionAPI(
+            evaluator=evaluator,
+            child_llm_configs=child_llm_configs,
+            cost_tracker=cost_tracker,
+            logger=logger,
+            max_generations=5,
+            max_children_per_generation=3,
+            default_child_llm_alias=sample_config.default_child_llm_alias,
+        )
+        api.end_calibration_phase()
+
+        mock_client = MockLLMClient(
+            model="test",
+            cost_tracker=cost_tracker,
+            llm_type="child:default",
+            responses=["```python\ndef run_packing(): pass\n```"] * 10,
+        )
+        api.child_llm_clients["default"] = mock_client
+
+        # Gen 0: one trial with high score
+        api.spawn_child_llm(prompt="Gen 0 high score")  # trial_0_0, score 2.8
+        api._advance_generation()
+
+        # Gen 1: two trials with lower scores
+        api.spawn_child_llm(prompt="Gen 1 low 1")  # trial_1_0, score 2.1
+        api.spawn_child_llm(prompt="Gen 1 low 2")  # trial_1_1, score 2.0
+
+        # Let auto-select happen (no selections provided)
+        api._advance_generation()
+
+        # Auto-select should only include Gen 1 trials (not Gen 0)
+        gen1 = api.generations[1]
+        assert "trial_0_0" not in gen1.selected_trial_ids
+        assert "trial_1_0" in gen1.selected_trial_ids  # Best of Gen 1
+        assert "Auto-selected top performing trials" in gen1.selection_reasoning
+
+    def test_trial_selection_source_generation_field(self):
+        """Test TrialSelection dataclass has source_generation field."""
+        from mango_evolve.evolution_api import TrialSelection
+
+        sel = TrialSelection(
+            trial_id="trial_0_5",
+            reasoning="Test",
+            category="performance",
+            source_generation=0,
+        )
+
+        assert sel.source_generation == 0
+
+        # Test to_dict includes it
+        d = sel.to_dict()
+        assert d["source_generation"] == 0
+
+        # Test from_dict with source_generation
+        sel2 = TrialSelection.from_dict(
+            {"trial_id": "trial_1_2", "reasoning": "Test2", "category": "diversity"},
+            source_generation=1,
+        )
+        assert sel2.source_generation == 1

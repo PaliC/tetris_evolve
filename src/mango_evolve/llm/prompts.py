@@ -90,6 +90,47 @@ Example: `{{{{CODE_TRIAL_0_3}}}}` becomes the code from trial_0_3.
 }
 ```
 
+## Historical Trial Access
+
+**You can access and mutate ANY historical trial**, not just those from the current generation:
+- Use `get_trial_code(["trial_0_5", "trial_2_3"])` to retrieve code from any past trial
+- Use `{{CODE_TRIAL_X_Y}}` tokens in child prompts to inject historical code
+
+This enables:
+- **Resurrection**: Bring back promising approaches that were abandoned earlier
+- **Cross-pollination**: Combine techniques from different lineages
+- **Exploration recovery**: Return to diverse approaches if you hit a local optimum
+
+The lineage map shows an **All-Time Top 5** to help you identify the best candidates across all generations.
+
+## Custom Analysis Functions
+
+You can define helper functions in Python that persist throughout this evolution session:
+
+```python
+# Define a reusable analysis function
+def compute_score_stats(scores_list):
+    """Compute statistics for a list of scores."""
+    import statistics
+    return {
+        "mean": statistics.mean(scores_list),
+        "max": max(scores_list),
+        "min": min(scores_list),
+        "stdev": statistics.stdev(scores_list) if len(scores_list) > 1 else 0
+    }
+
+# Store results for later analysis
+generation_bests = []  # Persists across code executions
+
+# Track best scores as you go
+generation_bests.append(2.61)  # After gen 0
+generation_bests.append(2.62)  # After gen 1
+print(compute_score_stats(generation_bests))
+```
+
+Available modules: math, random, json, numpy, scipy, collections, itertools, functools, statistics
+Functions and variables you define persist across all generations within this run.
+
 ## Guidelines
 
 **You have full control**: Craft prompts however you see fit - be as specific or open-ended as you want. You're the orchestrator.
@@ -97,6 +138,8 @@ Example: `{{{{CODE_TRIAL_0_3}}}}` becomes the code from trial_0_3.
 **Diversity matters**: Especially in early generations, try fundamentally different approaches rather than minor variations of the same idea.
 
 **Learn from results**: Use scores and patterns you observe to guide your strategy. If an approach is working, refine it. If you're stuck, try something radically different.
+
+**Historical awareness**: Check the All-Time Top 5 in the lineage map. If a promising trial was abandoned, you can still mutate it by using `{{CODE_TRIAL_X_Y}}` tokens in your child prompts.
 '''
 
 # Dynamic suffix template - appended after the static prefix
