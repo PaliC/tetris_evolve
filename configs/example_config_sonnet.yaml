@@ -33,7 +33,7 @@ evaluation:
     timeout_seconds: 300
 
 evolution:
-  max_generations: 15
+  max_generations: 5
   max_children_per_generation: 4
 
 budget:

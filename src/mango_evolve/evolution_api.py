@@ -1040,16 +1040,10 @@ class EvolutionAPI:
 
         Args:
             content: New scratchpad content (replaces existing content).
-                     Max recommended length: 4000 characters.
 
         Returns:
             Dictionary with success status and content length.
         """
-        max_length = 8000  # Hard limit to prevent context bloat
-        if len(content) > max_length:
-            tqdm.write(f"  ⚠️ Scratchpad truncated from {len(content)} to {max_length} chars")
-            content = content[:max_length]
-
         self.scratchpad = content
 
         # Materialize scratchpad immediately to the current generation folder

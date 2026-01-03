@@ -68,7 +68,6 @@ A mutable scratchpad for tracking insights across generations:
 - `len(scratchpad)` - Get character count
 
 The scratchpad is shown in Evolution Memory and persists across generations.
-Max 8000 characters.
 
 ### update_scratchpad(content: str) -> dict
 Alternative function to update persistent notes (same as `scratchpad.content = content`).
