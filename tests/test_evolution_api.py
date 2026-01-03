@@ -13,6 +13,7 @@ from mango_evolve import (
     ExperimentLogger,
     TrialResult,
 )
+from mango_evolve.evolution_api import ScratchpadProxy
 from mango_evolve.llm import MockLLMClient
 
 
@@ -371,11 +372,11 @@ class TestInternalMethods:
 class TestGetAPIFunctions:
     """Tests for get_api_functions."""
 
-    def test_returns_only_9_functions(self, evolution_api):
-        """Test that only 9 core API functions are returned."""
+    def test_returns_10_items(self, evolution_api):
+        """Test that 10 items (9 functions + 1 scratchpad proxy) are returned."""
         funcs = evolution_api.get_api_functions()
 
-        assert len(funcs) == 9
+        assert len(funcs) == 10
         assert "spawn_child_llm" in funcs
         assert "spawn_children_parallel" in funcs
         assert "evaluate_program" in funcs
@@ -385,6 +386,8 @@ class TestGetAPIFunctions:
         assert "update_scratchpad" in funcs
         assert "end_calibration_phase" in funcs
         assert "get_calibration_status" in funcs
+        assert "scratchpad" in funcs
+        assert isinstance(funcs["scratchpad"], ScratchpadProxy)
 
     def test_advance_generation_not_exposed(self, evolution_api):
         """Test that advance_generation is not in the public API."""
@@ -646,3 +649,124 @@ class TestSelectionBehavior:
             source_generation=1,
         )
         assert sel2.source_generation == 1
+
+
+class TestScratchpadProxy:
+    """Tests for ScratchpadProxy."""
+
+    def test_content_getter(self, evolution_api):
+        """Test reading scratchpad content via proxy."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        assert proxy.content == ""
+
+        evolution_api.scratchpad = "Test content"
+        assert proxy.content == "Test content"
+
+    def test_content_setter(self, evolution_api):
+        """Test setting scratchpad content via proxy triggers persistence."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        proxy.content = "New content via proxy"
+
+        assert evolution_api.scratchpad == "New content via proxy"
+
+    def test_append(self, evolution_api):
+        """Test appending to scratchpad."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        evolution_api.scratchpad = "Initial"
+        proxy.append(" - appended")
+
+        assert evolution_api.scratchpad == "Initial - appended"
+
+    def test_clear(self, evolution_api):
+        """Test clearing the scratchpad."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        evolution_api.scratchpad = "Some content"
+        proxy.clear()
+
+        assert evolution_api.scratchpad == ""
+
+    def test_str(self, evolution_api):
+        """Test string conversion."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        evolution_api.scratchpad = "String content"
+        assert str(proxy) == "String content"
+
+    def test_repr_empty(self, evolution_api):
+        """Test repr for empty scratchpad."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        assert repr(proxy) == "<scratchpad: empty>"
+
+    def test_repr_short_content(self, evolution_api):
+        """Test repr for short content."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        evolution_api.scratchpad = "Short"
+        result = repr(proxy)
+        assert "<scratchpad: 5 chars>" in result
+        assert "Short" in result
+
+    def test_repr_long_content(self, evolution_api):
+        """Test repr for long content (>100 chars) shows preview."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        evolution_api.scratchpad = "x" * 150
+        result = repr(proxy)
+        assert "<scratchpad: 150 chars>" in result
+        assert "..." in result
+
+    def test_len(self, evolution_api):
+        """Test len() on scratchpad."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        evolution_api.scratchpad = "12345"
+        assert len(proxy) == 5
+
+    def test_contains(self, evolution_api):
+        """Test 'in' operator on scratchpad."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        evolution_api.scratchpad = "Hello world"
+        assert "world" in proxy
+        assert "xyz" not in proxy
+
+    def test_add(self, evolution_api):
+        """Test addition operator (returns new string, doesn't persist)."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        evolution_api.scratchpad = "Hello"
+        result = proxy + " world"
+
+        # Result is a new string
+        assert result == "Hello world"
+        # Original scratchpad unchanged
+        assert evolution_api.scratchpad == "Hello"
+
+    def test_persistence_on_content_set(self, evolution_api):
+        """Test that setting content triggers logger.save_scratchpad."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        # The evolution_api.update_scratchpad calls logger.save_scratchpad
+        proxy.content = "Persisted content"
+
+        # Verify content was set
+        assert evolution_api.scratchpad == "Persisted content"
+
+    def test_integration_with_repl_namespace(self, evolution_api):
+        """Test that scratchpad proxy is accessible via get_api_functions."""
+        funcs = evolution_api.get_api_functions()
+
+        scratchpad = funcs["scratchpad"]
+        assert isinstance(scratchpad, ScratchpadProxy)
+
+        # Test operations through the namespace
+        scratchpad.content = "Via namespace"
+        assert evolution_api.scratchpad == "Via namespace"
+
+        scratchpad.append(" - more")
+        assert evolution_api.scratchpad == "Via namespace - more"

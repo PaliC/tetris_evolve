@@ -64,8 +64,22 @@ Get code from previous trials by ID.
 ### get_top_trials(n: int = 5) -> list[dict]
 Get a compact summary of the top-scoring trials across all generations.
 
+### `scratchpad` - Persistent notes
+
+A mutable scratchpad for tracking insights across generations:
+- `scratchpad.content` - Read current content
+- `scratchpad.content = "New notes"` - Replace content (auto-persists)
+- `scratchpad.append("\n## New section")` - Append content
+- `scratchpad.clear()` - Clear all content
+- `print(scratchpad)` - Print current content
+- `"grid" in scratchpad` - Check if text exists
+- `len(scratchpad)` - Get character count
+
+The scratchpad is shown in Evolution Memory and persists across generations.
+Max 8000 characters.
+
 ### update_scratchpad(content: str) -> dict
-Update your persistent notes. These are shown at the start of each generation along with the auto-generated lineage map (showing trial ancestry and scores). You are encouraged to write detailed and useful notes here.
+Alternative function to update persistent notes (same as `scratchpad.content = content`).
 
 ### terminate_evolution(reason: str, best_program: str = None) -> dict
 End evolution early.
