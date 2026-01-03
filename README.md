@@ -2,336 +2,202 @@
 
 LLM-driven evolutionary code generation for optimization problems.
 
-## Overview
+## Results
 
-This project combines ideas from:
-- **AlphaEvolve** (DeepMind): Evolutionary program generation using LLMs
-- **Recursive LLMs (RLM)**: Hierarchical LLM spawning with REPL environments
+MangoEvolve exceeded the DeepMind AlphaEvolve benchmark on the circle packing problem:
 
-A "Root LLM" orchestrates an evolutionary process, spawning "Child LLMs" to generate candidate programs, evaluating them, and iteratively improving the best candidates.
+| Run | Best Score | vs AlphaEvolve (2.635) | Generations |
+|-----|------------|------------------------|-------------|
+| 1 | **2.6359850561** | +0.00098 (new record) | 16 |
+| 2 | 2.6359831209 | +0.00098 | 16 |
+| 3 | 2.6359830899 | +0.00098 | 20 |
 
-### Current Target: Circle Packing
+**Configuration**: Claude Opus 4.5 root with extended thinking (xhigh), mixed child LLMs (Opus 4.5, Sonnet 4, Gemini 3 Flash). Budget: $50 max per run.
 
-Pack 26 circles into a unit square to maximize the sum of their radii.
+The winning algorithms used sequential basinhopping with SLSQP optimization, discovering that different random seeds escape different local optima.
 
-- **Benchmark**: AlphaEvolve achieved 2.635
-- **Best PoC result**: 2.08 (hexagonal packing)
-- **Evaluation**: Deterministic, fast (~60ms per trial)
-
-## Installation
-
-### Prerequisites
-
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) package manager
-
-### Install
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd mango_evolve
-
-# Install dependencies
-uv sync
-```
-
-### Set up API Key
-
-To run with real LLMs, set your Anthropic API key:
-
-```bash
-export ANTHROPIC_API_KEY=your_api_key_here
-```
-
-## Quick Start
-
-### Run with Default Configuration
-
-```bash
-# Run the evolution with the example config
-uv run python -m mango_evolve --config configs/example_config_sonnet.yaml
-
-# Run with verbose output
-uv run python -m mango_evolve --config configs/example_config_haiku.yaml --verbose
-```
-
-### Run PoC Examples (No API Key Required)
-
-```bash
-# Circle packing full integration (recommended)
-uv run python experiments/poc_circle_packing_integration.py
-
-# Core component tests
-uv run python experiments/poc_repl.py
-uv run python experiments/poc_cost_tracker.py
-uv run python experiments/poc_evaluator.py
-```
-
-### Run Tests
-
-```bash
-# Run all tests (uses mock LLMs)
-uv run pytest
-
-# Run with verbose output
-uv run pytest -v
-
-# Run specific test file
-uv run pytest tests/test_integration.py -v
-
-# Run E2E tests with real LLM (requires API key)
-ANTHROPIC_API_KEY=your_key uv run pytest tests/test_e2e.py -v
-```
-
-## Architecture
+## How It Works
 
 ```
 Root LLM (REPL) --> spawn_child_llm() --> Child LLM --> Code
-        |                                               |
-        |                                               v
-        |                                        evaluate_program()
-        |                                               |
-        <----------- metrics, reasoning <---------------+
-        |
-        v
-  advance_generation() / terminate_evolution()
+      │                                                  │
+      │                                                  ▼
+      │                                        evaluate_program()
+      │                                                  │
+      ◀──────────── metrics, reasoning ◀─────────────────┘
+      │
+      ▼
+advance_generation() / terminate_evolution()
 ```
 
-### Key Components
+A Root LLM orchestrates evolution via a Python REPL with an injected Evolution API. It spawns Child LLMs to generate candidate programs, evaluates them, selects the best, and iterates. The Root LLM writes Python code to control the process—it can try different models, resurrect old trials, cross-pollinate approaches, and adapt strategy based on results.
 
-- **Root LLM Orchestrator**: Manages the evolution loop, executes REPL code
-- **Evolution API**: Functions available to Root LLM (spawn, evaluate, advance, terminate)
-- **REPL Environment**: Python execution environment with Evolution API injected
-- **Cost Tracker**: Token usage tracking with budget enforcement
-- **Evaluator**: Pluggable evaluation system (currently Circle Packing)
-- **Logger**: Structured logging for experiments, generations, and trials
+### Comparison to Related Work
 
-## Configuration Reference
+| | AlphaEvolve | ShinkaEvolve | MangoEvolve |
+|-|-------------|--------------|-------------|
+| **Core Idea** | LLM-based evolutionary program search | ? | REPL-based Root LLM orchestrating evolution |
+| **Root Control** | Prompt-based | ? | Python REPL with Evolution API |
+| **Model Selection** | Single model | ? | Multi-provider, Root chooses per-task |
+| **Trial History** | Current generation | ? | Full history access + resurrection |
 
-Create a YAML configuration file (see `configs/example_config.yaml`):
+MangoEvolve's key differentiator is giving the Root LLM a Python REPL with full control over the evolution process. Instead of following a fixed evolutionary algorithm, the Root LLM can write code to:
+
+- Spawn specific child models for different tasks (`spawn_child_llm(prompt, model_alias="opus")`)
+- Access any historical trial (`get_trial_code("trial_2_5")`)
+- Resurrect promising old approaches
+- Combine techniques across lineages
+- Terminate early when satisfied
+
+## Quick Start
+
+```bash
+# Install
+git clone <repository-url> && cd mango_evolve
+uv sync
+
+# Set API keys (as needed)
+export ANTHROPIC_API_KEY=your_key
+export OPENROUTER_API_KEY=your_key  # for multi-provider configs
+
+# Run
+uv run python -m mango_evolve --config configs/example_config_sonnet.yaml
+```
+
+## Configuration
+
+Configs are YAML files. Here's a minimal example:
 
 ```yaml
-# Experiment settings
 experiment:
-  name: "circle_packing_v1"    # Experiment name (used in output directory)
-  output_dir: "./experiments"   # Where to save results
+  name: "my_experiment"
 
-# Root LLM configuration (orchestrator)
 root_llm:
-  model: "claude-sonnet-4-20250514"
+  model: "claude-sonnet-4-5-20250929"
+  provider: "anthropic"
   cost_per_million_input_tokens: 3.0
   cost_per_million_output_tokens: 15.0
-  max_iterations: 30            # Maximum conversation turns
+  max_iterations: 30
 
-# Child LLM configuration (program generators)
-child_llm:
-  model: "claude-sonnet-4-20250514"
-  cost_per_million_input_tokens: 3.0
-  cost_per_million_output_tokens: 15.0
+child_llms:
+  - alias: "sonnet"
+    model: "claude-sonnet-4-5-20250929"
+    provider: "anthropic"
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
 
-# Evaluation configuration
+default_child_llm_alias: "sonnet"
+
 evaluation:
   evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
   evaluator_kwargs:
-    n_circles: 26               # Number of circles to pack
-    timeout_seconds: 30         # Max evaluation time per trial
+    n_circles: 26
+    timeout_seconds: 300
 
-# Evolution settings
 evolution:
-  max_generations: 10           # Maximum generations
-  max_children_per_generation: 10
+  max_generations: 10
+  max_children_per_generation: 15
 
-# Budget settings
 budget:
-  max_total_cost: 20.0          # Maximum spend in USD
+  max_total_cost: 20.0
 ```
 
-### Configuration Options
+### Multi-Provider with Extended Thinking
 
-| Section | Field | Type | Description |
-|---------|-------|------|-------------|
-| experiment | name | string | Experiment identifier |
-| experiment | output_dir | string | Output directory for logs |
-| root_llm | model | string | Anthropic model ID |
-| root_llm | cost_per_million_input_tokens | float | Cost per million input tokens (USD) |
-| root_llm | cost_per_million_output_tokens | float | Cost per million output tokens (USD) |
-| root_llm | max_iterations | int | Max conversation turns |
-| child_llm | model | string | Anthropic model ID |
-| child_llm | cost_per_million_input_tokens | float | Cost per million input tokens (USD) |
-| child_llm | cost_per_million_output_tokens | float | Cost per million output tokens (USD) |
-| evaluation | evaluator_fn | string | Module path to evaluator class |
-| evaluation | evaluator_kwargs | dict | Arguments for evaluator constructor |
-| evolution | max_generations | int | Maximum evolution generations |
-| evolution | max_children_per_generation | int | Max trials per generation |
-| budget | max_total_cost | float | Maximum total cost (USD) |
+For best results, use OpenRouter with multiple models and extended thinking:
 
-## API Reference
+```yaml
+root_llm:
+  provider: "openrouter"
+  model: "anthropic/claude-opus-4.5"
+  cost_per_million_input_tokens: 5.0
+  cost_per_million_output_tokens: 25.0
+  max_iterations: 500
+  reasoning:
+    enabled: true
+    effort: "xhigh"
 
-### Evolution API Functions
+child_llms:
+  - alias: "opus"
+    model: "anthropic/claude-opus-4.5"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 5.0
+    cost_per_million_output_tokens: 25.0
+    reasoning:
+      enabled: true
+      effort: "high"
 
-These functions are available to the Root LLM in ```python``` code blocks:
+  - alias: "gemini-flash"
+    model: "google/gemini-3-flash-preview"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 0.50
+    cost_per_million_output_tokens: 3.00
+    reasoning:
+      enabled: true
+      effort: "high"
 
-#### `spawn_child_llm(prompt: str, parent_id: str = None) -> dict`
+default_child_llm_alias: "gemini-flash"
 
-Spawn a child LLM to generate a program.
+evolution:
+  max_generations: 20
+  max_children_per_generation: 16
+
+budget:
+  max_total_cost: 50.0
+```
+
+The `reasoning.effort` levels are: `minimal`, `low`, `medium`, `high`, `xhigh`.
+
+### Configuration Reference
+
+| Section | Field | Description |
+|---------|-------|-------------|
+| `experiment.name` | string | Experiment identifier |
+| `root_llm.model` | string | Model ID (e.g., `claude-sonnet-4-5-20250929`) |
+| `root_llm.provider` | string | `anthropic` or `openrouter` |
+| `root_llm.reasoning.enabled` | bool | Enable extended thinking (OpenRouter) |
+| `root_llm.reasoning.effort` | string | Thinking level: minimal/low/medium/high/xhigh |
+| `child_llms` | list | Array of child LLM configs |
+| `child_llms[].alias` | string | Name for Root LLM to reference this model |
+| `default_child_llm_alias` | string | Which child to use when not specified |
+| `evaluation.evaluator_fn` | string | `module.path:ClassName` format |
+| `evolution.max_generations` | int | Max generations (default: 10) |
+| `evolution.max_children_per_generation` | int | Max trials per gen (default: 10) |
+| `budget.max_total_cost` | float | Max USD spend (default: 20.0) |
+
+See `configs/` for more examples.
+
+## Adding Custom Evaluators
+
+Create a class with an `evaluate(code: str) -> dict` method:
 
 ```python
-result = spawn_child_llm("Write a circle packing algorithm")
-# Returns: {
-#   'trial_id': 'trial_0_0',
-#   'code': '...',
-#   'metrics': {'valid': True, 'score': 2.08, ...},
-#   'success': True,
-#   'error': None
-# }
-```
-
-#### `evaluate_program(code: str) -> dict`
-
-Evaluate code directly without spawning a child LLM.
-
-```python
-metrics = evaluate_program(code_string)
-# Returns: {'valid': True, 'score': 2.08, ...}
-```
-
-#### `advance_generation(selected_trial_ids: list, reasoning: str) -> int`
-
-Move to the next generation with selected trials as parents.
-
-```python
-new_gen = advance_generation(['trial_0_1'], 'Best score in generation')
-# Returns: 1 (new generation number)
-```
-
-#### `terminate_evolution(reason: str, best_program: str = None) -> dict`
-
-End the evolution and return final results.
-
-```python
-result = terminate_evolution('Found satisfactory solution', best_code)
-# Returns: {'terminated': True, 'reason': '...', 'num_generations': 3, ...}
-```
-
-## Output Structure
-
-When running an experiment, results are saved to:
-
-```
-{output_dir}/{experiment_name}_{timestamp}/
-├── config.json              # Configuration snapshot
-├── experiment.json          # Experiment summary
-├── root_llm_log.jsonl       # Root LLM conversation
-├── cost_tracking.json       # Token usage and costs
-└── generations/
-    ├── gen_0/
-    │   ├── summary.json     # Generation summary
-    │   ├── trial_0_0.json   # Individual trial
-    │   └── trial_0_1.json
-    └── gen_1/
-        └── ...
-```
-
-## Development
-
-### Project Structure
-
-```
-src/mango_evolve/
-├── __init__.py
-├── config.py              # Configuration loading
-├── cost_tracker.py        # Budget enforcement
-├── logger.py              # Experiment logging
-├── repl.py                # REPL environment
-├── evolution_api.py       # Evolution API
-├── root_llm.py            # Root orchestrator
-├── main.py                # CLI entry point
-├── exceptions.py          # Custom exceptions
-├── evaluation/
-│   ├── __init__.py
-│   └── circle_packing.py  # Circle packing evaluator
-├── llm/
-│   ├── __init__.py
-│   ├── client.py          # Anthropic wrapper
-│   └── prompts.py         # System prompts
-└── utils/
-    ├── __init__.py
-    └── code_extraction.py # Code parsing utilities
-
-tests/
-├── conftest.py            # Test fixtures
-├── test_config.py
-├── test_cost_tracker.py
-├── test_evaluator.py
-├── test_evolution_api.py
-├── test_root_llm.py
-├── test_integration.py    # Integration tests
-└── test_e2e.py            # E2E tests (require API key)
-```
-
-### Running Tests
-
-```bash
-# Run all tests
-uv run pytest
-
-# Run with coverage
-uv run pytest --cov=mango_evolve
-
-# Run specific test categories
-uv run pytest tests/test_integration.py -v
-uv run pytest -k "not e2e"  # Skip E2E tests
-```
-
-### Adding a New Evaluator
-
-1. Create a new evaluator class in `src/mango_evolve/evaluation/`:
-
-```python
+# src/mango_evolve/evaluation/my_evaluator.py
 class MyEvaluator:
     def __init__(self, **kwargs):
         self.config = kwargs
 
     def evaluate(self, code: str) -> dict:
-        # Run the code and return metrics
-        return {
-            'valid': True,
-            'score': 42.0,
-            'error': None,
-        }
+        # Execute code, return metrics
+        return {'valid': True, 'score': 42.0, 'error': None}
 ```
 
-2. Update your config to use the new evaluator:
+Reference in config:
 
 ```yaml
 evaluation:
-  evaluator_fn: "mango_evolve.evaluation.my_module:MyEvaluator"
+  evaluator_fn: "mango_evolve.evaluation.my_evaluator:MyEvaluator"
   evaluator_kwargs:
     param1: value1
 ```
 
-## Documentation
+## Development
 
-- [Design Document](docs/DESIGN.md) - Detailed architecture
-- [Circle Packing Design](docs/DESIGN_CIRCLE_PACKING.md) - Current target problem
-- [Implementation TODO](docs/IMPLEMENTATION_TODO.md) - Task list with dependencies
-
-## Example Results (from PoC)
-
-```
-Testing Circle Packing Evolution Pipeline...
-============================================================
-
-Generation 0: Exploring diverse strategies...
-  gen0_trial0: VALID, score=1.7687  (grid)
-  gen0_trial1: VALID, score=2.0800  (hexagonal)
-  gen0_trial2: INVALID, score=0.0000 (greedy - failed)
-  gen0_trial3: VALID, score=1.6512  (corner-first)
-  gen0_trial4: VALID, score=1.0795  (concentric)
-
-Best strategy: hexagonal
-  Sum of radii: 2.0800
+```bash
+uv run pytest                    # Run tests (mock LLMs, no API key needed)
+uv run pytest tests/test_e2e.py  # E2E tests (requires ANTHROPIC_API_KEY)
+uv run ruff check src tests      # Lint
+uv run ty check                  # Type check
 ```
 
 ## License
