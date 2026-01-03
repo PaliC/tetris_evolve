@@ -7,7 +7,7 @@ name = "mango-evolve"
 version = "0.1.0"
 description = "LLM-driven evolutionary code generation for optimization problems"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 license = {text = "MIT"}
 dependencies = [
     "anthropic>=0.18.0",
