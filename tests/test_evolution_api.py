@@ -747,6 +747,18 @@ class TestScratchpadProxy:
         # Original scratchpad unchanged
         assert evolution_api.scratchpad == "Hello"
 
+    def test_radd(self, evolution_api):
+        """Test reverse addition operator (returns new string, doesn't persist)."""
+        proxy = ScratchpadProxy(evolution_api)
+
+        evolution_api.scratchpad = "world"
+        result = "Hello " + proxy
+
+        # Result is a new string
+        assert result == "Hello world"
+        # Original scratchpad unchanged
+        assert evolution_api.scratchpad == "world"
+
     def test_persistence_on_content_set(self, evolution_api):
         """Test that setting content triggers logger.save_scratchpad."""
         proxy = ScratchpadProxy(evolution_api)
