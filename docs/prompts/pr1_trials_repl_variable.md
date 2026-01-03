@@ -51,6 +51,8 @@ class TrialView:
 
 ### 2. Create TrialsProxy Class (queryable collection)
 
+The interface should be simple: basic collection operations + one powerful `filter()` method.
+
 ```python
 class TrialsProxy:
     """Read-only queryable view of all trials, injected into REPL."""
@@ -74,69 +76,120 @@ class TrialsProxy:
     def __contains__(self, trial_id: str) -> bool:
         return trial_id in self._api.all_trials
 
-    def values(self) -> list[TrialView]:
-        """Return all trials as TrialView objects."""
-        return [TrialView.from_trial_result(t) for t in self._api.all_trials.values()]
-
-    def keys(self) -> list[str]:
-        """Return all trial IDs."""
-        return list(self._api.all_trials.keys())
-
     def filter(
         self,
+        *,
+        # Direct attribute filters
         success: bool | None = None,
         generation: int | None = None,
-        min_score: float | None = None,
         parent_id: str | None = None,
         model_alias: str | None = None,
+        # Lineage filters
+        ancestor_of: str | None = None,  # Find trials that are ancestors of this trial
+        descendant_of: str | None = None,  # Find trials that descend from this trial
+        # Custom predicate (lambda)
+        predicate: Callable[[TrialView], bool] | None = None,
+        # Sorting and limiting
+        sort_by: str | None = None,  # "score", "-score" (descending), "generation", etc.
+        limit: int | None = None,
     ) -> list[TrialView]:
-        """Filter trials by criteria."""
+        """
+        Filter trials by various criteria.
+
+        Examples:
+            # Top 5 by score
+            trials.filter(success=True, sort_by="-score", limit=5)
+
+            # All from generation 2
+            trials.filter(generation=2)
+
+            # Custom predicate
+            trials.filter(predicate=lambda t: t.score > 2.4 and "grid" in t.reasoning)
+
+            # All descendants of a trial
+            trials.filter(descendant_of="trial_0_3")
+
+            # Combined filters
+            trials.filter(success=True, generation=1, sort_by="-score", limit=3)
+        """
+        # Build set of descendant/ancestor trial IDs if needed
+        descendant_ids: set[str] | None = None
+        if descendant_of is not None:
+            descendant_ids = self._get_all_descendant_ids(descendant_of)
+
+        ancestor_ids: set[str] | None = None
+        if ancestor_of is not None:
+            ancestor_ids = self._get_all_ancestor_ids(ancestor_of)
+
         results = []
         for trial in self._api.all_trials.values():
+            # Apply direct attribute filters
             if success is not None and trial.success != success:
                 continue
             if generation is not None and trial.generation != generation:
                 continue
-            if min_score is not None:
-                score = trial.metrics.get("score", 0) if trial.success else 0
-                if score < min_score:
-                    continue
             if parent_id is not None and trial.parent_id != parent_id:
                 continue
             if model_alias is not None and trial.model_alias != model_alias:
                 continue
-            results.append(TrialView.from_trial_result(trial))
+
+            # Apply lineage filters
+            if descendant_ids is not None and trial.trial_id not in descendant_ids:
+                continue
+            if ancestor_ids is not None and trial.trial_id not in ancestor_ids:
+                continue
+
+            view = TrialView.from_trial_result(trial)
+
+            # Apply custom predicate
+            if predicate is not None and not predicate(view):
+                continue
+
+            results.append(view)
+
+        # Apply sorting
+        if sort_by is not None:
+            descending = sort_by.startswith("-")
+            field = sort_by.lstrip("-")
+            results.sort(key=lambda t: getattr(t, field, 0), reverse=descending)
+
+        # Apply limit
+        if limit is not None:
+            results = results[:limit]
+
         return results
 
-    def top(self, n: int = 5) -> list[TrialView]:
-        """Get top N trials by score."""
-        valid = [t for t in self._api.all_trials.values() if t.success]
-        sorted_trials = sorted(
-            valid,
-            key=lambda t: t.metrics.get("score", 0),
-            reverse=True
-        )[:n]
-        return [TrialView.from_trial_result(t) for t in sorted_trials]
-
-    def by_generation(self, gen: int) -> list[TrialView]:
-        """Get all trials from a specific generation."""
-        return self.filter(generation=gen)
-
-    def descendants(self, trial_id: str) -> list[TrialView]:
-        """Get all trials that descend from the given trial."""
-        result = []
+    def _get_all_descendant_ids(self, trial_id: str) -> set[str]:
+        """Get all trial IDs that descend from the given trial (recursive)."""
+        descendants = set()
         for trial in self._api.all_trials.values():
             if trial.parent_id == trial_id:
-                result.append(TrialView.from_trial_result(trial))
-                # Recursively get descendants
-                result.extend(self.descendants(trial.trial_id))
-        return result
+                descendants.add(trial.trial_id)
+                descendants.update(self._get_all_descendant_ids(trial.trial_id))
+        return descendants
+
+    def _get_all_ancestor_ids(self, trial_id: str) -> set[str]:
+        """Get all trial IDs that are ancestors of the given trial."""
+        ancestors = set()
+        trial = self._api.all_trials.get(trial_id)
+        while trial and trial.parent_id:
+            ancestors.add(trial.parent_id)
+            trial = self._api.all_trials.get(trial.parent_id)
+        return ancestors
 
     def __repr__(self) -> str:
         total = len(self)
         success = sum(1 for t in self._api.all_trials.values() if t.success)
         return f"<Trials: {total} total, {success} successful>"
 ```
+
+**Key design decisions:**
+- Single `filter()` method handles all query patterns
+- `sort_by` with `-` prefix for descending (e.g., `-score`)
+- `limit` for top-N queries
+- `predicate` for arbitrary lambda filtering
+- `descendant_of` / `ancestor_of` for lineage queries
+- All parameters are keyword-only (`*`) for clarity
 
 ### 3. Inject into REPL
 
@@ -192,16 +245,51 @@ Update `src/mango_evolve/llm/prompts.py` to document the new `trials` variable:
 ## REPL Variables
 
 ### `trials` - Query all trials
-A live view of all trials across all generations. Supports:
-- `trials["trial_0_5"]` - Get specific trial
-- `trials.top(5)` - Get top 5 by score
-- `trials.filter(success=True, generation=2)` - Filter trials
-- `trials.by_generation(1)` - All trials from gen 1
-- `trials.descendants("trial_0_3")` - All children/grandchildren
+A live view of all trials across all generations.
+
+**Basic access:**
+- `trials["trial_0_5"]` - Get specific trial by ID
 - `len(trials)` - Total trial count
 - `for t in trials: ...` - Iterate all trials
+- `"trial_0_5" in trials` - Check if trial exists
 
-Each trial has: `.trial_id`, `.code`, `.score`, `.success`, `.generation`,
+**Filtering with `trials.filter()`:**
+```python
+# Top 5 by score
+trials.filter(success=True, sort_by="-score", limit=5)
+
+# All from generation 2
+trials.filter(generation=2)
+
+# Custom predicate (lambda)
+trials.filter(predicate=lambda t: t.score > 2.4 and "grid" in t.reasoning)
+
+# All descendants of a trial
+trials.filter(descendant_of="trial_0_3")
+
+# All ancestors of a trial
+trials.filter(ancestor_of="trial_2_5")
+
+# Combined: top 3 successful from gen 1
+trials.filter(success=True, generation=1, sort_by="-score", limit=3)
+
+# Filter by model
+trials.filter(model_alias="fast", success=True)
+```
+
+**Filter parameters:**
+- `success`: bool - Filter by success/failure
+- `generation`: int - Filter by generation number
+- `parent_id`: str - Filter by direct parent
+- `model_alias`: str - Filter by child LLM model
+- `descendant_of`: str - All trials descending from this trial
+- `ancestor_of`: str - All ancestors of this trial
+- `predicate`: lambda - Custom filter function
+- `sort_by`: str - Sort field ("-score" for descending)
+- `limit`: int - Max results to return
+
+**Trial attributes:**
+`.trial_id`, `.code`, `.score`, `.success`, `.generation`,
 `.parent_id`, `.reasoning`, `.error`, `.model_alias`, `.metrics`
 """
 ```
@@ -213,11 +301,17 @@ Each trial has: `.trial_id`, `.code`, `.score`, `.success`, `.generation`,
 ### 7. Tests
 
 Add tests in `tests/test_repl_proxies.py`:
-- Test TrialsProxy iteration, filtering, top()
-- Test TrialView properties
-- Test injection into REPL
+- Test TrialsProxy `__len__`, `__iter__`, `__getitem__`, `__contains__`
+- Test `filter()` with each parameter individually
+- Test `filter()` with combined parameters
+- Test `filter()` with `predicate` lambda
+- Test `filter()` with `sort_by` (ascending and descending)
+- Test `filter()` with `limit`
+- Test `filter()` with `descendant_of` and `ancestor_of`
+- Test TrialView properties and `__repr__`
+- Test injection into REPL namespace
 - Test that spawn_child_llm returns TrialView
-- Test backward compatibility with .to_dict()
+- Test backward compatibility with `.to_dict()`
 
 ## Files to Modify
 - `src/mango_evolve/evolution_api.py` - Add TrialView, TrialsProxy, update spawn returns
