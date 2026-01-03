@@ -1,15 +1,20 @@
 """
 Tests for the prompt substitution module.
 
-Tests the {{CODE_TRIAL_X_Y}} token substitution functionality that allows
-Root LLM to reference code from previous trials in child LLM prompts.
+Tests the {{CODE_TRIAL_N}} and {{CODE_TRIAL_X_Y}} token substitution functionality
+that allows Root LLM to reference code from previous trials in child LLM prompts.
+
+Supports two formats:
+- Sequential: {{CODE_TRIAL_5}} -> trial_5
+- Legacy: {{CODE_TRIAL_0_3}} -> trial_0_3
 """
 
 import json
 
 from mango_evolve.evolution_api import TrialResult
 from mango_evolve.utils.prompt_substitution import (
-    TRIAL_CODE_PATTERN,
+    TRIAL_CODE_PATTERN_LEGACY,
+    TRIAL_CODE_PATTERN_SEQUENTIAL,
     find_trial_code_tokens,
     load_trial_code_from_disk,
     substitute_trial_codes,
@@ -17,12 +22,12 @@ from mango_evolve.utils.prompt_substitution import (
 )
 
 
-class TestTrialCodePattern:
-    """Tests for the TRIAL_CODE_PATTERN regex."""
+class TestTrialCodePatternLegacy:
+    """Tests for the TRIAL_CODE_PATTERN_LEGACY regex."""
 
     def test_matches_simple_token(self):
         """Test that pattern matches simple token."""
-        match = TRIAL_CODE_PATTERN.search("{{CODE_TRIAL_0_0}}")
+        match = TRIAL_CODE_PATTERN_LEGACY.search("{{CODE_TRIAL_0_0}}")
         assert match is not None
         assert match.group(0) == "{{CODE_TRIAL_0_0}}"
         assert match.group(1) == "0"
@@ -30,24 +35,54 @@ class TestTrialCodePattern:
 
     def test_matches_multi_digit_numbers(self):
         """Test that pattern matches multi-digit generation and trial numbers."""
-        match = TRIAL_CODE_PATTERN.search("{{CODE_TRIAL_12_345}}")
+        match = TRIAL_CODE_PATTERN_LEGACY.search("{{CODE_TRIAL_12_345}}")
         assert match is not None
         assert match.group(1) == "12"
         assert match.group(2) == "345"
 
     def test_no_match_for_partial_tokens(self):
         """Test that pattern doesn't match partial tokens."""
-        assert TRIAL_CODE_PATTERN.search("{{CODE_TRIAL_0_}}") is None
-        assert TRIAL_CODE_PATTERN.search("{{CODE_TRIAL__0}}") is None
-        assert TRIAL_CODE_PATTERN.search("{CODE_TRIAL_0_0}") is None
-        assert TRIAL_CODE_PATTERN.search("CODE_TRIAL_0_0") is None
+        assert TRIAL_CODE_PATTERN_LEGACY.search("{{CODE_TRIAL_0_}}") is None
+        assert TRIAL_CODE_PATTERN_LEGACY.search("{{CODE_TRIAL__0}}") is None
+        assert TRIAL_CODE_PATTERN_LEGACY.search("{CODE_TRIAL_0_0}") is None
+        assert TRIAL_CODE_PATTERN_LEGACY.search("CODE_TRIAL_0_0") is None
 
     def test_matches_in_text(self):
         """Test that pattern matches token embedded in text."""
         text = "Improve this code: {{CODE_TRIAL_0_3}} and make it better."
-        match = TRIAL_CODE_PATTERN.search(text)
+        match = TRIAL_CODE_PATTERN_LEGACY.search(text)
         assert match is not None
         assert match.group(0) == "{{CODE_TRIAL_0_3}}"
+
+
+class TestTrialCodePatternSequential:
+    """Tests for the TRIAL_CODE_PATTERN_SEQUENTIAL regex."""
+
+    def test_matches_simple_token(self):
+        """Test that pattern matches simple sequential token."""
+        match = TRIAL_CODE_PATTERN_SEQUENTIAL.search("{{CODE_TRIAL_5}}")
+        assert match is not None
+        assert match.group(0) == "{{CODE_TRIAL_5}}"
+        assert match.group(1) == "5"
+
+    def test_matches_multi_digit_numbers(self):
+        """Test that pattern matches multi-digit trial numbers."""
+        match = TRIAL_CODE_PATTERN_SEQUENTIAL.search("{{CODE_TRIAL_123}}")
+        assert match is not None
+        assert match.group(1) == "123"
+
+    def test_no_match_for_partial_tokens(self):
+        """Test that pattern doesn't match partial tokens."""
+        assert TRIAL_CODE_PATTERN_SEQUENTIAL.search("{{CODE_TRIAL_}}") is None
+        assert TRIAL_CODE_PATTERN_SEQUENTIAL.search("{CODE_TRIAL_5}") is None
+        assert TRIAL_CODE_PATTERN_SEQUENTIAL.search("CODE_TRIAL_5") is None
+
+    def test_matches_in_text(self):
+        """Test that pattern matches token embedded in text."""
+        text = "Improve this code: {{CODE_TRIAL_42}} and make it better."
+        match = TRIAL_CODE_PATTERN_SEQUENTIAL.search(text)
+        assert match is not None
+        assert match.group(0) == "{{CODE_TRIAL_42}}"
 
 
 class TestFindTrialCodeTokens:
@@ -59,15 +94,22 @@ class TestFindTrialCodeTokens:
         tokens = find_trial_code_tokens(prompt)
         assert tokens == []
 
-    def test_single_token(self):
-        """Test with single token."""
+    def test_single_legacy_token(self):
+        """Test with single legacy token."""
         prompt = "Improve this: {{CODE_TRIAL_0_5}}"
         tokens = find_trial_code_tokens(prompt)
         assert len(tokens) == 1
-        assert tokens[0] == ("{{CODE_TRIAL_0_5}}", 0, 5)
+        assert tokens[0] == ("{{CODE_TRIAL_0_5}}", "trial_0_5")
 
-    def test_multiple_tokens(self):
-        """Test with multiple tokens."""
+    def test_single_sequential_token(self):
+        """Test with single sequential token."""
+        prompt = "Improve this: {{CODE_TRIAL_5}}"
+        tokens = find_trial_code_tokens(prompt)
+        assert len(tokens) == 1
+        assert tokens[0] == ("{{CODE_TRIAL_5}}", "trial_5")
+
+    def test_multiple_legacy_tokens(self):
+        """Test with multiple legacy tokens."""
         prompt = """Combine these approaches:
         Approach A: {{CODE_TRIAL_0_1}}
         Approach B: {{CODE_TRIAL_0_3}}
@@ -75,24 +117,33 @@ class TestFindTrialCodeTokens:
         """
         tokens = find_trial_code_tokens(prompt)
         assert len(tokens) == 3
-        assert tokens[0] == ("{{CODE_TRIAL_0_1}}", 0, 1)
-        assert tokens[1] == ("{{CODE_TRIAL_0_3}}", 0, 3)
-        assert tokens[2] == ("{{CODE_TRIAL_1_0}}", 1, 0)
+        assert tokens[0] == ("{{CODE_TRIAL_0_1}}", "trial_0_1")
+        assert tokens[1] == ("{{CODE_TRIAL_0_3}}", "trial_0_3")
+        assert tokens[2] == ("{{CODE_TRIAL_1_0}}", "trial_1_0")
+
+    def test_mixed_formats(self):
+        """Test with mixed sequential and legacy tokens."""
+        prompt = "Legacy: {{CODE_TRIAL_0_1}}, Sequential: {{CODE_TRIAL_5}}"
+        tokens = find_trial_code_tokens(prompt)
+        assert len(tokens) == 2
+        # Legacy tokens are found first
+        assert ("{{CODE_TRIAL_0_1}}", "trial_0_1") in tokens
+        assert ("{{CODE_TRIAL_5}}", "trial_5") in tokens
 
     def test_duplicate_tokens(self):
         """Test with duplicate tokens."""
         prompt = "{{CODE_TRIAL_0_1}} is similar to {{CODE_TRIAL_0_1}}"
         tokens = find_trial_code_tokens(prompt)
         assert len(tokens) == 2
-        assert tokens[0] == ("{{CODE_TRIAL_0_1}}", 0, 1)
-        assert tokens[1] == ("{{CODE_TRIAL_0_1}}", 0, 1)
+        assert tokens[0] == ("{{CODE_TRIAL_0_1}}", "trial_0_1")
+        assert tokens[1] == ("{{CODE_TRIAL_0_1}}", "trial_0_1")
 
 
 class TestLoadTrialCodeFromDisk:
     """Tests for load_trial_code_from_disk function."""
 
-    def test_loads_existing_trial(self, temp_dir):
-        """Test loading code from an existing trial file."""
+    def test_loads_existing_legacy_trial(self, temp_dir):
+        """Test loading code from an existing legacy trial file."""
         # Create trial file structure
         gen_dir = temp_dir / "generations" / "gen_0"
         gen_dir.mkdir(parents=True)
@@ -110,6 +161,26 @@ class TestLoadTrialCodeFromDisk:
         # Load the trial
         code = load_trial_code_from_disk("trial_0_3", temp_dir)
         assert code == "def construct_packing():\n    return 'test code'"
+
+    def test_loads_existing_sequential_trial(self, temp_dir):
+        """Test loading code from an existing sequential trial file."""
+        # Create trial file structure
+        gen_dir = temp_dir / "generations" / "gen_0"
+        gen_dir.mkdir(parents=True)
+
+        trial_data = {
+            "trial_id": "trial_5",
+            "generation": 0,
+            "code": "def construct_packing():\n    return 'sequential code'",
+            "metrics": {"valid": True},
+        }
+        trial_path = gen_dir / "trial_5.json"
+        with open(trial_path, "w") as f:
+            json.dump(trial_data, f)
+
+        # Load the trial
+        code = load_trial_code_from_disk("trial_5", temp_dir)
+        assert code == "def construct_packing():\n    return 'sequential code'"
 
     def test_returns_none_for_missing_trial(self, temp_dir):
         """Test that missing trial returns None."""
@@ -149,6 +220,18 @@ class TestLoadTrialCodeFromDisk:
 
         assert load_trial_code_from_disk("trial_0_1", temp_dir) == "gen0_code"
         assert load_trial_code_from_disk("trial_1_2", temp_dir) == "gen1_code"
+
+    def test_sequential_trial_across_generations(self, temp_dir):
+        """Test loading sequential trial that could be in any generation."""
+        # Create trial in gen_1 (not gen_0)
+        gen1_dir = temp_dir / "generations" / "gen_1"
+        gen1_dir.mkdir(parents=True)
+        with open(gen1_dir / "trial_10.json", "w") as f:
+            json.dump({"code": "trial_10_code"}, f)
+
+        # Should find it by searching all generations
+        code = load_trial_code_from_disk("trial_10", temp_dir)
+        assert code == "trial_10_code"
 
 
 class TestSubstituteTrialCodes:

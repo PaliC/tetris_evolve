@@ -3,7 +3,11 @@ Prompt substitution utilities for mango_evolve.
 
 Handles substitution of trial code tokens in prompts before sending to child LLMs.
 This allows the Root LLM to reference code from previous trials using tokens like
-{{CODE_TRIAL_0_3}} which get replaced with the actual code from that trial.
+{{CODE_TRIAL_5}} which get replaced with the actual code from that trial.
+
+Supports two formats:
+- New sequential format: {{CODE_TRIAL_N}} where N is the trial number (e.g., trial_5)
+- Legacy format: {{CODE_TRIAL_X_Y}} where X is generation, Y is trial number (e.g., trial_0_3)
 """
 
 import json
@@ -14,28 +18,49 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from ..evolution_api import TrialResult
 
-# Pattern to match {{CODE_TRIAL_X_Y}} tokens
+# Pattern to match {{CODE_TRIAL_N}} tokens (new sequential format)
+TRIAL_CODE_PATTERN_SEQUENTIAL = re.compile(r"\{\{CODE_TRIAL_(\d+)\}\}")
+
+# Pattern to match {{CODE_TRIAL_X_Y}} tokens (legacy format)
 # X = generation number (0+), Y = trial number within generation (0+)
-TRIAL_CODE_PATTERN = re.compile(r"\{\{CODE_TRIAL_(\d+)_(\d+)\}\}")
+TRIAL_CODE_PATTERN_LEGACY = re.compile(r"\{\{CODE_TRIAL_(\d+)_(\d+)\}\}")
 
 
-def find_trial_code_tokens(prompt: str) -> list[tuple[str, int, int]]:
+def find_trial_code_tokens(prompt: str) -> list[tuple[str, str]]:
     """
     Find all trial code tokens in a prompt.
+
+    Supports both formats:
+    - Sequential: {{CODE_TRIAL_5}} -> trial_5
+    - Legacy: {{CODE_TRIAL_0_3}} -> trial_0_3
 
     Args:
         prompt: The prompt string to search
 
     Returns:
-        List of tuples: (full_token, generation, trial_num)
-        e.g., [("{{CODE_TRIAL_0_3}}", 0, 3), ("{{CODE_TRIAL_1_2}}", 1, 2)]
+        List of tuples: (full_token, trial_id)
+        e.g., [("{{CODE_TRIAL_5}}", "trial_5"), ("{{CODE_TRIAL_0_3}}", "trial_0_3")]
     """
     tokens = []
-    for match in TRIAL_CODE_PATTERN.finditer(prompt):
+
+    # Find legacy format tokens first (more specific pattern)
+    for match in TRIAL_CODE_PATTERN_LEGACY.finditer(prompt):
         full_token = match.group(0)
         generation = int(match.group(1))
         trial_num = int(match.group(2))
-        tokens.append((full_token, generation, trial_num))
+        trial_id = f"trial_{generation}_{trial_num}"
+        tokens.append((full_token, trial_id))
+
+    # Find sequential format tokens
+    for match in TRIAL_CODE_PATTERN_SEQUENTIAL.finditer(prompt):
+        full_token = match.group(0)
+        # Skip if this is part of a legacy token (already matched)
+        if any(full_token in legacy_token for legacy_token, _ in tokens):
+            continue
+        trial_num = int(match.group(1))
+        trial_id = f"trial_{trial_num}"
+        tokens.append((full_token, trial_id))
+
     return tokens
 
 
@@ -46,31 +71,50 @@ def load_trial_code_from_disk(
     """
     Load trial code from disk.
 
+    Supports both formats:
+    - Sequential: trial_5
+    - Legacy: trial_0_3
+
     Args:
-        trial_id: Trial identifier (e.g., "trial_0_3")
+        trial_id: Trial identifier (e.g., "trial_5" or "trial_0_3")
         experiment_dir: Path to experiment directory
 
     Returns:
         The code string if found, None otherwise
     """
-    # Parse generation from trial_id
-    match = re.match(r"trial_(\d+)_(\d+)", trial_id)
-    if not match:
-        return None
+    experiment_path = Path(experiment_dir)
 
-    generation = int(match.group(1))
+    # Try legacy format first (trial_X_Y)
+    legacy_match = re.match(r"trial_(\d+)_(\d+)", trial_id)
+    if legacy_match:
+        generation = int(legacy_match.group(1))
+        trial_path = experiment_path / "generations" / f"gen_{generation}" / f"{trial_id}.json"
 
-    trial_path = Path(experiment_dir) / "generations" / f"gen_{generation}" / f"{trial_id}.json"
+        if trial_path.exists():
+            try:
+                with open(trial_path) as f:
+                    trial_data = json.load(f)
+                return trial_data.get("code")
+            except (json.JSONDecodeError, OSError):
+                pass
 
-    if not trial_path.exists():
-        return None
+    # Try sequential format (trial_N) - search all generation folders
+    sequential_match = re.match(r"trial_(\d+)$", trial_id)
+    if sequential_match:
+        generations_dir = experiment_path / "generations"
+        if generations_dir.exists():
+            for gen_dir in sorted(generations_dir.iterdir()):
+                if gen_dir.is_dir() and gen_dir.name.startswith("gen_"):
+                    trial_path = gen_dir / f"{trial_id}.json"
+                    if trial_path.exists():
+                        try:
+                            with open(trial_path) as f:
+                                trial_data = json.load(f)
+                            return trial_data.get("code")
+                        except (json.JSONDecodeError, OSError):
+                            pass
 
-    try:
-        with open(trial_path) as f:
-            trial_data = json.load(f)
-        return trial_data.get("code")
-    except (json.JSONDecodeError, OSError):
-        return None
+    return None
 
 
 def _get_trial_code_internal(
@@ -102,7 +146,11 @@ def substitute_trial_codes(
     experiment_dir: str | Path | None = None,
 ) -> tuple[str, list[dict[str, Any]]]:
     """
-    Substitute all {{CODE_TRIAL_X_Y}} tokens in a prompt with actual code.
+    Substitute all trial code tokens in a prompt with actual code.
+
+    Supports both formats:
+    - Sequential: {{CODE_TRIAL_5}} -> trial_5
+    - Legacy: {{CODE_TRIAL_0_3}} -> trial_0_3
 
     Args:
         prompt: The prompt string with potential tokens
@@ -125,8 +173,7 @@ def substitute_trial_codes(
     substitution_report: list[dict[str, Any]] = []
     result = prompt
 
-    for token, generation, trial_num in tokens:
-        trial_id = f"trial_{generation}_{trial_num}"
+    for token, trial_id in tokens:
         code = _get_trial_code_internal(trial_id, all_trials, experiment_dir)
 
         if code:

@@ -10,7 +10,8 @@ from .code_extraction import (
     extract_reasoning,
 )
 from .prompt_substitution import (
-    TRIAL_CODE_PATTERN,
+    TRIAL_CODE_PATTERN_LEGACY,
+    TRIAL_CODE_PATTERN_SEQUENTIAL,
     find_trial_code_tokens,
     load_trial_code_from_disk,
     substitute_trial_codes,
@@ -23,7 +24,8 @@ __all__ = [
     "extract_python_blocks",
     "extract_reasoning",
     "extract_python_code",
-    "TRIAL_CODE_PATTERN",
+    "TRIAL_CODE_PATTERN_LEGACY",
+    "TRIAL_CODE_PATTERN_SEQUENTIAL",
     "find_trial_code_tokens",
     "load_trial_code_from_disk",
     "substitute_trial_codes",

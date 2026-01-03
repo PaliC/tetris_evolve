@@ -78,9 +78,9 @@ class TestRootSystemPrompt:
             max_generations=3,
             current_generation=1,
         )
-        assert "5" in prompt  # max_children_per_generation
-        assert "3" in prompt  # max_generations
-        assert "Current generation" in prompt
+        assert "5" in prompt  # max_children_per_generation (suggested batch size)
+        assert "3" in prompt  # max_generations (max checkpoints)
+        assert "checkpoint" in prompt.lower()  # Uses checkpoints instead of generations
 
     def test_prompt_encourages_diversity(self):
         """Test that prompt mentions diversity."""
@@ -92,11 +92,11 @@ class TestRootSystemPrompt:
         prompt = get_root_system_prompt()
         assert "CODE_TRIAL" in prompt
 
-    def test_prompt_documents_selection_format(self):
-        """Test that selection format is documented."""
+    def test_prompt_documents_continuous_evolution(self):
+        """Test that continuous evolution loop is documented."""
         prompt = get_root_system_prompt()
-        assert "selection" in prompt.lower()
-        assert "trial_id" in prompt
+        assert "continuous" in prompt.lower()
+        assert "checkpoint" in prompt.lower()
 
 
 class TestFormatChildMutationPrompt:

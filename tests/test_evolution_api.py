@@ -98,7 +98,8 @@ class TestSpawnChildren:
         assert hasattr(result, "code")
         assert hasattr(result, "metrics")
         assert hasattr(result, "success")
-        assert result.trial_id.startswith("trial_0_")
+        # Sequential trial IDs: trial_0, trial_1, etc.
+        assert result.trial_id.startswith("trial_")
 
     def test_spawn_with_parent(self, evolution_api):
         """Test spawning with parent ID."""
@@ -334,16 +335,17 @@ class TestInternalMethods:
 class TestGetAPIFunctions:
     """Tests for get_api_functions."""
 
-    def test_returns_8_items(self, evolution_api):
-        """Test that 8 items (7 functions + 1 scratchpad proxy) are returned."""
+    def test_returns_9_items(self, evolution_api):
+        """Test that 9 items (8 functions + 1 scratchpad proxy) are returned."""
         funcs = evolution_api.get_api_functions()
 
-        assert len(funcs) == 8
+        assert len(funcs) == 9
         assert "spawn_children" in funcs
         assert "evaluate_program" in funcs
         assert "terminate_evolution" in funcs
         assert "get_top_trials" in funcs
         assert "update_scratchpad" in funcs
+        assert "checkpoint" in funcs
         assert "end_calibration_phase" in funcs
         assert "get_calibration_status" in funcs
         assert "scratchpad" in funcs
@@ -435,13 +437,13 @@ class TestScratchpad:
 
         assert evolution_api.scratchpad == "Second notes"
 
-    def test_update_scratchpad_truncates_long_content(self, evolution_api):
-        """Test that very long content is truncated."""
-        long_content = "x" * 10000  # Exceeds 8000 limit
+    def test_update_scratchpad_allows_long_content(self, evolution_api):
+        """Test that long content is accepted without truncation."""
+        long_content = "x" * 10000
         result = evolution_api.update_scratchpad(long_content)
 
-        assert result["length"] == 8000
-        assert len(evolution_api.scratchpad) == 8000
+        assert result["length"] == 10000
+        assert len(evolution_api.scratchpad) == 10000
 
 
 class TestLineageMap:
@@ -481,10 +483,10 @@ class TestSelectionBehavior:
 
     def test_selection_allows_historical_trials(self, evolution_api):
         """Test that _advance_generation accepts trials from any generation."""
-        # Create trials directly in Gen 0
+        # Create trials directly in Gen 0 (sequential IDs: trial_0, trial_1)
         for i in range(2):
             trial = TrialResult(
-                trial_id=f"trial_0_{i}",
+                trial_id=f"trial_{i}",
                 code="def run_packing(): pass",
                 metrics={"valid": True, "score": 2.5 - i * 0.2},
                 prompt=f"Gen 0 Trial {i}",
@@ -498,10 +500,10 @@ class TestSelectionBehavior:
             evolution_api._record_trial(trial)
         evolution_api._advance_generation()
 
-        # Create trials in Gen 1
+        # Create trials in Gen 1 (sequential IDs: trial_2, trial_3)
         for i in range(2):
             trial = TrialResult(
-                trial_id=f"trial_1_{i}",
+                trial_id=f"trial_{2 + i}",
                 code="def run_packing(): pass",
                 metrics={"valid": True, "score": 2.6 - i * 0.2},
                 prompt=f"Gen 1 Trial {i}",
@@ -516,8 +518,8 @@ class TestSelectionBehavior:
 
         # Try to select with a mix of historical (Gen 0) and current (Gen 1) trials
         selections = [
-            {"trial_id": "trial_1_0", "reasoning": "Current gen", "category": "performance"},
-            {"trial_id": "trial_0_0", "reasoning": "Historical (allowed)", "category": "diversity"},
+            {"trial_id": "trial_2", "reasoning": "Current gen", "category": "performance"},
+            {"trial_id": "trial_0", "reasoning": "Historical (allowed)", "category": "diversity"},
         ]
 
         evolution_api._advance_generation(selections=selections, selection_summary="Test")
@@ -525,15 +527,15 @@ class TestSelectionBehavior:
         # Both current and historical selections should be preserved
         gen1 = evolution_api.generations[1]
         assert len(gen1.trial_selections) == 2
-        assert gen1.selected_trial_ids == ["trial_1_0", "trial_0_0"]
+        assert gen1.selected_trial_ids == ["trial_2", "trial_0"]
         assert gen1.trial_selections[0].source_generation == 1
         assert gen1.trial_selections[1].source_generation == 0
 
     def test_auto_select_from_current_generation_only(self, evolution_api):
         """Test that auto-selection only selects from current generation."""
-        # Gen 0: one trial with high score
+        # Gen 0: one trial with high score (sequential ID: trial_0)
         trial_0 = TrialResult(
-            trial_id="trial_0_0",
+            trial_id="trial_0",
             code="def run_packing(): pass",
             metrics={"valid": True, "score": 2.8},
             prompt="Gen 0 high score",
@@ -547,10 +549,10 @@ class TestSelectionBehavior:
         evolution_api._record_trial(trial_0)
         evolution_api._advance_generation()
 
-        # Gen 1: two trials with lower scores
+        # Gen 1: two trials with lower scores (sequential IDs: trial_1, trial_2)
         for i in range(2):
             trial = TrialResult(
-                trial_id=f"trial_1_{i}",
+                trial_id=f"trial_{1 + i}",
                 code="def run_packing(): pass",
                 metrics={"valid": True, "score": 2.1 - i * 0.1},
                 prompt=f"Gen 1 low {i}",
@@ -568,8 +570,8 @@ class TestSelectionBehavior:
 
         # Auto-select should only include Gen 1 trials (not Gen 0)
         gen1 = evolution_api.generations[1]
-        assert "trial_0_0" not in gen1.selected_trial_ids
-        assert "trial_1_0" in gen1.selected_trial_ids  # Best of Gen 1
+        assert "trial_0" not in gen1.selected_trial_ids
+        assert "trial_1" in gen1.selected_trial_ids  # Best of Gen 1
         assert "Auto-selected top performing trials" in gen1.selection_reasoning
 
     def test_trial_selection_source_generation_field(self):

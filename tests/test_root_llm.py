@@ -66,7 +66,7 @@ class TestBuildInitialMessages:
 
         assert len(messages) == 1
         assert messages[0]["role"] == "user"
-        assert "generation 0" in messages[0]["content"].lower()
+        assert "evolution" in messages[0]["content"].lower()
         assert "spawn" in messages[0]["content"].lower()
 
 

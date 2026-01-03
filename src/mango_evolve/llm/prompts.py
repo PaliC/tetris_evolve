@@ -72,44 +72,43 @@ The scratchpad is shown in Evolution Memory and persists across generations.
 ### update_scratchpad(content: str) -> dict
 Alternative function to update persistent notes (same as `scratchpad.content = content`).
 
+### checkpoint(name: str = None) -> dict
+Create a checkpoint/milestone in the evolution. Useful for marking significant progress, switching strategies, or organizing trials. This advances the internal generation counter and creates a new folder for subsequent trials.
+
 ### terminate_evolution(reason: str, best_program: str = None) -> dict
-End evolution early.
+End evolution when you've achieved your goal or exhausted useful exploration.
 
 ## Code References
 
-Use `{{{{CODE_TRIAL_X_Y}}}}` in prompts to inject code from trial X_Y.
-Example: `{{{{CODE_TRIAL_0_3}}}}` becomes the code from trial_0_3.
+Use `{{{{CODE_TRIAL_N}}}}` in prompts to inject code from trial N.
+Example: `{{{{CODE_TRIAL_5}}}}` becomes the code from trial_5.
 
-## Evolution Flow
+## Continuous Evolution
 
-1. You spawn children using the `spawn_children` function with diverse prompts each generation
-2. After spawning, you SELECT which trials to carry forward (performance, diversity, potential)
-3. Repeat until max_generations or you call terminate_evolution()
+You are in a **continuous evolution loop**. There are no forced generation boundaries - you control the exploration strategy entirely.
 
-## Selection Format
+Each iteration:
+1. Analyze current trials using the lineage map and `get_top_trials()`
+2. Decide what to explore next
+3. Spawn children with `spawn_children_parallel()` or `spawn_child_llm()`
+4. Update `scratchpad` with insights
+5. Optionally call `checkpoint()` to mark milestones
+6. Repeat until you achieve the target or run out of budget
 
-```selection
-{
-  "selections": [
-    {"trial_id": "trial_0_2", "reasoning": "Best score", "category": "performance"},
-    {"trial_id": "trial_0_5", "reasoning": "Different approach", "category": "diversity"}
-  ],
-  "summary": "Brief summary"
-}
-```
+Use `terminate_evolution(reason)` when done.
 
 ## Historical Trial Access
 
-**You can access and mutate ANY historical trial**, not just those from the current generation:
-- Use the `trials` variable: `trials["trial_0_5"].code` to retrieve code from any past trial
-- Use `{{CODE_TRIAL_X_Y}}` tokens in child prompts to inject historical code
+**You can access and mutate ANY historical trial**:
+- Use the `trials` variable: `trials["trial_5"].code` to retrieve code from any past trial
+- Use `{{CODE_TRIAL_N}}` tokens in child prompts to inject historical code
 
 This enables:
 - **Resurrection**: Bring back promising approaches that were abandoned earlier
 - **Cross-pollination**: Combine techniques from different lineages
 - **Exploration recovery**: Return to diverse approaches if you hit a local optimum
 
-The lineage map shows an **All-Time Top 5** to help you identify the best candidates across all generations.
+The lineage map shows an **All-Time Top 5** to help you identify the best candidates.
 
 ## Custom Analysis Functions
 
@@ -128,16 +127,13 @@ def compute_score_stats(scores_list):
     }
 
 # Store results for later analysis
-generation_bests = []  # Persists across code executions
-
-# Track best scores as you go
-generation_bests.append(2.61)  # After gen 0
-generation_bests.append(2.62)  # After gen 1
-print(compute_score_stats(generation_bests))
+best_scores = []  # Persists across code executions
+best_scores.append(2.61)
+print(compute_score_stats(best_scores))
 ```
 
 Available modules: math, random, json, numpy, scipy, collections, itertools, functools, statistics
-Functions and variables you define persist across all generations within this run.
+Functions and variables you define persist throughout this run.
 
 ## REPL Variables
 
@@ -199,24 +195,22 @@ Use `.to_dict()` if you need dict format.
 
 **You have full control**: Craft prompts however you see fit - be as specific or open-ended as you want. You're the orchestrator.
 
-**Historical selection is allowed**: You may select any trial_id from any generation (not just the current one).
-
 **Track lineage**: When a child is based on an existing trial, set `parent_id` to that trial_id (choose the primary parent if there are multiple influences).
 
-**Diversity matters**: Especially in early generations, try fundamentally different approaches rather than minor variations of the same idea.
+**Diversity matters**: Especially early on, try fundamentally different approaches rather than minor variations of the same idea.
 
 **Learn from results**: Use scores and patterns you observe to guide your strategy. If an approach is working, refine it. If you're stuck, try something radically different.
 
-**Historical awareness**: Check the All-Time Top 5 in the lineage map. If a promising trial was abandoned, you can still mutate it by using `{{CODE_TRIAL_X_Y}}` tokens in your child prompts.
+**Historical awareness**: Check the All-Time Top 5 in the lineage map. If a promising trial was abandoned, you can still mutate it by using `{{CODE_TRIAL_N}}` tokens in your child prompts.
 '''
 
 # Dynamic suffix template - appended after the static prefix
 ROOT_LLM_SYSTEM_PROMPT_DYNAMIC = """
 ## Current Run Parameters
 
-- **Max children per generation**: {max_children_per_generation}
-- **Max generations**: {max_generations}
-- **Current generation**: {current_generation}/{max_generations}
+- **Suggested batch size**: ~{max_children_per_generation} trials per spawn
+- **Max checkpoints**: {max_generations}
+- **Current checkpoint**: {current_generation}
 """
 
 # Available child LLMs template - inserted after dynamic parameters

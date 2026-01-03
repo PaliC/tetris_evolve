@@ -403,6 +403,7 @@ class EvolutionAPI:
         logger: ExperimentLogger,
         max_generations: int = 10,
         max_children_per_generation: int = 10,
+        max_total_trials: int | None = None,
         default_child_llm_alias: str | None = None,
         evaluator_kwargs: dict[str, Any] | None = None,
     ):
@@ -414,8 +415,9 @@ class EvolutionAPI:
             child_llm_configs: Dict mapping effective_alias -> ChildLLMConfig
             cost_tracker: CostTracker for budget management
             logger: ExperimentLogger for logging
-            max_generations: Maximum number of generations
-            max_children_per_generation: Maximum children per generation
+            max_generations: Maximum number of generations (used for checkpoints)
+            max_children_per_generation: Maximum children per generation (soft limit, not enforced in continuous mode)
+            max_total_trials: Optional limit on total trials across all generations
             default_child_llm_alias: Default model alias to use if none specified
             evaluator_kwargs: Kwargs for creating evaluator in worker processes
         """
@@ -424,7 +426,8 @@ class EvolutionAPI:
         self.cost_tracker = cost_tracker
         self.logger = logger
         self._max_generations = max_generations  # Read-only after init
-        self._max_children_per_generation = max_children_per_generation  # Read-only after init
+        self._max_children_per_generation = max_children_per_generation  # Soft limit (not enforced in continuous mode)
+        self._max_total_trials = max_total_trials  # Hard limit on total trials
         self.default_child_llm_alias = default_child_llm_alias
         self.evaluator_kwargs = evaluator_kwargs or {}
 
@@ -440,6 +443,7 @@ class EvolutionAPI:
         self.current_generation = 0
         self.generations: list[GenerationSummary] = [GenerationSummary(generation_num=0, trials=[])]
         self.all_trials: dict[str, TrialResult] = {}
+        self._next_trial_num = 0  # Sequential trial counter
         self._terminated = False
         self._termination_reason: str | None = None
 
@@ -448,18 +452,28 @@ class EvolutionAPI:
 
     @property
     def max_generations(self) -> int:
-        """Maximum number of generations (read-only after initialization)."""
+        """Maximum number of generations/checkpoints (read-only after initialization)."""
         return self._max_generations
 
     @property
     def max_children_per_generation(self) -> int:
-        """Maximum children per generation (read-only after initialization)."""
+        """Suggested children per generation - soft limit (read-only after initialization)."""
         return self._max_children_per_generation
+
+    @property
+    def max_total_trials(self) -> int | None:
+        """Maximum total trials across all generations (read-only after initialization)."""
+        return self._max_total_trials
 
     @property
     def is_terminated(self) -> bool:
         """Check if evolution has been terminated."""
         return self._terminated
+
+    @property
+    def total_trials_count(self) -> int:
+        """Return the total number of trials spawned (excluding calibration)."""
+        return sum(1 for t in self.all_trials.values() if t.generation >= 0)
 
     def _resolve_model_alias(self, model: str | None) -> str:
         """Resolve a model alias to an effective alias, validating it exists."""
@@ -491,6 +505,191 @@ class EvolutionAPI:
                 llm_type=f"child:{alias}",
             )
         return self.child_llm_clients[alias]
+
+    def spawn_child_llm(
+        self,
+        prompt: str,
+        parent_id: str | None = None,
+        model: str | None = None,
+        temperature: float = 0.7,
+    ) -> dict[str, Any]:
+        """
+        Spawn a child LLM to generate a program.
+
+        The prompt should be the complete prompt to send to the child LLM.
+        The Root LLM is responsible for crafting the full prompt including
+        problem specification, constraints, and parent code if mutating.
+
+        Args:
+            prompt: Complete prompt to send to the child LLM
+            parent_id: Optional trial ID of parent (for mutation tracking)
+            model: Alias of the child LLM to use (from config). If None, uses default.
+            temperature: Sampling temperature (default 0.7)
+
+        Returns:
+            Dictionary with trial result:
+            {
+                'trial_id': str,
+                'code': str,
+                'metrics': dict,
+                'reasoning': str,
+                'success': bool,
+                'error': Optional[str],
+                'model_alias': str
+            }
+
+        Raises:
+            ChildrenLimitError: If max_children_per_generation limit is reached
+            CalibrationBudgetError: If in calibration phase and budget exhausted for model
+        """
+        # Resolve model alias
+        model_alias = self._resolve_model_alias(model)
+
+        # Check calibration budget if in calibration phase
+        if self.in_calibration_phase:
+            if self.calibration_calls_remaining[model_alias] <= 0:
+                raise CalibrationBudgetError(
+                    f"Calibration budget exhausted for model '{model_alias}'. "
+                    f"Remaining calls: {self.calibration_calls_remaining}. "
+                    "Use a different model or call end_calibration_phase()."
+                )
+            self.calibration_calls_remaining[model_alias] -= 1
+
+        # Check budget
+        self.cost_tracker.raise_if_over_budget()
+
+        # Determine trial generation (-1 for calibration, else current_generation)
+        trial_generation = -1 if self.in_calibration_phase else self.current_generation
+
+        # Check total trials limit (only during evolution, not calibration)
+        if not self.in_calibration_phase:
+            if self._max_total_trials is not None and self.total_trials_count >= self._max_total_trials:
+                raise ChildrenLimitError(
+                    f"Cannot spawn more children. Total trials limit of {self._max_total_trials} reached."
+                )
+            # Generate sequential trial ID
+            trial_id = f"trial_{self._next_trial_num}"
+            self._next_trial_num += 1
+        else:
+            # During calibration, use calibration-prefixed IDs
+            calibration_num = len([t for t in self.all_trials.values() if t.generation == -1])
+            trial_id = f"trial_cal_{calibration_num}"
+
+        # Show progress for child LLM spawn
+        phase_str = "calibration" if self.in_calibration_phase else f"gen {self.current_generation}"
+        tqdm.write(
+            f"  └─ Spawning child LLM ({model_alias}): {phase_str}, "
+            f"{trial_id}"
+            + (f" (parent: {parent_id})" if parent_id else "")
+            + f" [temp={temperature}]"
+        )
+
+        # Substitute {{CODE_TRIAL_X_Y}} tokens with actual code
+        substituted_prompt, substitution_report = substitute_trial_codes(
+            prompt,
+            all_trials=self.all_trials,
+            experiment_dir=str(self.logger.base_dir),
+        )
+        if substitution_report:
+            for sub in substitution_report:
+                if sub["success"]:
+                    tqdm.write(
+                        f"       → Substituted {sub['token']} with code from {sub['trial_id']}"
+                    )
+                else:
+                    tqdm.write(f"       ⚠ Failed to substitute {sub['token']}: {sub['error']}")
+
+        # Get or create LLM client for this model
+        child_llm = self._get_or_create_child_llm_client(model_alias)
+
+        # Build model config for trial metadata
+        config = self.child_llm_configs[model_alias]
+        model_config = {
+            "model": config.model,
+            "temperature": temperature,
+        }
+
+        # Call child LLM
+        try:
+            response = child_llm.generate(
+                messages=[{"role": "user", "content": substituted_prompt}],
+                max_tokens=4096,
+                temperature=temperature,
+            )
+            response_text = response.content
+        except Exception as e:
+            # LLM call failed
+            trial = TrialResult(
+                trial_id=trial_id,
+                code="",
+                metrics={},
+                prompt=substituted_prompt,
+                response="",
+                reasoning="",
+                success=False,
+                parent_id=parent_id,
+                error=f"LLM call failed: {str(e)}",
+                generation=trial_generation,
+                model_alias=model_alias,
+                model_config=model_config,
+            )
+            self._record_trial(trial)
+            return trial.to_dict()
+
+        # Extract code from response
+        code = extract_python_code(response_text)
+        reasoning = extract_reasoning(response_text)
+
+        if not code:
+            # No code found in response
+            trial = TrialResult(
+                trial_id=trial_id,
+                code="",
+                metrics={},
+                prompt=substituted_prompt,
+                response=response_text,
+                reasoning=reasoning,
+                success=False,
+                parent_id=parent_id,
+                error="No Python code block found in response",
+                generation=trial_generation,
+                model_alias=model_alias,
+                model_config=model_config,
+            )
+            self._record_trial(trial)
+            return trial.to_dict()
+
+        # Evaluate the code
+        try:
+            metrics = self.evaluator.evaluate(code)
+        except Exception as e:
+            metrics = {
+                "valid": False,
+                "error": f"Evaluation error: {str(e)}",
+            }
+
+        # Determine success
+        success = bool(metrics.get("valid", False))
+        error_value = metrics.get("error") if not success else None
+        error_msg = str(error_value) if error_value is not None else None
+
+        trial = TrialResult(
+            trial_id=trial_id,
+            code=code,
+            metrics=metrics,
+            prompt=substituted_prompt,
+            response=response_text,
+            reasoning=reasoning,
+            success=success,
+            parent_id=parent_id,
+            error=error_msg,
+            generation=trial_generation,
+            model_alias=model_alias,
+            model_config=model_config,
+        )
+
+        self._record_trial(trial)
+        return trial.to_dict()
 
     def _record_trial(self, trial: TrialResult, skip_file_write: bool = False) -> None:
         """Record a trial in the current generation and log it.
@@ -564,14 +763,15 @@ class EvolutionAPI:
         # Check budget
         self.cost_tracker.raise_if_over_budget()
 
-        # Check children limit (only during evolution, not calibration)
+        # Check total trials limit (only during evolution, not calibration)
         if not self.in_calibration_phase:
-            current_count = len(self.generations[self.current_generation].trials)
-            if current_count + len(children) > self.max_children_per_generation:
-                raise ChildrenLimitError(
-                    f"Cannot spawn {len(children)} children in generation {self.current_generation}. "
-                    f"Current count: {current_count}, limit: {self.max_children_per_generation}."
-                )
+            if self._max_total_trials is not None:
+                remaining = self._max_total_trials - self.total_trials_count
+                if len(children) > remaining:
+                    raise ChildrenLimitError(
+                        f"Cannot spawn {len(children)} children. "
+                        f"Total trials limit: {self._max_total_trials}, remaining: {remaining}."
+                    )
 
         # Resolve model aliases for all children and check calibration budget
         resolved_models: dict[int, tuple[str, ChildLLMConfig]] = {}
@@ -604,11 +804,12 @@ class EvolutionAPI:
         # Pre-assign trial IDs for each child
         if self.in_calibration_phase:
             starting_trial_num = len([t for t in self.all_trials.values() if t.generation == -1])
+            trial_ids = [f"trial_cal_{starting_trial_num + i}" for i in range(len(children))]
         else:
-            starting_trial_num = len(self.generations[self.current_generation].trials)
-        trial_ids = [
-            f"trial_{trial_generation}_{starting_trial_num + i}" for i in range(len(children))
-        ]
+            # Use sequential trial IDs
+            starting_trial_num = self._next_trial_num
+            trial_ids = [f"trial_{starting_trial_num + i}" for i in range(len(children))]
+            self._next_trial_num += len(children)
 
         # Get experiment directory for workers to write trial files
         experiment_dir = str(self.logger.base_dir)
@@ -1056,6 +1257,90 @@ class EvolutionAPI:
         tqdm.write(f"  📝 Scratchpad updated ({len(content)} chars)")
         return {"success": True, "length": len(content)}
 
+    def checkpoint(self, name: str | None = None) -> dict[str, Any]:
+        """
+        Create a checkpoint of current evolution state.
+
+        Useful for marking milestones, switching strategies, or organizing
+        the trial history. This advances the generation/checkpoint counter
+        and creates a new folder for subsequent trials.
+
+        Args:
+            name: Optional name for the checkpoint (defaults to "checkpoint_N")
+
+        Returns:
+            Dictionary with checkpoint info including:
+            - checkpoint: The checkpoint name
+            - generation: New generation number
+            - total_trials: Total trials so far
+            - best_trial: Info about best trial so far
+        """
+        # Finalize current generation before advancing
+        gen = self.generations[self.current_generation]
+
+        # Update best trial for current generation
+        best_trial_in_gen = None
+        for trial in gen.trials:
+            if trial.success:
+                score = trial.metrics.get("score", 0)
+                if score > gen.best_score:
+                    gen.best_score = score
+                    gen.best_trial_id = trial.trial_id
+                    best_trial_in_gen = trial
+
+        # Log the current generation
+        self.logger.log_generation(
+            generation=self.current_generation,
+            trials=[t.to_dict() for t in gen.trials],
+            selected_trial_ids=gen.selected_trial_ids,
+            selection_reasoning=gen.selection_reasoning or "Checkpoint created",
+            best_trial_id=gen.best_trial_id,
+            best_score=gen.best_score,
+            trial_selections=[s.to_dict() for s in gen.trial_selections],
+            parents_used=gen.parents_used,
+            parents_used_counts=gen.parents_used_counts,
+            parents_not_selected_prev_gen=gen.parents_not_selected_prev_gen,
+        )
+
+        # Advance to next generation
+        self.current_generation += 1
+        checkpoint_name = name or f"checkpoint_{self.current_generation}"
+
+        # Create new generation summary
+        self.generations.append(
+            GenerationSummary(generation_num=self.current_generation, trials=[])
+        )
+
+        # Write scratchpad to new generation directory
+        self.logger.save_scratchpad(
+            generation=self.current_generation,
+            scratchpad=self.scratchpad,
+            lineage_map=self._build_lineage_map(),
+        )
+
+        # Get global best trial
+        best_trials = self._get_best_trials(n=1)
+        best_info = None
+        if best_trials:
+            best_info = {
+                "trial_id": best_trials[0].get("trial_id"),
+                "score": best_trials[0].get("metrics", {}).get("score", 0),
+            }
+
+        num_trials = len(gen.trials)
+        tqdm.write(
+            f"\n  ═══ Checkpoint '{checkpoint_name}': {num_trials} trials, "
+            f"best={gen.best_score:.10f} ═══\n"
+        )
+
+        return {
+            "checkpoint": checkpoint_name,
+            "generation": self.current_generation,
+            "total_trials": self.total_trials_count,
+            "best_trial": best_info,
+            "previous_generation_trials": num_trials,
+        }
+
     def end_calibration_phase(self) -> dict[str, Any]:
         """
         End the calibration phase and transition to main evolution.
@@ -1234,6 +1519,7 @@ class EvolutionAPI:
         - terminate_evolution: End the evolution process
         - get_top_trials: Retrieve top trials across history (summary)
         - update_scratchpad: Update persistent notes across generations
+        - checkpoint: Create a checkpoint/milestone in evolution
         - end_calibration_phase: End calibration and start evolution
         - get_calibration_status: Check calibration phase status
 
@@ -1251,6 +1537,7 @@ class EvolutionAPI:
             "terminate_evolution": self.terminate_evolution,
             "get_top_trials": self.get_top_trials,
             "update_scratchpad": self.update_scratchpad,
+            "checkpoint": self.checkpoint,
             "end_calibration_phase": self.end_calibration_phase,
             "get_calibration_status": self.get_calibration_status,
             "scratchpad": ScratchpadProxy(self),

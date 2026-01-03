@@ -88,6 +88,7 @@ class EvolutionConfig:
 
     max_generations: int = 10
     max_children_per_generation: int = 10
+    max_total_trials: int | None = None  # Optional limit on total trials across all generations
 
 
 @dataclass
@@ -319,12 +320,13 @@ def _parse_evolution_config(data: dict[str, Any] | None) -> EvolutionConfig:
         return EvolutionConfig()
     _validate_types(
         data,
-        {"max_generations": int, "max_children_per_generation": int},
+        {"max_generations": int, "max_children_per_generation": int, "max_total_trials": int},
         "evolution",
     )
     return EvolutionConfig(
         max_generations=data.get("max_generations", 10),
         max_children_per_generation=data.get("max_children_per_generation", 10),
+        max_total_trials=data.get("max_total_trials"),
     )
 
 
