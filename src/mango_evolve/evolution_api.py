@@ -6,8 +6,11 @@ Provides the core API exposed to the Root LLM for controlling the evolution proc
 
 import multiprocessing
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from typing import Any, Protocol
+from dataclasses import asdict, dataclass, field
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 from tqdm import tqdm
 
@@ -76,6 +79,197 @@ class TrialResult:
             "model_alias": self.model_alias,
             "model_config": self.model_config,
         }
+
+
+@dataclass
+class TrialView:
+    """Read-only view of a trial for REPL access.
+
+    This provides a convenient interface for the Root LLM to query and analyze
+    trials in the REPL environment.
+    """
+
+    trial_id: str
+    code: str
+    score: float  # Convenience: metrics.get("score", 0) if valid else 0
+    success: bool
+    generation: int
+    parent_id: str | None
+    reasoning: str
+    error: str | None
+    model_alias: str | None
+    metrics: dict[str, Any]  # Full metrics dict
+
+    @classmethod
+    def from_trial_result(cls, trial: "TrialResult") -> "Self":
+        """Create from internal TrialResult."""
+        score = trial.metrics.get("score", 0) if trial.success else 0
+        return cls(
+            trial_id=trial.trial_id,
+            code=trial.code,
+            score=score,
+            success=trial.success,
+            generation=trial.generation,
+            parent_id=trial.parent_id,
+            reasoning=trial.reasoning,
+            error=trial.error,
+            model_alias=trial.model_alias,
+            metrics=trial.metrics,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for backward compatibility."""
+        return asdict(self)
+
+    def __repr__(self) -> str:
+        status = "✓" if self.success else "✗"
+        return f"<Trial {self.trial_id} [{status}] score={self.score:.6f}>"
+
+
+class TrialsProxy:
+    """Read-only queryable view of all trials, injected into REPL.
+
+    Provides convenient access to trials with filtering capabilities.
+    """
+
+    def __init__(self, api: "EvolutionAPI"):
+        self._api = api
+
+    def __len__(self) -> int:
+        return len(self._api.all_trials)
+
+    def __iter__(self):
+        for trial in self._api.all_trials.values():
+            yield TrialView.from_trial_result(trial)
+
+    def __getitem__(self, trial_id: str) -> TrialView:
+        trial = self._api.all_trials.get(trial_id)
+        if trial is None:
+            raise KeyError(f"Trial {trial_id} not found")
+        return TrialView.from_trial_result(trial)
+
+    def __contains__(self, trial_id: str) -> bool:
+        return trial_id in self._api.all_trials
+
+    def filter(
+        self,
+        *,
+        # Direct attribute filters
+        success: bool | None = None,
+        generation: int | None = None,
+        parent_id: str | None = None,
+        model_alias: str | None = None,
+        # Lineage filters
+        ancestor_of: str | None = None,  # Find trials that are ancestors of this trial
+        descendant_of: str | None = None,  # Find trials that descend from this trial
+        # Custom predicate (lambda)
+        predicate: Callable[[TrialView], bool] | None = None,
+        # Sorting and limiting
+        sort_by: str | None = None,  # "score", "-score" (descending), "generation", etc.
+        limit: int | None = None,
+    ) -> list[TrialView]:
+        """
+        Filter trials by various criteria.
+
+        Examples:
+            # Top 5 by score
+            trials.filter(success=True, sort_by="-score", limit=5)
+
+            # All from generation 2
+            trials.filter(generation=2)
+
+            # Custom predicate
+            trials.filter(predicate=lambda t: t.score > 2.4 and "grid" in t.reasoning)
+
+            # All descendants of a trial
+            trials.filter(descendant_of="trial_0_3")
+
+            # Combined filters
+            trials.filter(success=True, generation=1, sort_by="-score", limit=3)
+
+        Args:
+            success: Filter by success/failure
+            generation: Filter by generation number
+            parent_id: Filter by direct parent
+            model_alias: Filter by child LLM model
+            descendant_of: Find all trials descending from this trial
+            ancestor_of: Find all ancestors of this trial
+            predicate: Custom filter function
+            sort_by: Sort field ("-score" for descending)
+            limit: Max results to return
+
+        Returns:
+            List of TrialView objects matching the criteria
+        """
+        # Build set of descendant/ancestor trial IDs if needed
+        descendant_ids: set[str] | None = None
+        if descendant_of is not None:
+            descendant_ids = self._get_all_descendant_ids(descendant_of)
+
+        ancestor_ids: set[str] | None = None
+        if ancestor_of is not None:
+            ancestor_ids = self._get_all_ancestor_ids(ancestor_of)
+
+        results = []
+        for trial in self._api.all_trials.values():
+            # Apply direct attribute filters
+            if success is not None and trial.success != success:
+                continue
+            if generation is not None and trial.generation != generation:
+                continue
+            if parent_id is not None and trial.parent_id != parent_id:
+                continue
+            if model_alias is not None and trial.model_alias != model_alias:
+                continue
+
+            # Apply lineage filters
+            if descendant_ids is not None and trial.trial_id not in descendant_ids:
+                continue
+            if ancestor_ids is not None and trial.trial_id not in ancestor_ids:
+                continue
+
+            view = TrialView.from_trial_result(trial)
+
+            # Apply custom predicate
+            if predicate is not None and not predicate(view):
+                continue
+
+            results.append(view)
+
+        # Apply sorting
+        if sort_by is not None:
+            descending = sort_by.startswith("-")
+            field_name = sort_by.lstrip("-")
+            results.sort(key=lambda t: getattr(t, field_name, 0), reverse=descending)
+
+        # Apply limit
+        if limit is not None:
+            results = results[:limit]
+
+        return results
+
+    def _get_all_descendant_ids(self, trial_id: str) -> set[str]:
+        """Get all trial IDs that descend from the given trial (recursive)."""
+        descendants: set[str] = set()
+        for trial in self._api.all_trials.values():
+            if trial.parent_id == trial_id:
+                descendants.add(trial.trial_id)
+                descendants.update(self._get_all_descendant_ids(trial.trial_id))
+        return descendants
+
+    def _get_all_ancestor_ids(self, trial_id: str) -> set[str]:
+        """Get all trial IDs that are ancestors of the given trial."""
+        ancestors: set[str] = set()
+        trial = self._api.all_trials.get(trial_id)
+        while trial and trial.parent_id:
+            ancestors.add(trial.parent_id)
+            trial = self._api.all_trials.get(trial.parent_id)
+        return ancestors
+
+    def __repr__(self) -> str:
+        total = len(self)
+        success = sum(1 for t in self._api.all_trials.values() if t.success)
+        return f"<Trials: {total} total, {success} successful>"
 
 
 @dataclass
@@ -249,7 +443,7 @@ class EvolutionAPI:
         parent_id: str | None = None,
         model: str | None = None,
         temperature: float = 0.7,
-    ) -> dict[str, Any]:
+    ) -> TrialView:
         """
         Spawn a child LLM to generate a program.
 
@@ -264,16 +458,19 @@ class EvolutionAPI:
             temperature: Sampling temperature (default 0.7)
 
         Returns:
-            Dictionary with trial result:
-            {
-                'trial_id': str,
-                'code': str,
-                'metrics': dict,
-                'reasoning': str,
-                'success': bool,
-                'error': Optional[str],
-                'model_alias': str
-            }
+            TrialView object with trial result containing:
+            - trial_id: str
+            - code: str
+            - score: float
+            - success: bool
+            - generation: int
+            - parent_id: str | None
+            - reasoning: str
+            - error: str | None
+            - model_alias: str | None
+            - metrics: dict
+
+            Use .to_dict() for backward compatibility if dict format is needed.
 
         Raises:
             ChildrenLimitError: If max_children_per_generation limit is reached
@@ -372,7 +569,7 @@ class EvolutionAPI:
                 model_config=model_config,
             )
             self._record_trial(trial)
-            return trial.to_dict()
+            return TrialView.from_trial_result(trial)
 
         # Extract code from response
         code = extract_python_code(response_text)
@@ -395,7 +592,7 @@ class EvolutionAPI:
                 model_config=model_config,
             )
             self._record_trial(trial)
-            return trial.to_dict()
+            return TrialView.from_trial_result(trial)
 
         # Evaluate the code
         try:
@@ -427,7 +624,7 @@ class EvolutionAPI:
         )
 
         self._record_trial(trial)
-        return trial.to_dict()
+        return TrialView.from_trial_result(trial)
 
     def _record_trial(self, trial: TrialResult, skip_file_write: bool = False) -> None:
         """Record a trial in the current generation and log it.
@@ -477,7 +674,7 @@ class EvolutionAPI:
         self,
         children: list[dict[str, Any]],
         num_workers: int | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[TrialView]:
         """
         Spawn multiple child LLMs in parallel using multiprocessing.
 
@@ -493,7 +690,8 @@ class EvolutionAPI:
             num_workers: Number of parallel workers (defaults to number of children)
 
         Returns:
-            List of dictionaries with trial results (same format as spawn_child_llm)
+            List of TrialView objects with trial results (same format as spawn_child_llm).
+            Use .to_dict() on each for backward compatibility if dict format is needed.
 
         Raises:
             ChildrenLimitError: If spawning would exceed max_children_per_generation
@@ -646,7 +844,7 @@ class EvolutionAPI:
             )
 
             self._record_trial(trial, skip_file_write=True)
-            results_by_trial_id[trial_id] = trial.to_dict()
+            results_by_trial_id[trial_id] = TrialView.from_trial_result(trial)
 
         # Return results in original order (by trial_id which preserves input order)
         results = [results_by_trial_id[trial_ids[i]] for i in range(len(children))]
@@ -1230,3 +1428,18 @@ class EvolutionAPI:
             "end_calibration_phase": self.end_calibration_phase,
             "get_calibration_status": self.get_calibration_status,
         }
+
+    def get_repl_namespace(self) -> dict[str, Any]:
+        """
+        Get functions AND variables to inject into the REPL namespace.
+
+        This extends get_api_functions() to also include the `trials` variable
+        for direct access to trial data in the REPL.
+
+        Returns:
+            Dictionary mapping names to callables or values to inject
+        """
+        namespace = self.get_api_functions()
+        # Add the trials variable (TrialsProxy)
+        namespace["trials"] = TrialsProxy(self)
+        return namespace

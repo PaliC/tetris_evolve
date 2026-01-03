@@ -86,16 +86,17 @@ class TestSpawnChildLLM:
     """Tests for spawn_child_llm."""
 
     def test_spawn_returns_result(self, evolution_api):
-        """Test that spawn returns a trial result."""
+        """Test that spawn returns a TrialView result."""
         result = evolution_api.spawn_child_llm(
             prompt="Generate a circle packing algorithm",
         )
 
-        assert "trial_id" in result
-        assert "code" in result
-        assert "metrics" in result
-        assert "success" in result
-        assert result["trial_id"].startswith("trial_0_")
+        # Result is now a TrialView object
+        assert hasattr(result, "trial_id")
+        assert hasattr(result, "code")
+        assert hasattr(result, "metrics")
+        assert hasattr(result, "success")
+        assert result.trial_id.startswith("trial_0_")
 
     def test_spawn_with_parent(self, evolution_api):
         """Test spawning with parent ID."""
@@ -104,7 +105,7 @@ class TestSpawnChildLLM:
             parent_id="trial_0_0",
         )
 
-        assert result["parent_id"] == "trial_0_0"
+        assert result.parent_id == "trial_0_0"
 
     def test_spawn_records_trial(self, evolution_api):
         """Test that spawn records the trial."""
@@ -112,7 +113,7 @@ class TestSpawnChildLLM:
             prompt="Generate algorithm",
         )
 
-        assert result["trial_id"] in evolution_api.all_trials
+        assert result.trial_id in evolution_api.all_trials
         assert len(evolution_api.generations[0].trials) == 1
 
     def test_spawn_evaluates_code(self, evolution_api, mock_evaluator):
@@ -150,8 +151,8 @@ class TestSpawnChildLLM:
 
         result = api.spawn_child_llm(prompt="Test")
 
-        assert result["success"] is False
-        assert "No Python code block" in result["error"]
+        assert result.success is False
+        assert "No Python code block" in result.error
 
     def test_spawn_budget_exceeded(self, evolution_api):
         """Test that spawn raises on budget exceeded."""

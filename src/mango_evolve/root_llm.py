@@ -144,8 +144,8 @@ class RootLLMOrchestrator:
             evaluator_kwargs=evaluator_kwargs,
         )
 
-        # Initialize REPL with Evolution API functions
-        self.repl = REPLEnvironment(api_functions=self.evolution_api.get_api_functions())
+        # Initialize REPL with Evolution API namespace (functions + variables like `trials`)
+        self.repl = REPLEnvironment(namespace=self.evolution_api.get_repl_namespace())
 
         # Conversation state
         self.messages: list[dict[str, str]] = []

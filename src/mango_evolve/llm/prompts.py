@@ -134,6 +134,62 @@ print(compute_score_stats(generation_bests))
 Available modules: math, random, json, numpy, scipy, collections, itertools, functools, statistics
 Functions and variables you define persist across all generations within this run.
 
+## REPL Variables
+
+### `trials` - Query all trials
+A live view of all trials across all generations. Use this for flexible analysis.
+
+**Basic access:**
+```python
+trials["trial_0_5"]  # Get specific trial by ID
+len(trials)          # Total trial count
+for t in trials: ... # Iterate all trials
+"trial_0_5" in trials  # Check if trial exists
+```
+
+**Filtering with `trials.filter()`:**
+```python
+# Top 5 by score
+trials.filter(success=True, sort_by="-score", limit=5)
+
+# All from generation 2
+trials.filter(generation=2)
+
+# Custom predicate (lambda)
+trials.filter(predicate=lambda t: t.score > 2.4 and "grid" in t.reasoning)
+
+# All descendants of a trial
+trials.filter(descendant_of="trial_0_3")
+
+# All ancestors of a trial
+trials.filter(ancestor_of="trial_2_5")
+
+# Combined: top 3 successful from gen 1
+trials.filter(success=True, generation=1, sort_by="-score", limit=3)
+
+# Filter by model
+trials.filter(model_alias="fast", success=True)
+```
+
+**Filter parameters:**
+- `success`: bool - Filter by success/failure
+- `generation`: int - Filter by generation number
+- `parent_id`: str - Filter by direct parent
+- `model_alias`: str - Filter by child LLM model
+- `descendant_of`: str - All trials descending from this trial
+- `ancestor_of`: str - All ancestors of this trial
+- `predicate`: lambda - Custom filter function
+- `sort_by`: str - Sort field ("-score" for descending)
+- `limit`: int - Max results to return
+
+**Trial attributes:**
+`.trial_id`, `.code`, `.score`, `.success`, `.generation`,
+`.parent_id`, `.reasoning`, `.error`, `.model_alias`, `.metrics`
+
+**Return values from spawn functions:**
+`spawn_child_llm()` and `spawn_children_parallel()` return TrialView objects
+(same attributes as above). Use `.to_dict()` if you need dict format.
+
 ## Guidelines
 
 **You have full control**: Craft prompts however you see fit - be as specific or open-ended as you want. You're the orchestrator.
