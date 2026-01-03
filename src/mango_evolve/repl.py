@@ -144,23 +144,36 @@ class REPLEnvironment:
     - Restricted imports
     - State persistence between executions
     - stdout/stderr capture
-    - Optional Evolution API injection
+    - Optional Evolution API injection (functions and variables)
     """
 
-    def __init__(self, api_functions: dict[str, Callable] | None = None):
+    def __init__(
+        self,
+        namespace: dict[str, Any] | None = None,
+        api_functions: dict[str, Callable] | None = None,  # Backward compat
+    ):
         """
         Initialize the REPL environment.
 
         Args:
-            api_functions: Optional dictionary of functions to inject into the namespace
+            namespace: Optional dictionary of functions and variables to inject.
+                       This includes both API functions (spawn_children, etc.)
+                       and variables (trials, etc.).
+            api_functions: Deprecated - use namespace instead. Kept for backward
+                          compatibility.
         """
         self.globals = self._create_safe_globals()
         self.locals: dict[str, Any] = {}
-        self._api_functions = api_functions or {}
 
-        # Inject API functions into globals
-        for name, func in self._api_functions.items():
-            self.globals[name] = func
+        # Handle backward compatibility: api_functions is deprecated alias
+        if api_functions is not None and namespace is None:
+            namespace = api_functions
+
+        self._namespace = namespace or {}
+
+        # Inject namespace items (functions and variables) into globals
+        for name, value in self._namespace.items():
+            self.globals[name] = value
 
     def _create_safe_globals(self) -> dict[str, Any]:
         """Create the globals dictionary with safe builtins."""
@@ -173,6 +186,17 @@ class REPLEnvironment:
             "__doc__": None,
         }
 
+    def inject(self, name: str, value: Any) -> None:
+        """
+        Inject a function or variable into the REPL namespace.
+
+        Args:
+            name: Name to use in the namespace
+            value: The function or value to inject
+        """
+        self._namespace[name] = value
+        self.globals[name] = value
+
     def inject_function(self, name: str, func: Callable) -> None:
         """
         Inject a function into the REPL namespace.
@@ -180,9 +204,20 @@ class REPLEnvironment:
         Args:
             name: Name to use in the namespace
             func: The function to inject
+
+        Note: This is an alias for inject() for backward compatibility.
         """
-        self._api_functions[name] = func
-        self.globals[name] = func
+        self.inject(name, func)
+
+    def remove(self, name: str) -> None:
+        """
+        Remove a function or variable from the REPL namespace.
+
+        Args:
+            name: Name of the item to remove
+        """
+        self._namespace.pop(name, None)
+        self.globals.pop(name, None)
 
     def remove_function(self, name: str) -> None:
         """
@@ -190,9 +225,10 @@ class REPLEnvironment:
 
         Args:
             name: Name of the function to remove
+
+        Note: This is an alias for remove() for backward compatibility.
         """
-        self._api_functions.pop(name, None)
-        self.globals.pop(name, None)
+        self.remove(name)
 
     def execute(self, code: str) -> REPLResult:
         """
@@ -246,9 +282,9 @@ class REPLEnvironment:
         self.locals.clear()
         self.globals = self._create_safe_globals()
 
-        # Re-inject API functions
-        for name, func in self._api_functions.items():
-            self.globals[name] = func
+        # Re-inject namespace items (functions and variables)
+        for name, value in self._namespace.items():
+            self.globals[name] = value
 
     def get_state(self) -> dict[str, Any]:
         """

@@ -6,8 +6,11 @@ Provides the core API exposed to the Root LLM for controlling the evolution proc
 
 import multiprocessing
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from typing import Any, Protocol
+from dataclasses import asdict, dataclass, field
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 from tqdm import tqdm
 
@@ -76,6 +79,197 @@ class TrialResult:
             "model_alias": self.model_alias,
             "model_config": self.model_config,
         }
+
+
+@dataclass
+class TrialView:
+    """Read-only view of a trial for REPL access.
+
+    This provides a convenient interface for the Root LLM to query and analyze
+    trials in the REPL environment.
+    """
+
+    trial_id: str
+    code: str
+    score: float  # Convenience: metrics.get("score", 0) if valid else 0
+    success: bool
+    generation: int
+    parent_id: str | None
+    reasoning: str
+    error: str | None
+    model_alias: str | None
+    metrics: dict[str, Any]  # Full metrics dict
+
+    @classmethod
+    def from_trial_result(cls, trial: "TrialResult") -> "Self":
+        """Create from internal TrialResult."""
+        score = trial.metrics.get("score", 0) if trial.success else 0
+        return cls(
+            trial_id=trial.trial_id,
+            code=trial.code,
+            score=score,
+            success=trial.success,
+            generation=trial.generation,
+            parent_id=trial.parent_id,
+            reasoning=trial.reasoning,
+            error=trial.error,
+            model_alias=trial.model_alias,
+            metrics=trial.metrics,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for backward compatibility."""
+        return asdict(self)
+
+    def __repr__(self) -> str:
+        status = "✓" if self.success else "✗"
+        return f"<Trial {self.trial_id} [{status}] score={self.score:.6f}>"
+
+
+class TrialsProxy:
+    """Read-only queryable view of all trials, injected into REPL.
+
+    Provides convenient access to trials with filtering capabilities.
+    """
+
+    def __init__(self, api: "EvolutionAPI"):
+        self._api = api
+
+    def __len__(self) -> int:
+        return len(self._api.all_trials)
+
+    def __iter__(self):
+        for trial in self._api.all_trials.values():
+            yield TrialView.from_trial_result(trial)
+
+    def __getitem__(self, trial_id: str) -> TrialView:
+        trial = self._api.all_trials.get(trial_id)
+        if trial is None:
+            raise KeyError(f"Trial {trial_id} not found")
+        return TrialView.from_trial_result(trial)
+
+    def __contains__(self, trial_id: str) -> bool:
+        return trial_id in self._api.all_trials
+
+    def filter(
+        self,
+        *,
+        # Direct attribute filters
+        success: bool | None = None,
+        generation: int | None = None,
+        parent_id: str | None = None,
+        model_alias: str | None = None,
+        # Lineage filters
+        ancestor_of: str | None = None,  # Find trials that are ancestors of this trial
+        descendant_of: str | None = None,  # Find trials that descend from this trial
+        # Custom predicate (lambda)
+        predicate: Callable[[TrialView], bool] | None = None,
+        # Sorting and limiting
+        sort_by: str | None = None,  # "score", "-score" (descending), "generation", etc.
+        limit: int | None = None,
+    ) -> list[TrialView]:
+        """
+        Filter trials by various criteria.
+
+        Examples:
+            # Top 5 by score
+            trials.filter(success=True, sort_by="-score", limit=5)
+
+            # All from generation 2
+            trials.filter(generation=2)
+
+            # Custom predicate
+            trials.filter(predicate=lambda t: t.score > 2.4 and "grid" in t.reasoning)
+
+            # All descendants of a trial
+            trials.filter(descendant_of="trial_0_3")
+
+            # Combined filters
+            trials.filter(success=True, generation=1, sort_by="-score", limit=3)
+
+        Args:
+            success: Filter by success/failure
+            generation: Filter by generation number
+            parent_id: Filter by direct parent
+            model_alias: Filter by child LLM model
+            descendant_of: Find all trials descending from this trial
+            ancestor_of: Find all ancestors of this trial
+            predicate: Custom filter function
+            sort_by: Sort field ("-score" for descending)
+            limit: Max results to return
+
+        Returns:
+            List of TrialView objects matching the criteria
+        """
+        # Build set of descendant/ancestor trial IDs if needed
+        descendant_ids: set[str] | None = None
+        if descendant_of is not None:
+            descendant_ids = self._get_all_descendant_ids(descendant_of)
+
+        ancestor_ids: set[str] | None = None
+        if ancestor_of is not None:
+            ancestor_ids = self._get_all_ancestor_ids(ancestor_of)
+
+        results = []
+        for trial in self._api.all_trials.values():
+            # Apply direct attribute filters
+            if success is not None and trial.success != success:
+                continue
+            if generation is not None and trial.generation != generation:
+                continue
+            if parent_id is not None and trial.parent_id != parent_id:
+                continue
+            if model_alias is not None and trial.model_alias != model_alias:
+                continue
+
+            # Apply lineage filters
+            if descendant_ids is not None and trial.trial_id not in descendant_ids:
+                continue
+            if ancestor_ids is not None and trial.trial_id not in ancestor_ids:
+                continue
+
+            view = TrialView.from_trial_result(trial)
+
+            # Apply custom predicate
+            if predicate is not None and not predicate(view):
+                continue
+
+            results.append(view)
+
+        # Apply sorting
+        if sort_by is not None:
+            descending = sort_by.startswith("-")
+            field_name = sort_by.lstrip("-")
+            results.sort(key=lambda t: getattr(t, field_name, 0), reverse=descending)
+
+        # Apply limit
+        if limit is not None:
+            results = results[:limit]
+
+        return results
+
+    def _get_all_descendant_ids(self, trial_id: str) -> set[str]:
+        """Get all trial IDs that descend from the given trial (recursive)."""
+        descendants: set[str] = set()
+        for trial in self._api.all_trials.values():
+            if trial.parent_id == trial_id:
+                descendants.add(trial.trial_id)
+                descendants.update(self._get_all_descendant_ids(trial.trial_id))
+        return descendants
+
+    def _get_all_ancestor_ids(self, trial_id: str) -> set[str]:
+        """Get all trial IDs that are ancestors of the given trial."""
+        ancestors: set[str] = set()
+        trial = self._api.all_trials.get(trial_id)
+        while trial and trial.parent_id:
+            ancestors.add(trial.parent_id)
+            trial = self._api.all_trials.get(trial.parent_id)
+        return ancestors
+
+    def __repr__(self) -> str:
+        total = len(self)
+        success = sum(1 for t in self._api.all_trials.values() if t.success)
+        return f"<Trials: {total} total, {success} successful>"
 
 
 @dataclass
@@ -243,192 +437,6 @@ class EvolutionAPI:
             )
         return self.child_llm_clients[alias]
 
-    def spawn_child_llm(
-        self,
-        prompt: str,
-        parent_id: str | None = None,
-        model: str | None = None,
-        temperature: float = 0.7,
-    ) -> dict[str, Any]:
-        """
-        Spawn a child LLM to generate a program.
-
-        The prompt should be the complete prompt to send to the child LLM.
-        The Root LLM is responsible for crafting the full prompt including
-        problem specification, constraints, and parent code if mutating.
-
-        Args:
-            prompt: Complete prompt to send to the child LLM
-            parent_id: Optional trial ID of parent (for mutation tracking)
-            model: Alias of the child LLM to use (from config). If None, uses default.
-            temperature: Sampling temperature (default 0.7)
-
-        Returns:
-            Dictionary with trial result:
-            {
-                'trial_id': str,
-                'code': str,
-                'metrics': dict,
-                'reasoning': str,
-                'success': bool,
-                'error': Optional[str],
-                'model_alias': str
-            }
-
-        Raises:
-            ChildrenLimitError: If max_children_per_generation limit is reached
-            CalibrationBudgetError: If in calibration phase and budget exhausted for model
-        """
-        # Resolve model alias
-        model_alias = self._resolve_model_alias(model)
-
-        # Check calibration budget if in calibration phase
-        if self.in_calibration_phase:
-            if self.calibration_calls_remaining[model_alias] <= 0:
-                raise CalibrationBudgetError(
-                    f"Calibration budget exhausted for model '{model_alias}'. "
-                    f"Remaining calls: {self.calibration_calls_remaining}. "
-                    "Use a different model or call end_calibration_phase()."
-                )
-            self.calibration_calls_remaining[model_alias] -= 1
-
-        # Check budget
-        self.cost_tracker.raise_if_over_budget()
-
-        # Determine trial generation (-1 for calibration, else current_generation)
-        trial_generation = -1 if self.in_calibration_phase else self.current_generation
-
-        # Check children limit (only during evolution, not calibration)
-        if not self.in_calibration_phase:
-            trial_num = len(self.generations[self.current_generation].trials)
-            if trial_num >= self.max_children_per_generation:
-                raise ChildrenLimitError(
-                    f"Cannot spawn more children in generation {self.current_generation}. "
-                    f"Limit of {self.max_children_per_generation} children reached."
-                )
-        else:
-            # During calibration, use a separate counter
-            trial_num = len([t for t in self.all_trials.values() if t.generation == -1])
-
-        # Generate trial ID
-        trial_id = f"trial_{trial_generation}_{trial_num}"
-
-        # Show progress for child LLM spawn
-        phase_str = "calibration" if self.in_calibration_phase else f"gen {self.current_generation}"
-        tqdm.write(
-            f"  └─ Spawning child LLM ({model_alias}): {phase_str}, "
-            f"trial {trial_num + 1}"
-            + (f" (parent: {parent_id})" if parent_id else "")
-            + f" [temp={temperature}]"
-        )
-
-        # Substitute {{CODE_TRIAL_X_Y}} tokens with actual code
-        substituted_prompt, substitution_report = substitute_trial_codes(
-            prompt,
-            all_trials=self.all_trials,
-            experiment_dir=str(self.logger.base_dir),
-        )
-        if substitution_report:
-            for sub in substitution_report:
-                if sub["success"]:
-                    tqdm.write(
-                        f"       → Substituted {sub['token']} with code from {sub['trial_id']}"
-                    )
-                else:
-                    tqdm.write(f"       ⚠ Failed to substitute {sub['token']}: {sub['error']}")
-
-        # Get or create LLM client for this model
-        child_llm = self._get_or_create_child_llm_client(model_alias)
-
-        # Build model config for trial metadata
-        config = self.child_llm_configs[model_alias]
-        model_config = {
-            "model": config.model,
-            "temperature": temperature,
-        }
-
-        # Call child LLM
-        try:
-            response = child_llm.generate(
-                messages=[{"role": "user", "content": substituted_prompt}],
-                max_tokens=4096,
-                temperature=temperature,
-            )
-            response_text = response.content
-        except Exception as e:
-            # LLM call failed
-            trial = TrialResult(
-                trial_id=trial_id,
-                code="",
-                metrics={},
-                prompt=substituted_prompt,
-                response="",
-                reasoning="",
-                success=False,
-                parent_id=parent_id,
-                error=f"LLM call failed: {str(e)}",
-                generation=trial_generation,
-                model_alias=model_alias,
-                model_config=model_config,
-            )
-            self._record_trial(trial)
-            return trial.to_dict()
-
-        # Extract code from response
-        code = extract_python_code(response_text)
-        reasoning = extract_reasoning(response_text)
-
-        if not code:
-            # No code found in response
-            trial = TrialResult(
-                trial_id=trial_id,
-                code="",
-                metrics={},
-                prompt=substituted_prompt,
-                response=response_text,
-                reasoning=reasoning,
-                success=False,
-                parent_id=parent_id,
-                error="No Python code block found in response",
-                generation=trial_generation,
-                model_alias=model_alias,
-                model_config=model_config,
-            )
-            self._record_trial(trial)
-            return trial.to_dict()
-
-        # Evaluate the code
-        try:
-            metrics = self.evaluator.evaluate(code)
-        except Exception as e:
-            metrics = {
-                "valid": False,
-                "error": f"Evaluation error: {str(e)}",
-            }
-
-        # Determine success
-        success = bool(metrics.get("valid", False))
-        error_value = metrics.get("error") if not success else None
-        error_msg = str(error_value) if error_value is not None else None
-
-        trial = TrialResult(
-            trial_id=trial_id,
-            code=code,
-            metrics=metrics,
-            prompt=substituted_prompt,
-            response=response_text,
-            reasoning=reasoning,
-            success=success,
-            parent_id=parent_id,
-            error=error_msg,
-            generation=trial_generation,
-            model_alias=model_alias,
-            model_config=model_config,
-        )
-
-        self._record_trial(trial)
-        return trial.to_dict()
-
     def _record_trial(self, trial: TrialResult, skip_file_write: bool = False) -> None:
         """Record a trial in the current generation and log it.
 
@@ -473,16 +481,15 @@ class EvolutionAPI:
                 model_config=trial.model_config,
             )
 
-    def spawn_children_parallel(
+    def spawn_children(
         self,
         children: list[dict[str, Any]],
         num_workers: int | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[TrialView]:
         """
-        Spawn multiple child LLMs in parallel using multiprocessing.
+        Spawn child LLMs in parallel using multiprocessing.
 
         Each child LLM call and its evaluation runs in a separate process.
-        This significantly speeds up evolution when spawning multiple children.
 
         Args:
             children: List of dicts with keys:
@@ -493,7 +500,8 @@ class EvolutionAPI:
             num_workers: Number of parallel workers (defaults to number of children)
 
         Returns:
-            List of dictionaries with trial results (same format as spawn_child_llm)
+            List of TrialView objects with trial results.
+            Use .to_dict() on each for backward compatibility if dict format is needed.
 
         Raises:
             ChildrenLimitError: If spawning would exceed max_children_per_generation
@@ -646,7 +654,7 @@ class EvolutionAPI:
             )
 
             self._record_trial(trial, skip_file_write=True)
-            results_by_trial_id[trial_id] = trial.to_dict()
+            results_by_trial_id[trial_id] = TrialView.from_trial_result(trial)
 
         # Return results in original order (by trial_id which preserves input order)
         results = [results_by_trial_id[trial_ids[i]] for i in range(len(children))]
@@ -958,38 +966,6 @@ class EvolutionAPI:
             )
         return summaries
 
-    def get_trial_code(self, trial_ids: list[str]) -> dict[str, str | None]:
-        """
-        Retrieve the code for specific trials by their IDs.
-
-        This function allows the Root LLM to fetch code from previous trials
-        on demand, rather than having all code included in feedback messages.
-        Use this when you need to inspect or analyze specific trial code.
-
-        For including code in child LLM prompts, prefer using the {{CODE_TRIAL_X_Y}}
-        token syntax which automatically substitutes the code.
-
-        Args:
-            trial_ids: List of trial IDs to retrieve code for.
-                      Example: ["trial_0_3", "trial_1_2", "trial_2_5"]
-
-        Returns:
-            Dictionary mapping trial_id to code string (or None if not found).
-            Example: {
-                "trial_0_3": "import numpy as np\\n...",
-                "trial_1_2": None,  # Not found
-                "trial_2_5": "import numpy as np\\n..."
-            }
-        """
-        result: dict[str, str | None] = {}
-        for trial_id in trial_ids:
-            trial = self.all_trials.get(trial_id)
-            if trial:
-                result[trial_id] = trial.code
-            else:
-                result[trial_id] = None
-        return result
-
     def _get_current_generation(self) -> int:
         """Get the current generation number (internal method)."""
         return self.current_generation
@@ -1204,12 +1180,10 @@ class EvolutionAPI:
         Get a dictionary of API functions to inject into the REPL.
 
         Core evolution functions exposed:
-        - spawn_child_llm: Generate new programs via child LLM (sequential)
-        - spawn_children_parallel: Generate multiple programs in parallel
+        - spawn_children: Generate multiple programs in parallel
         - evaluate_program: Evaluate code directly
         - terminate_evolution: End the evolution process
         - get_top_trials: Retrieve top trials across history (summary)
-        - get_trial_code: Retrieve code from specific trials on demand
         - update_scratchpad: Update persistent notes across generations
         - end_calibration_phase: End calibration and start evolution
         - get_calibration_status: Check calibration phase status
@@ -1220,13 +1194,26 @@ class EvolutionAPI:
             Dictionary mapping function names to callables
         """
         return {
-            "spawn_child_llm": self.spawn_child_llm,
-            "spawn_children_parallel": self.spawn_children_parallel,
+            "spawn_children": self.spawn_children,
             "evaluate_program": self.evaluate_program,
             "terminate_evolution": self.terminate_evolution,
             "get_top_trials": self.get_top_trials,
-            "get_trial_code": self.get_trial_code,
             "update_scratchpad": self.update_scratchpad,
             "end_calibration_phase": self.end_calibration_phase,
             "get_calibration_status": self.get_calibration_status,
         }
+
+    def get_repl_namespace(self) -> dict[str, Any]:
+        """
+        Get functions AND variables to inject into the REPL namespace.
+
+        This extends get_api_functions() to also include the `trials` variable
+        for direct access to trial data in the REPL.
+
+        Returns:
+            Dictionary mapping names to callables or values to inject
+        """
+        namespace = self.get_api_functions()
+        # Add the trials variable (TrialsProxy)
+        namespace["trials"] = TrialsProxy(self)
+        return namespace

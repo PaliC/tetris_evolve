@@ -11,7 +11,6 @@ from mango_evolve.evolution_api import TrialResult
 from mango_evolve.utils.prompt_substitution import (
     TRIAL_CODE_PATTERN,
     find_trial_code_tokens,
-    get_trial_code,
     load_trial_code_from_disk,
     substitute_trial_codes,
     substitute_trial_codes_batch,
@@ -150,77 +149,6 @@ class TestLoadTrialCodeFromDisk:
 
         assert load_trial_code_from_disk("trial_0_1", temp_dir) == "gen0_code"
         assert load_trial_code_from_disk("trial_1_2", temp_dir) == "gen1_code"
-
-
-class TestGetTrialCode:
-    """Tests for get_trial_code function."""
-
-    def test_gets_from_memory_first(self, temp_dir):
-        """Test that memory is checked before disk."""
-        # Create a trial in memory
-        trial = TrialResult(
-            trial_id="trial_0_1",
-            code="memory_code",
-            metrics={},
-            prompt="",
-            response="",
-            reasoning="",
-            success=True,
-            generation=0,
-        )
-        all_trials = {"trial_0_1": trial}
-
-        # Also create on disk with different code
-        gen_dir = temp_dir / "generations" / "gen_0"
-        gen_dir.mkdir(parents=True)
-        with open(gen_dir / "trial_0_1.json", "w") as f:
-            json.dump({"code": "disk_code"}, f)
-
-        # Should get memory version
-        code = get_trial_code("trial_0_1", all_trials, temp_dir)
-        assert code == "memory_code"
-
-    def test_falls_back_to_disk(self, temp_dir):
-        """Test that disk is used when not in memory."""
-        gen_dir = temp_dir / "generations" / "gen_0"
-        gen_dir.mkdir(parents=True)
-        with open(gen_dir / "trial_0_2.json", "w") as f:
-            json.dump({"code": "disk_code"}, f)
-
-        code = get_trial_code("trial_0_2", all_trials={}, experiment_dir=temp_dir)
-        assert code == "disk_code"
-
-    def test_returns_none_when_not_found(self, temp_dir):
-        """Test that None is returned when trial not found anywhere."""
-        code = get_trial_code("trial_99_99", all_trials={}, experiment_dir=temp_dir)
-        assert code is None
-
-    def test_works_with_none_parameters(self):
-        """Test that function works when parameters are None."""
-        code = get_trial_code("trial_0_0", all_trials=None, experiment_dir=None)
-        assert code is None
-
-    def test_memory_with_empty_code_falls_to_disk(self, temp_dir):
-        """Test that empty code in memory falls back to disk."""
-        trial = TrialResult(
-            trial_id="trial_0_1",
-            code="",  # Empty code
-            metrics={},
-            prompt="",
-            response="",
-            reasoning="",
-            success=False,
-            generation=0,
-        )
-        all_trials = {"trial_0_1": trial}
-
-        gen_dir = temp_dir / "generations" / "gen_0"
-        gen_dir.mkdir(parents=True)
-        with open(gen_dir / "trial_0_1.json", "w") as f:
-            json.dump({"code": "disk_code"}, f)
-
-        code = get_trial_code("trial_0_1", all_trials, temp_dir)
-        assert code == "disk_code"
 
 
 class TestSubstituteTrialCodes:

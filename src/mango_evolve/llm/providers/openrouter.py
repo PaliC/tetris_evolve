@@ -231,11 +231,22 @@ class OpenRouterProvider(BaseLLMProvider):
                     outcome.exception(),
                 )
             else:
+                # Empty response - log reasoning info for debugging
+                reasoning_info = ""
+                if outcome is not None:
+                    response = outcome.result()
+                    if response and response.choices:
+                        message = response.choices[0].message
+                        reasoning = getattr(message, "reasoning", None)
+                        if reasoning:
+                            reasoning_len = len(reasoning) if reasoning else 0
+                            reasoning_info = f" (has {reasoning_len} chars of reasoning)"
                 logger.warning(
-                    "Empty response from %s, retrying (attempt %d/%d)",
+                    "Empty response from %s, retrying (attempt %d/%d)%s",
                     self.model,
                     retry_state.attempt_number,
                     self.max_retries + 1,
+                    reasoning_info,
                 )
 
         # Build reasoning parameter

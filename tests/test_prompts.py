@@ -13,16 +13,15 @@ from mango_evolve.llm.prompts import (
 class TestRootSystemPrompt:
     """Tests for the Root LLM system prompt."""
 
-    def test_prompt_documents_spawn_children_parallel(self):
-        """Test that spawn_children_parallel is documented."""
+    def test_prompt_documents_spawn_children(self):
+        """Test that spawn_children is documented."""
         prompt = get_root_system_prompt()
-        assert "spawn_children_parallel" in prompt
+        assert "spawn_children" in prompt
 
     def test_prompt_documents_core_functions(self):
         """Test that core functions are documented."""
         prompt = get_root_system_prompt()
-        assert "spawn_children_parallel" in prompt
-        assert "get_trial_code" in prompt
+        assert "spawn_children" in prompt
         assert "update_scratchpad" in prompt
         assert "terminate_evolution" in prompt
 
@@ -38,11 +37,6 @@ class TestRootSystemPrompt:
         assert "terminate_evolution" in prompt
         assert "best_program" in prompt
 
-    def test_prompt_documents_get_trial_code(self):
-        """Test that get_trial_code is documented."""
-        prompt = get_root_system_prompt()
-        assert "get_trial_code" in prompt
-
     def test_prompt_documents_update_scratchpad(self):
         """Test that update_scratchpad is documented."""
         prompt = get_root_system_prompt()
@@ -54,7 +48,7 @@ class TestRootSystemPrompt:
         prompt = get_root_system_prompt()
         # These internal methods (prefixed with _) should not be listed as available functions
         assert "### _get_best_trials" not in prompt
-        assert "### _get_trial(" not in prompt  # Note: get_trial_code IS a public function
+        assert "### _get_trial(" not in prompt
         assert "### _get_generation_history" not in prompt
         assert "### _advance_generation" not in prompt
 

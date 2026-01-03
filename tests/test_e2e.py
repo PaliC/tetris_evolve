@@ -135,19 +135,20 @@ def run_packing():
 Please implement a simple but valid grid-based approach that places circles in a regular pattern.
 Return the complete code in a single Python code block."""
 
-        result = evolution_api.spawn_child_llm(prompt)
+        results = evolution_api.spawn_children([{"prompt": prompt}])
+        result = results[0]
 
-        # Verify the result structure
-        assert "trial_id" in result
-        assert "code" in result
-        assert "metrics" in result
-        assert "success" in result
+        # Verify the result structure (TrialView object)
+        assert hasattr(result, "trial_id")
+        assert hasattr(result, "code")
+        assert hasattr(result, "metrics")
+        assert hasattr(result, "success")
 
         # The code should have been extracted
-        assert len(result["code"]) > 0, "No code was extracted from LLM response"
+        assert len(result.code) > 0, "No code was extracted from LLM response"
 
         # The evaluation should have run
-        assert "valid" in result["metrics"], "Evaluation didn't produce 'valid' metric"
+        assert "valid" in result.metrics, "Evaluation didn't produce 'valid' metric"
 
         # Cost should have been tracked
         summary = cost_tracker.get_summary()
@@ -157,10 +158,10 @@ Return the complete code in a single Python code block."""
 
         # Print results for manual inspection
         print("\n--- E2E Single Trial Results ---")
-        print(f"Trial ID: {result['trial_id']}")
-        print(f"Success: {result['success']}")
-        print(f"Valid: {result['metrics'].get('valid')}")
-        print(f"Score: {result['metrics'].get('score', 0):.4f}")
+        print(f"Trial ID: {result.trial_id}")
+        print(f"Success: {result.success}")
+        print(f"Valid: {result.metrics.get('valid')}")
+        print(f"Score: {result.metrics.get('score', 0):.4f}")
         print(f"Cost: ${summary.total_cost:.6f}")
         print(f"Tokens: {summary.total_input_tokens} in / {summary.total_output_tokens} out")
 

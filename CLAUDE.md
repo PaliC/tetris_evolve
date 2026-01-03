@@ -36,7 +36,7 @@ uv run ty check
 ## Architecture
 
 ```
-Root LLM (REPL) --> spawn_child_llm() --> Child LLM --> Code
+Root LLM (REPL) --> spawn_children() --> Child LLM --> Code
       |                                               |
       |                                               v
       |                                        evaluate_program()
@@ -50,7 +50,7 @@ advance_generation() / terminate_evolution()
 ### Key Components
 
 - **Root LLM Orchestrator** (`root_llm.py`): Manages the evolution loop, executes REPL code blocks
-- **Evolution API** (`evolution_api.py`): Functions available to Root LLM (spawn_child_llm, evaluate_program, advance_generation, terminate_evolution)
+- **Evolution API** (`evolution_api.py`): Functions available to Root LLM (spawn_children, evaluate_program, terminate_evolution)
 - **REPL Environment** (`repl.py`): Python execution environment with Evolution API injected
 - **LLM Providers** (`llm/providers/`): Pluggable LLM backends - Anthropic and OpenRouter supported
 - **Evaluator** (`evaluation/`): Pluggable evaluation system loaded dynamically from config

@@ -144,8 +144,8 @@ class RootLLMOrchestrator:
             evaluator_kwargs=evaluator_kwargs,
         )
 
-        # Initialize REPL with Evolution API functions
-        self.repl = REPLEnvironment(api_functions=self.evolution_api.get_api_functions())
+        # Initialize REPL with Evolution API namespace (functions + variables like `trials`)
+        self.repl = REPLEnvironment(namespace=self.evolution_api.get_repl_namespace())
 
         # Conversation state
         self.messages: list[dict[str, str]] = []
@@ -194,7 +194,7 @@ class RootLLMOrchestrator:
                 "3. Observe output quality, code style, and reasoning depth",
                 "4. Update your scratchpad with observations about each model",
                 "",
-                "Use `spawn_child_llm(prompt, model=alias, temperature=T)` to test models.",
+                "Use `spawn_children([{prompt, model, temperature}])` to test models.",
                 "Use `update_scratchpad(content)` to record your observations.",
                 "Use `get_calibration_status()` to check remaining calibration calls.",
                 "",
@@ -293,7 +293,7 @@ class RootLLMOrchestrator:
             else:
                 user_content = (
                     f"No code executed. Remaining calibration calls: {remaining_str}\n\n"
-                    "Use `spawn_child_llm(prompt, model=alias, temperature=T)` to test models, "
+                    "Use `spawn_children([{{prompt, model, temperature}}])` to test models, "
                     "or call `end_calibration_phase()` when done."
                 )
 
@@ -610,7 +610,7 @@ class RootLLMOrchestrator:
         """Build a compact feedback message with results from the previous generation.
 
         Note: Full code is NOT included to reduce context size. The Root LLM can
-        use get_trial_code(trial_ids) to retrieve specific code when needed, or
+        use trials[trial_id].code to retrieve specific code when needed, or
         use {{CODE_TRIAL_X_Y}} tokens in child prompts.
         """
         prev_gen = self.evolution_api.current_generation - 1
@@ -624,7 +624,7 @@ class RootLLMOrchestrator:
         lines = [
             f"Generation {prev_gen} complete. {len(trials)} children spawned.",
             "",
-            "Results (use `get_trial_code([trial_ids])` to retrieve code, "
+            "Results (use `trials[trial_id].code` to retrieve code, "
             "or `{{CODE_TRIAL_X_Y}}` tokens in child prompts):",
             "",
         ]
@@ -759,11 +759,11 @@ class RootLLMOrchestrator:
                 "- **Potential**: Which trials might improve with refinement, even if current scores are lower?",
                 "",
                 "You can select any trial_id from any generation (current or historical).",
-                "If you want extra history, you can call get_trial_code([...]) or get_top_trials(n),",
+                "If you want extra history, you can use `trials[trial_id].code` or `get_top_trials(n)`,",
                 "but prefer your own reasoning and notes when possible.",
                 "**Tip**: Use the All-Time Top 5 in the lineage map above to identify promising",
                 "historical trials. You can mutate any past trial using `{{CODE_TRIAL_X_Y}}` tokens",
-                "or `get_trial_code([trial_ids])` in your next generation's prompts.",
+                "or `trials[trial_id].code` in your next generation's prompts.",
                 "",
                 "Respond with a ```selection``` block containing JSON:",
                 "```selection",
@@ -893,7 +893,7 @@ class RootLLMOrchestrator:
         else:
             user_message = (
                 "No children were spawned. Please spawn children using "
-                "`spawn_children_parallel()` in a ```python``` code block."
+                "`spawn_children()` in a ```python``` code block."
             )
 
         self._append_and_log("user", user_message)

@@ -19,7 +19,7 @@ The winning algorithms used sequential basinhopping with SLSQP optimization, dis
 ## How It Works
 
 ```
-Root LLM (REPL) --> spawn_child_llm() --> Child LLM --> Code
+Root LLM (REPL) --> spawn_children() --> Child LLM --> Code
       │                                                  │
       │                                                  ▼
       │                                        evaluate_program()
@@ -43,8 +43,8 @@ A Root LLM orchestrates evolution via a Python REPL with an injected Evolution A
 
 MangoEvolve's key differentiator is giving the Root LLM a Python REPL with full control over the evolution process. Instead of following a fixed evolutionary algorithm, the Root LLM can write code to:
 
-- Spawn specific child models for different tasks (`spawn_child_llm(prompt, model_alias="opus")`)
-- Access any historical trial (`get_trial_code("trial_2_5")`)
+- Spawn specific child models for different tasks (`spawn_children([{"prompt": prompt, "model": "opus"}])`)
+- Access any historical trial (`trials["trial_2_5"].code`)
 - Resurrect promising old approaches
 - Combine techniques across lineages
 - Terminate early when satisfied
