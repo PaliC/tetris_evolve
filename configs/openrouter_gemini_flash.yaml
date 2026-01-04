@@ -14,9 +14,8 @@ root_llm:
   cost_per_million_input_tokens: 0.50
   cost_per_million_output_tokens: 3.00
   max_iterations: 30
-  # reasoning:
-  #   enabled: true
-  #   reasoning_effort: "high"
+  reasoning:
+    enabled: true
 
 child_llms:
   - alias: "gemini-flash"
@@ -25,9 +24,8 @@ child_llms:
     cost_per_million_input_tokens: 0.50
     cost_per_million_output_tokens: 3.00
     calibration_calls: 2
-    # reasoning:
-    #   enabled: true
-    #   reasoning_effort: "high"
+    reasoning:
+      enabled: true
 
 default_child_llm_alias: "gemini-flash"
 
@@ -38,8 +36,8 @@ evaluation:
     timeout_seconds: 300
 
 evolution:
-  max_generations: 12
-  max_children_per_generation: 4
+  max_generations: 8
+  max_children_per_generation: 50
 
 budget:
   max_total_cost: 10.0  # Lower budget since Gemini is much cheaper

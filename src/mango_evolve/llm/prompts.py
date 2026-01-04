@@ -45,29 +45,27 @@ def run_packing():
 
 ## Available Functions
 
-### spawn_children(children: list[dict]) -> list[TrialView]
+### spawn_child_llm(prompt, parent_id=None, model=None, temperature=0.7) -> dict
+Spawn a single child LLM. Returns `{trial_id, code, metrics, reasoning, success, error}`.
+- `model`: Child LLM alias from available models (see below). Uses default if None.
+- `temperature`: Sampling temperature (0.0-1.0). Higher = more creative.
+
+### spawn_children_parallel(children: list[dict]) -> list[dict]
 Spawn child LLMs in parallel. Each child dict has:
 - `prompt` (str, required)
 - `parent_id` (str, optional)
 - `model` (str, optional) - alias from available child LLMs
 - `temperature` (float, optional, default 0.7)
-Returns list of TrialView objects with: trial_id, code, score, success, reasoning, error, etc.
+Returns: `[{trial_id, code, metrics, reasoning, success, error}, ...]`
 
-### `scratchpad` - Persistent notes
+### get_trial_code(trial_ids: list[str]) -> dict[str, str | None]
+Get code from previous trials by ID.
 
-A mutable scratchpad for tracking insights across generations:
-- `scratchpad.content` - Read current content
-- `scratchpad.content = "New notes"` - Replace content (auto-persists)
-- `scratchpad.append("\n## New section")` - Append content
-- `scratchpad.clear()` - Clear all content
-- `print(scratchpad)` - Print current content
-- `"grid" in scratchpad` - Check if text exists
-- `len(scratchpad)` - Get character count
-
-The scratchpad is shown in Evolution Memory and persists across generations.
+### get_top_trials(n: int = 5) -> list[dict]
+Get a compact summary of the top-scoring trials across all generations.
 
 ### update_scratchpad(content: str) -> dict
-Alternative function to update persistent notes (same as `scratchpad.content = content`).
+Update your persistent notes. These are shown at the start of each generation along with the auto-generated lineage map (showing trial ancestry and scores). You are encouraged to write detailed and useful notes here.
 
 ### terminate_evolution(reason: str, best_program: str = None) -> dict
 End evolution early.
@@ -79,7 +77,7 @@ Example: `{{{{CODE_TRIAL_0_3}}}}` becomes the code from trial_0_3.
 
 ## Evolution Flow
 
-1. You spawn children using the `spawn_children` function with diverse prompts each generation
+1. You spawn children using the `spawn_children_parallel` function with diverse prompts each generation
 2. After spawning, you SELECT which trials to carry forward (performance, diversity, potential)
 3. Repeat until max_generations or you call terminate_evolution()
 
@@ -98,7 +96,7 @@ Example: `{{{{CODE_TRIAL_0_3}}}}` becomes the code from trial_0_3.
 ## Historical Trial Access
 
 **You can access and mutate ANY historical trial**, not just those from the current generation:
-- Use the `trials` variable: `trials["trial_0_5"].code` to retrieve code from any past trial
+- Use `get_trial_code(["trial_0_5", "trial_2_3"])` to retrieve code from any past trial
 - Use `{{CODE_TRIAL_X_Y}}` tokens in child prompts to inject historical code
 
 This enables:
@@ -135,62 +133,6 @@ print(compute_score_stats(generation_bests))
 
 Available modules: math, random, json, numpy, scipy, collections, itertools, functools, statistics
 Functions and variables you define persist across all generations within this run.
-
-## REPL Variables
-
-### `trials` - Query all trials
-A live view of all trials across all generations. Use this for flexible analysis.
-
-**Basic access:**
-```python
-trials["trial_0_5"]  # Get specific trial by ID
-len(trials)          # Total trial count
-for t in trials: ... # Iterate all trials
-"trial_0_5" in trials  # Check if trial exists
-```
-
-**Filtering with `trials.filter()`:**
-```python
-# Top 5 by score
-trials.filter(success=True, sort_by="-score", limit=5)
-
-# All from generation 2
-trials.filter(generation=2)
-
-# Custom predicate (lambda)
-trials.filter(predicate=lambda t: t.score > 2.4 and "grid" in t.reasoning)
-
-# All descendants of a trial
-trials.filter(descendant_of="trial_0_3")
-
-# All ancestors of a trial
-trials.filter(ancestor_of="trial_2_5")
-
-# Combined: top 3 successful from gen 1
-trials.filter(success=True, generation=1, sort_by="-score", limit=3)
-
-# Filter by model
-trials.filter(model_alias="fast", success=True)
-```
-
-**Filter parameters:**
-- `success`: bool - Filter by success/failure
-- `generation`: int - Filter by generation number
-- `parent_id`: str - Filter by direct parent
-- `model_alias`: str - Filter by child LLM model
-- `descendant_of`: str - All trials descending from this trial
-- `ancestor_of`: str - All ancestors of this trial
-- `predicate`: lambda - Custom filter function
-- `sort_by`: str - Sort field ("-score" for descending)
-- `limit`: int - Max results to return
-
-**Trial attributes:**
-`.trial_id`, `.code`, `.score`, `.success`, `.generation`,
-`.parent_id`, `.reasoning`, `.error`, `.model_alias`, `.metrics`
-
-**Return values from spawn_children:**
-`spawn_children()` returns TrialView objects (same attributes as above).
-Use `.to_dict()` if you need dict format.
 
 ## Guidelines
 
@@ -467,12 +409,11 @@ The main task is packing 26 circles into a unit square [0,1] x [0,1] to maximize
 
 ## Available Functions
 
-### spawn_children(children: list[dict]) -> list[TrialView]
-Spawn child LLMs with ANY prompts. Each child dict has:
-- `prompt` (str, required) - Any question or task, not limited to circle packing!
-- `model` (str, optional) - alias from available child LLMs
-- `temperature` (float, optional, default 0.7)
-Returns list of TrialView objects with: trial_id, code, score, success, reasoning, error, etc.
+### spawn_child_llm(prompt, parent_id=None, model=None, temperature=0.7) -> dict
+Spawn a child LLM with ANY prompt. Returns `{trial_id, code, metrics, reasoning, success, error}`.
+- `prompt`: Any question or task - you're not limited to circle packing!
+- `model`: Child LLM alias (see available models below)
+- `temperature`: Sampling temperature (0.0-1.0). Higher = more creative.
 
 ### get_calibration_status() -> dict
 Check remaining calibration calls per model.

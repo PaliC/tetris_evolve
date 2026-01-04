@@ -73,15 +73,23 @@ def load_trial_code_from_disk(
         return None
 
 
-def _get_trial_code_internal(
+def get_trial_code(
     trial_id: str,
     all_trials: dict[str, "TrialResult"] | None = None,
     experiment_dir: str | Path | None = None,
 ) -> str | None:
     """
-    Get trial code from memory or disk (internal helper).
+    Get trial code from memory or disk.
 
     First tries to get code from in-memory trial cache, then falls back to disk.
+
+    Args:
+        trial_id: Trial identifier (e.g., "trial_0_3")
+        all_trials: Dictionary mapping trial_id to TrialResult (optional)
+        experiment_dir: Path to experiment directory for disk fallback (optional)
+
+    Returns:
+        The code string if found, None otherwise
     """
     # Try in-memory first
     if all_trials and trial_id in all_trials:
@@ -127,7 +135,7 @@ def substitute_trial_codes(
 
     for token, generation, trial_num in tokens:
         trial_id = f"trial_{generation}_{trial_num}"
-        code = _get_trial_code_internal(trial_id, all_trials, experiment_dir)
+        code = get_trial_code(trial_id, all_trials, experiment_dir)
 
         if code:
             result = result.replace(token, code)

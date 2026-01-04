@@ -7,9 +7,6 @@ root_llm:
   cost_per_million_input_tokens: 3.0
   cost_per_million_output_tokens: 15.0
   max_iterations: 30
-  reasoning:
-    enabled: true
-    reasoning_effort: "high"
 
 child_llms:
   - alias: "sonnet"
@@ -18,9 +15,6 @@ child_llms:
     cost_per_million_input_tokens: 3.0
     cost_per_million_output_tokens: 15.0
     calibration_calls: 2
-    reasoning:
-      enabled: true
-      reasoning_effort: "high"
 
 default_child_llm_alias: "sonnet"
 
@@ -33,8 +27,8 @@ evaluation:
     timeout_seconds: 300
 
 evolution:
-  max_generations: 5
-  max_children_per_generation: 4
+  max_generations: 10
+  max_children_per_generation: 15
 
 budget:
   max_total_cost: 20.0

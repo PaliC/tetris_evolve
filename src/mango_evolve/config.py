@@ -26,7 +26,7 @@ class ExperimentConfig:
 
 @dataclass
 class ReasoningConfig:
-    """Configuration for reasoning/thinking tokens (OpenRouter and Google providers).
+    """Configuration for reasoning/thinking tokens (OpenRouter only).
 
     Enables extended reasoning for models that support it like Gemini Flash,
     DeepSeek, OpenAI o-series, etc.
@@ -45,9 +45,9 @@ class LLMConfig:
     model: str
     cost_per_million_input_tokens: float
     cost_per_million_output_tokens: float
-    provider: str = "anthropic"  # "anthropic", "openrouter", or "google"
+    provider: str = "anthropic"  # "anthropic" or "openrouter"
     max_iterations: int | None = None  # Only used for root LLM
-    reasoning: ReasoningConfig | None = None  # OpenRouter/Google reasoning config
+    reasoning: ReasoningConfig | None = None  # OpenRouter reasoning config
 
 
 @dataclass
@@ -58,9 +58,9 @@ class ChildLLMConfig:
     cost_per_million_input_tokens: float
     cost_per_million_output_tokens: float
     alias: str | None = None  # Optional, defaults to model name
-    provider: str = "anthropic"  # "anthropic", "openrouter", or "google"
+    provider: str = "anthropic"  # "anthropic" or "openrouter"
     calibration_calls: int = 3  # Number of test calls during calibration phase
-    reasoning: ReasoningConfig | None = None  # OpenRouter/Google reasoning config
+    reasoning: ReasoningConfig | None = None  # OpenRouter reasoning config
 
     @property
     def effective_alias(self) -> str:
@@ -225,7 +225,7 @@ def _parse_child_llm_config(data: dict[str, Any], index: int) -> ChildLLMConfig:
 
     # Validate provider value
     provider = data.get("provider", "anthropic")
-    valid_providers = {"anthropic", "google", "openrouter"}
+    valid_providers = {"anthropic", "openrouter"}
     if provider not in valid_providers:
         raise ConfigValidationError(
             f"Invalid provider '{provider}' in section '{section}'. "
@@ -293,7 +293,7 @@ def _parse_llm_config(data: dict[str, Any], section: str) -> LLMConfig:
     )
     # Validate provider value
     provider = data.get("provider", "anthropic")
-    valid_providers = {"anthropic", "google", "openrouter"}
+    valid_providers = {"anthropic", "openrouter"}
     if provider not in valid_providers:
         raise ConfigValidationError(
             f"Invalid provider '{provider}' in section '{section}'. "
