@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from .providers.anthropic import AnthropicProvider
 from .providers.base import BaseLLMProvider, LLMResponse
+from .providers.google import GoogleProvider
 from .providers.openrouter import OpenRouterProvider
 
 if TYPE_CHECKING:
@@ -36,16 +37,17 @@ def create_llm_client(
         cost_tracker: CostTracker instance for budget enforcement
         llm_type: Either "root" or "child" - used for cost tracking
         max_retries: Maximum number of retries on transient errors
-        reasoning_config: Optional reasoning configuration (OpenRouter only)
+        reasoning_config: Optional reasoning configuration (OpenRouter and Google only)
 
     Returns:
-        LLM client instance (AnthropicProvider or OpenRouterProvider)
+        LLM client instance (AnthropicProvider, GoogleProvider, or OpenRouterProvider)
 
     Raises:
         ValueError: If provider is unknown
     """
     providers = {
         "anthropic": AnthropicProvider,
+        "google": GoogleProvider,
         "openrouter": OpenRouterProvider,
     }
 
@@ -54,9 +56,9 @@ def create_llm_client(
             f"Unknown provider: '{provider}'. Supported providers: {list(providers.keys())}"
         )
 
-    # OpenRouter supports reasoning config
-    if provider == "openrouter":
-        return OpenRouterProvider(
+    # OpenRouter and Google support reasoning config
+    if provider in ("openrouter", "google"):
+        return providers[provider](
             model=model,
             cost_tracker=cost_tracker,
             llm_type=llm_type,
