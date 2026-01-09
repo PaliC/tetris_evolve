@@ -1097,10 +1097,17 @@ class EvolutionAPI:
         num_workers: int | None = None,
     ) -> list[dict[str, Any]]:
         """
-        Query child LLMs during calibration phase (no evaluation, no trial records).
+        Query child LLMs without code evaluation or trial records.
 
-        Use this to test model capabilities before evolution begins. Each query
-        just returns the raw LLM response without code extraction or evaluation.
+        Use this for:
+        - Analyzing and comparing trials ("Why did trial_0_5 score higher?")
+        - Understanding methodology ("What optimization technique is used here?")
+        - Exploring diversity ("How do these two approaches differ?")
+        - Strategic planning ("What should I try next given these results?")
+        - Looking through trials for interesting patterns
+
+        During calibration phase, this uses the calibration budget.
+        During evolution, this uses the regular cost budget.
 
         Args:
             queries: List of dicts with keys:
@@ -1119,35 +1126,30 @@ class EvolutionAPI:
                 - 'error': Error message if failed
 
         Raises:
-            ValueError: If called outside of calibration phase
-            CalibrationBudgetError: If calibration budget is exhausted for a model
+            CalibrationBudgetError: If calibration budget is exhausted (calibration phase only)
         """
-        if not self.in_calibration_phase:
-            raise ValueError(
-                "query_llm() is only available during calibration phase. "
-                "Use spawn_children() during evolution."
-            )
-
         # Check budget
         self.cost_tracker.raise_if_over_budget()
 
-        # Resolve model aliases and check calibration budget
+        # Resolve model aliases and check calibration budget if in calibration phase
         resolved_models: dict[int, tuple[str, ChildLLMConfig]] = {}
         for i, query in enumerate(queries):
             model_alias = self._resolve_model_alias(query.get("model"))
             config = self.child_llm_configs[model_alias]
             resolved_models[i] = (model_alias, config)
 
-            # Check and decrement calibration budget
-            if self.calibration_calls_remaining[model_alias] <= 0:
-                raise CalibrationBudgetError(
-                    f"Calibration budget exhausted for model '{model_alias}'. "
-                    f"Remaining calls: {self.calibration_calls_remaining}"
-                )
-            self.calibration_calls_remaining[model_alias] -= 1
+            # Only check/decrement calibration budget during calibration phase
+            if self.in_calibration_phase:
+                if self.calibration_calls_remaining[model_alias] <= 0:
+                    raise CalibrationBudgetError(
+                        f"Calibration budget exhausted for model '{model_alias}'. "
+                        f"Remaining calls: {self.calibration_calls_remaining}"
+                    )
+                self.calibration_calls_remaining[model_alias] -= 1
 
         # Show progress
-        tqdm.write(f"  └─ Querying {len(queries)} LLMs in parallel: calibration")
+        phase = "calibration" if self.in_calibration_phase else "analysis"
+        tqdm.write(f"  └─ Querying {len(queries)} LLMs in parallel: {phase}")
 
         # Prepare worker arguments
         worker_args = []
@@ -1336,7 +1338,7 @@ class EvolutionAPI:
         - update_scratchpad: Update persistent notes across generations
         - end_calibration_phase: End calibration and start evolution
         - get_calibration_status: Check calibration phase status
-        - query_llm: Query LLMs during calibration (no evaluation)
+        - query_llm: Query LLMs for analysis (no evaluation, works during both phases)
 
         Objects exposed:
         - scratchpad: ScratchpadProxy for direct scratchpad access

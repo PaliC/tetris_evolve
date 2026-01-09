@@ -53,6 +53,32 @@ Spawn child LLMs in parallel. Each child dict has:
 - `temperature` (float, optional, default 0.7)
 Returns list of TrialView objects with: trial_id, code, score, success, reasoning, error, etc.
 
+### query_llm(queries: list[dict]) -> list[dict]
+Query child LLMs for analysis without code evaluation or trial records. Use this to:
+- **Compare trials**: "Why does trial_0_5 score higher than trial_0_3?"
+- **Understand methodology**: "What optimization technique is used in this code?"
+- **Explore diversity**: "How do these two approaches differ conceptually?"
+- **Plan strategy**: "Given these results, what should I try next?"
+- **Find patterns**: "What do the top 5 trials have in common?"
+
+Each query dict has:
+- `prompt` (str, required) - Include trial code/data in your prompt as needed
+- `model` (str, optional) - alias from available child LLMs
+- `temperature` (float, optional, default 0.7)
+
+Returns list of dicts with: model, prompt, response, temperature, success, error.
+
+Example:
+```python
+top_trials = trials.filter(success=True, sort_by="-score", limit=3)
+analysis = query_llm([{
+    "prompt": f"Compare these approaches and identify what makes the best one work:\n" +
+              "\n".join(f"Score {t.score}: {t.code[:500]}" for t in top_trials),
+    "model": "strong"
+}])
+print(analysis[0]["response"])
+```
+
 ### `scratchpad` - Persistent notes
 
 A mutable scratchpad for tracking insights across generations:
@@ -99,14 +125,6 @@ Example: `{{{{CODE_TRIAL_0_3}}}}` becomes the code from trial_0_3.
 
 **You can access and mutate ANY historical trial**, not just those from the current generation:
 - Use the `trials` variable: `trials["trial_0_5"].code` to retrieve code from any past trial
-- Use `{{CODE_TRIAL_X_Y}}` tokens in child prompts to inject historical code
-
-This enables:
-- **Resurrection**: Bring back promising approaches that were abandoned earlier
-- **Cross-pollination**: Combine techniques from different lineages
-- **Exploration recovery**: Return to diverse approaches if you hit a local optimum
-
-The lineage map shows an **All-Time Top 5** to help you identify the best candidates across all generations.
 
 ## Custom Analysis Functions
 
@@ -200,11 +218,11 @@ Use `.to_dict()` if you need dict format.
 
 **Track lineage**: When a child is based on an existing trial, set `parent_id` to that trial_id (choose the primary parent if there are multiple influences).
 
-**Diversity matters**: Especially in early generations, try fundamentally different approaches rather than minor variations of the same idea.
+**Diversity matters**: Especially in early generations, try fundamentally different approaches rather than minor variations of the same idea. If you feel like you are platueing, use diverse tests as well.
 
 **Learn from results**: Use scores and patterns you observe to guide your strategy. If an approach is working, refine it. If you're stuck, try something radically different.
 
-**Historical awareness**: Check the All-Time Top 5 in the lineage map. If a promising trial was abandoned, you can still mutate it by using `{{CODE_TRIAL_X_Y}}` tokens in your child prompts.
+**Use query_llm for analysis**: When you want to understand *why* something works, compare approaches, or get strategic advice, use `query_llm()` to analyze trials. This helps you make more informed decisions about what to try next.
 '''
 
 # Dynamic suffix template - appended after the static prefix

@@ -334,17 +334,18 @@ class TestInternalMethods:
 class TestGetAPIFunctions:
     """Tests for get_api_functions."""
 
-    def test_returns_7_items(self, evolution_api):
-        """Test that 7 items (6 functions + 1 scratchpad proxy) are returned."""
+    def test_returns_8_items(self, evolution_api):
+        """Test that 8 items (7 functions + 1 scratchpad proxy) are returned."""
         funcs = evolution_api.get_api_functions()
 
-        assert len(funcs) == 7
+        assert len(funcs) == 8
         assert "spawn_children" in funcs
         assert "evaluate_program" in funcs
         assert "terminate_evolution" in funcs
         assert "update_scratchpad" in funcs
         assert "end_calibration_phase" in funcs
         assert "get_calibration_status" in funcs
+        assert "query_llm" in funcs
         assert "scratchpad" in funcs
         assert isinstance(funcs["scratchpad"], ScratchpadProxy)
 
