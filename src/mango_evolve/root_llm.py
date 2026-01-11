@@ -20,7 +20,7 @@ from .config import (
 )
 from .cost_tracker import CostTracker
 from .evolution_api import EvolutionAPI
-from .exceptions import BudgetExceededError, GenerationLimitError
+from .exceptions import BudgetExceededError, ContextOverflowError, GenerationLimitError
 from .llm.client import LLMClient, MockLLMClient, create_llm_client
 from .llm.prompts import (
     get_calibration_system_prompt_parts,
@@ -442,14 +442,29 @@ class RootLLMOrchestrator:
             "critical": estimated_tokens > 250_000,
         }
 
-    def _check_context_health(self) -> None:
-        """Check context size and warn if growing too large."""
+    def _check_context_health(self, max_context_tokens: int = 180_000) -> None:
+        """Check context size and stop if it exceeds safe limits.
+
+        Args:
+            max_context_tokens: Maximum allowed context size in tokens.
+                Defaults to 180,000 (safe for most models with 200K context).
+
+        Raises:
+            ContextOverflowError: If context exceeds max_context_tokens.
+        """
         stats = self._get_context_size_estimate()
 
-        if stats["critical"]:
+        if stats["estimated_tokens"] > max_context_tokens:
+            raise ContextOverflowError(
+                f"Context size ({stats['estimated_tokens']:,} tokens) exceeds "
+                f"maximum allowed ({max_context_tokens:,} tokens). "
+                f"Messages: {stats['message_count']}. "
+                "The experiment must stop to prevent API failures."
+            )
+        elif stats["critical"]:
             tqdm.write(
                 f"  ⚠️  CRITICAL: Context size ~{stats['estimated_tokens']:,} tokens. "
-                "Risk of API failure. Consider pruning history."
+                f"Limit: {max_context_tokens:,}. Risk of overflow soon."
             )
         elif stats["warning"]:
             tqdm.write(
@@ -655,7 +670,7 @@ class RootLLMOrchestrator:
         lines.append("```")
         lines.append("")
         lines.append(
-            "You are encouraged to use `query_llm(dicts: list[dict])` to analyze trials and inform your strategy."
+            "The contents of trials can be very very large (especially cumalitive accesses of trials[experiment_name].code). You are heavily encouraged to use `query_llm(dicts: list[dict])` to analyze trials and inform your strategy."
         )
         lines.append("")
 
@@ -1187,7 +1202,7 @@ class RootLLMOrchestrator:
                     if gen_result.errors:
                         generation_errors.extend(gen_result.errors)
 
-                except BudgetExceededError:
+                except (BudgetExceededError, ContextOverflowError):
                     # Re-raise to break the loop
                     raise
                 except Exception as e:
@@ -1199,6 +1214,8 @@ class RootLLMOrchestrator:
 
         except BudgetExceededError as e:
             termination_reason = f"budget_exceeded: {str(e)}"
+        except ContextOverflowError as e:
+            termination_reason = f"context_overflow: {str(e)}"
         finally:
             children_pbar.close()
             gen_pbar.close()

@@ -51,3 +51,9 @@ class CalibrationBudgetError(MangoEvolveError):
     """Raised when calibration call budget is exhausted for a model."""
 
     pass
+
+
+class ContextOverflowError(MangoEvolveError):
+    """Raised when root LLM context size exceeds safe limits."""
+
+    pass

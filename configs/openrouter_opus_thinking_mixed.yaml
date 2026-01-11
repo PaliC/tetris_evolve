@@ -58,6 +58,7 @@ child_llms:
       effort: "high"
 
 default_child_llm_alias: "gemini-flash"
+calibration_notes_file: "/Users/sahan/conductor/workspaces/tetris_evolve/perth/experiments/circle_packing_opus_thinking_mixed_20260111_071624/calibration_notes.yaml"
 
 evaluation:
   evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
