@@ -1,0 +1,45 @@
+{
+  "generation_num": 8,
+  "num_trials": 16,
+  "num_successful_trials": 4,
+  "best_trial_id": "trial_8_1",
+  "best_score": 2.6105628829518386,
+  "selected_trial_ids": [
+    "trial_6_6",
+    "trial_4_6",
+    "trial_8_1"
+  ],
+  "selection_reasoning": "Sticking with the top performers. The Constructive and Physics lineages are the only ones producing valid, high-scoring results. I will try to hybridize them.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_6_6",
+      "reasoning": "Still the champion (2.6299). Constructive strategy.",
+      "category": "performance",
+      "source_generation": 6
+    },
+    {
+      "trial_id": "trial_4_6",
+      "reasoning": "Best Physics strategy (2.6292).",
+      "category": "performance",
+      "source_generation": 4
+    },
+    {
+      "trial_id": "trial_8_1",
+      "reasoning": "Best-of-K insertion (2.610). A valid variation of the constructive approach.",
+      "category": "potential",
+      "source_generation": 8
+    }
+  ],
+  "parents_used": [
+    "trial_4_6",
+    "trial_6_5",
+    "trial_6_6"
+  ],
+  "parents_used_counts": {
+    "trial_4_6": 2,
+    "trial_6_5": 1,
+    "trial_6_6": 3
+  },
+  "parents_not_selected_prev_gen": [],
+  "timestamp": "2026-01-08T10:50:50.585204"
+}

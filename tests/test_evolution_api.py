@@ -334,17 +334,18 @@ class TestInternalMethods:
 class TestGetAPIFunctions:
     """Tests for get_api_functions."""
 
-    def test_returns_7_items(self, evolution_api):
-        """Test that 7 items (6 functions + 1 scratchpad proxy) are returned."""
+    def test_returns_8_items(self, evolution_api):
+        """Test that 8 items (7 functions + 1 scratchpad proxy) are returned."""
         funcs = evolution_api.get_api_functions()
 
-        assert len(funcs) == 7
+        assert len(funcs) == 8
         assert "spawn_children" in funcs
         assert "evaluate_program" in funcs
         assert "terminate_evolution" in funcs
         assert "update_scratchpad" in funcs
         assert "end_calibration_phase" in funcs
         assert "get_calibration_status" in funcs
+        assert "query_llm" in funcs
         assert "scratchpad" in funcs
         assert isinstance(funcs["scratchpad"], ScratchpadProxy)
 
@@ -392,24 +393,6 @@ class TestTrialResult:
         assert d["metrics"] == {"score": 1.5}
         assert d["success"] is True
         assert d["parent_id"] == "parent_0_0"
-
-
-class TestPromptSubstitutionUtility:
-    """Tests for prompt substitution utility (not requiring EvolutionAPI)."""
-
-    def test_substitute_trial_codes_works(self, evolution_api):
-        """Test that substitute_trial_codes utility works."""
-        from mango_evolve.utils.prompt_substitution import substitute_trial_codes
-
-        # Just test the utility function directly
-        prompt = "Test: {{CODE_TRIAL_0_0}}"
-        result, report = substitute_trial_codes(
-            prompt,
-            all_trials={},  # Empty - should show error marker
-            experiment_dir="/tmp",
-        )
-
-        assert "[CODE NOT FOUND: trial_0_0]" in result
 
 
 class TestScratchpad:

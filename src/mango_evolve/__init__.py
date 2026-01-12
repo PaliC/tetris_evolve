@@ -22,6 +22,7 @@ from .exceptions import (
     BudgetExceededError,
     CodeExtractionError,
     ConfigValidationError,
+    ContextOverflowError,
     EvaluationError,
     MangoEvolveError,
 )
@@ -43,6 +44,7 @@ __all__ = [
     "BudgetExceededError",
     "ConfigValidationError",
     "CodeExtractionError",
+    "ContextOverflowError",
     "EvaluationError",
     # Config
     "Config",

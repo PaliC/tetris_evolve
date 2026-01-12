@@ -47,11 +47,84 @@ def run_packing():
 
 ### spawn_children(children: list[dict]) -> list[TrialView]
 Spawn child LLMs in parallel. Each child dict has:
-- `prompt` (str, required)
-- `parent_id` (str, optional)
+- `prompt` (str, required) - Use `trials["trial_X_Y"].code` to include code in your prompt
+- `parent_id` (str, optional) - set to track lineage when improving a trial
 - `model` (str, optional) - alias from available child LLMs
 - `temperature` (float, optional, default 0.7)
 Returns list of TrialView objects with: trial_id, code, score, success, reasoning, error, etc.
+
+Example:
+```python
+# Improve the best trial from previous generation
+best = trials.filter(success=True, sort_by="-score", limit=1)[0]
+results = spawn_children([{
+    "prompt": f"Improve this circle packing (score={best.score}):\\n{best.code}\\nTry to increase the sum of radii.",
+    "parent_id": best.trial_id
+}])
+
+# Combine two approaches
+t1, t2 = trials.filter(success=True, sort_by="-score", limit=2)
+spawn_children([{
+    "prompt": f"Combine these two approaches:\\n# Approach 1 ({t1.score}):\\n{t1.code}\\n\\n# Approach 2 ({t2.score}):\\n{t2.code}"
+}])
+```
+
+### query_llm(queries: list[dict]) -> list[dict]
+Query child LLMs for analysis without code evaluation or trial records. Use this to:
+- **Compare trials**: "Why does trial_0_5 score higher than trial_0_3?"
+- **Understand methodology**: "What optimization technique is used in this code?"
+- **Explore diversity**: "How do these two approaches differ conceptually?"
+- **Plan strategy**: "Given these results, what should I try next?"
+- **Find patterns**: "What do the top 5 trials have in common?"
+
+Each query dict has:
+- `prompt` (str, required) - Use `trials["trial_X_Y"].code` to include code in your prompt
+- `model` (str, optional) - alias from available child LLMs
+- `temperature` (float, optional, default 0.7)
+
+Returns list of dicts with: model, prompt, response, temperature, success, error.
+
+Examples:
+```python
+# Analyze top performing trials
+top = trials.filter(success=True, sort_by="-score", limit=3)
+analysis = query_llm([{
+    "prompt": f"Compare these approaches and identify what makes the best one work:\\n" +
+              "\\n---\\n".join(f"# {t.trial_id} (score={t.score})\\n{t.code}" for t in top),
+    "model": "model_alias_of_your_choice"
+}])
+print(analysis[0]["response"])
+
+# Ask about a specific trial
+best = trials.filter(success=True, sort_by="-score", limit=1)[0]
+query_llm([{"prompt": f"What optimization technique does this use?\\n{best.code}"}])
+
+# Compare all trials of a generation
+generation = trials.filter(generation=0)
+analysis = query_llm([{
+    "prompt": f"Compare all trials of generation 0 and identify what makes the best ones work vs the rest:\\n" +
+              "\\n---\\n".join(f"# {t.trial_id} (score={t.score})\\n{t.code}" for t in generation),
+    "model": "model_alias_of_your_choice"
+}])
+print(analysis[0]["response"])
+
+# Find diversity in a generation
+generation = trials.filter(generation=0)
+analysis = query_llm([{
+    "prompt": f"Look throug the various approaches and identify which ones may not be the best, but may be interesting to try again in the future:\\n" +
+              "\\n---\\n".join(f"# {t.trial_id} (score={t.score})\\n{t.code}" for t in generation),
+    "model": "model_alias_of_your_choice"
+}])
+print(analysis[0]["response"])
+
+# Identify bugs in a trial
+trial = trials["trial_0_5"]
+analysis = query_llm([{
+    "prompt": f"Identify bugs in the following code:\\n{trial.code}",
+    "model": "model_alias_of_your_choice"
+}])
+print(analysis[0]["response"])
+```
 
 ### `scratchpad` - Persistent notes
 
@@ -72,15 +145,12 @@ Alternative function to update persistent notes (same as `scratchpad.content = c
 ### terminate_evolution(reason: str, best_program: str = None) -> dict
 End evolution early.
 
-## Code References
-
-Use `{{{{CODE_TRIAL_X_Y}}}}` in prompts to inject code from trial X_Y.
-Example: `{{{{CODE_TRIAL_0_3}}}}` becomes the code from trial_0_3.
-
 ## Evolution Flow
 
-1. You spawn children using the `spawn_children` function with diverse prompts each generation
-2. After spawning, you SELECT which trials to carry forward (performance, diversity, potential)
+1. (Optional) Run analysis in one or more ```python``` blocks
+2. When ready, spawn children using the `spawn_children` function with diverse prompts
+2. Using the trials variable do some analysis on the results in order to inform your strategy. We recommend at lookingings at all of the results. As the contents of trials may be large, you can use the `query_llm` function to analyze the results. Note you have access and are encouraged to consider all past trials not just the past generation.
+3. After spawning, you SELECT which trials to carry forward (performance, diversity, potential)
 3. Repeat until max_generations or you call terminate_evolution()
 
 ## Selection Format
@@ -99,14 +169,6 @@ Example: `{{{{CODE_TRIAL_0_3}}}}` becomes the code from trial_0_3.
 
 **You can access and mutate ANY historical trial**, not just those from the current generation:
 - Use the `trials` variable: `trials["trial_0_5"].code` to retrieve code from any past trial
-- Use `{{CODE_TRIAL_X_Y}}` tokens in child prompts to inject historical code
-
-This enables:
-- **Resurrection**: Bring back promising approaches that were abandoned earlier
-- **Cross-pollination**: Combine techniques from different lineages
-- **Exploration recovery**: Return to diverse approaches if you hit a local optimum
-
-The lineage map shows an **All-Time Top 5** to help you identify the best candidates across all generations.
 
 ## Custom Analysis Functions
 
@@ -200,11 +262,13 @@ Use `.to_dict()` if you need dict format.
 
 **Track lineage**: When a child is based on an existing trial, set `parent_id` to that trial_id (choose the primary parent if there are multiple influences).
 
-**Diversity matters**: Especially in early generations, try fundamentally different approaches rather than minor variations of the same idea.
+**Diversity matters**: Especially in early generations, try fundamentally different approaches rather than minor variations of the same idea. If you feel like you are platueing, use diverse tests as well.
 
 **Learn from results**: Use scores and patterns you observe to guide your strategy. If an approach is working, refine it. If you're stuck, try something radically different.
 
-**Historical awareness**: Check the All-Time Top 5 in the lineage map. If a promising trial was abandoned, you can still mutate it by using `{{CODE_TRIAL_X_Y}}` tokens in your child prompts.
+**Use query_llm for analysis**: When you want to understand *why* something works, compare approaches, or get strategic advice, use `query_llm(queries: list[dict])` to analyze trials. This helps you make more informed decisions about what to try next.
+
+**Exploration and Exploitation**: You are encouraged to explore different approaches and to exploit the best ones. Given the amount of trials you are encouraged to allocate some for exploration and exploring ideas with potential or new ideas, and others for refining the best solution(s).
 '''
 
 # Dynamic suffix template - appended after the static prefix
@@ -465,27 +529,65 @@ The goal is to understand what each model is good at so you can use them strateg
 The main task is packing 26 circles into a unit square [0,1] x [0,1] to maximize the sum of radii.
 - The best known solution is 2.6359850561146603. Aim to achieve as high of a score as possible.
 
+## How to Call Functions
+
+**IMPORTANT**: Write Python code in ```python blocks to call functions. Example:
+
+```python
+query_llm([
+    {"prompt": "Explain quicksort", "model": "sonnet", "temperature": 0.5},
+    {"prompt": "What is 2+2?", "model": "gpt41", "temperature": 0.3}
+])
+```
+
 ## Available Functions
 
-### spawn_children(children: list[dict]) -> list[TrialView]
-Spawn child LLMs with ANY prompts. Each child dict has:
+### query_llm(queries: list[dict]) -> list[dict]
+Query child LLMs with ANY prompts (no code evaluation - just get responses). Each dict has:
 - `prompt` (str, required) - Any question or task, not limited to circle packing!
 - `model` (str, optional) - alias from available child LLMs
 - `temperature` (float, optional, default 0.7)
-Returns list of TrialView objects with: trial_id, code, score, success, reasoning, error, etc.
+
+Returns list of dicts with: model, prompt, response, temperature, success, error.
+
+Example:
+```python
+results = query_llm([
+    {"prompt": "Explain gradient descent in 2 sentences", "model": "sonnet"},
+    {"prompt": "Write a Python function to compute factorial", "model": "gpt41"}
+])
+for r in results:
+    print(f"{r['model']}: {r['response'][:200]}")
+```
 
 ### get_calibration_status() -> dict
 Check remaining calibration calls per model.
 
+```python
+get_calibration_status()
+```
+
 ### update_scratchpad(content: str) -> dict
 Record your observations about each model's behavior. These notes will persist into evolution.
+
+```python
+update_scratchpad(\"\"\"
+## Model Observations
+- sonnet: Strong reasoning, verbose responses
+- gpt41: Concise, good at math
+\"\"\")
+```
 
 ### end_calibration_phase() -> dict
 Finish calibration and begin the evolution phase. Call this when you've learned enough.
 
+```python
+end_calibration_phase()
+```
+
 ## Guidelines
 
-1. **Ask diverse questions**: Test reasoning, math, code quality - not just circle packing. You're notes should be generic and not specific to the circle packing task.
+1. **Ask diverse questions**: Test reasoning, math, code quality - not just circle packing. Your notes should be generic and not specific to the circle packing task.
 2. **Compare models**: Give the same prompt to different models to compare their responses
 3. **Experiment with temperatures**: Generally 0 is considered the most focused / reproducible, 1 is the most creative.
 4. **Record detailed observations**: Note strengths/weaknesses of each model

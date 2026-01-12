@@ -16,27 +16,29 @@ experiment:
   output_dir: "./experiments"
 
 root_llm:
-  provider: "google"
-  model: "gemini-2.5-flash"
-  cost_per_million_input_tokens: 0.15
-  cost_per_million_output_tokens: 0.60
-  max_iterations: 30
-  reasoning:
-    enabled: true
-    effort: "xhigh"
-
-child_llms:
-  - alias: "gemini-flash"
-    model: "gemini-2.5-flash"
+    model: "gemini-3-flash-preview"
     provider: "google"
-    cost_per_million_input_tokens: 0.15
-    cost_per_million_output_tokens: 0.60
+    cost_per_million_input_tokens: 0.50
+    cost_per_million_output_tokens: 3.00
     calibration_calls: 2
     reasoning:
       enabled: true
-      effort: "high"
+      effort: "xhigh"
 
-default_child_llm_alias: "gemini-flash"
+child_llms:
+  - alias: "flash"
+    model: "gemini-3-flash-preview"
+    provider: "google"
+    cost_per_million_input_tokens: 0.50
+    cost_per_million_output_tokens: 3.00
+    calibration_calls: 2
+    reasoning:
+      enabled: true
+      effort: "xhigh"
+
+default_child_llm_alias: "flash"
+
+calibration_notes_file: "/Users/sahan/conductor/workspaces/tetris_evolve/perth/experiments/circle_packing_google_gemini_flash_20260108_210031/calibration_notes.yaml"
 
 evaluation:
   evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
@@ -45,8 +47,8 @@ evaluation:
     timeout_seconds: 300
 
 evolution:
-  max_generations: 3
-  max_children_per_generation: 3
+  max_generations: 20
+  max_children_per_generation: 15
 
 budget:
-  max_total_cost: 5.0
+  max_total_cost: 10.0

@@ -1,0 +1,66 @@
+{
+  "experiment": {
+    "name": "circle_packing_gemini_3_mixed",
+    "output_dir": "./experiments",
+    "seed": null
+  },
+  "root_llm": {
+    "model": "gemini-3-pro-preview",
+    "cost_per_million_input_tokens": 2.0,
+    "cost_per_million_output_tokens": 12.0,
+    "provider": "google",
+    "max_iterations": 30,
+    "reasoning": {
+      "enabled": true,
+      "effort": "xhigh",
+      "max_tokens": null,
+      "exclude": false
+    }
+  },
+  "child_llms": [
+    {
+      "model": "gemini-3-flash-preview",
+      "cost_per_million_input_tokens": 0.5,
+      "cost_per_million_output_tokens": 3.0,
+      "alias": "flash",
+      "provider": "google",
+      "calibration_calls": 2,
+      "reasoning": {
+        "enabled": true,
+        "effort": "high",
+        "max_tokens": null,
+        "exclude": false
+      }
+    },
+    {
+      "model": "gemini-3-pro-preview",
+      "cost_per_million_input_tokens": 2.0,
+      "cost_per_million_output_tokens": 12.0,
+      "alias": "pro",
+      "provider": "google",
+      "calibration_calls": 1,
+      "reasoning": {
+        "enabled": true,
+        "effort": "high",
+        "max_tokens": null,
+        "exclude": false
+      }
+    }
+  ],
+  "evaluation": {
+    "evaluator_fn": "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+    "evaluator_kwargs": {
+      "n_circles": 26,
+      "timeout_seconds": 300
+    }
+  },
+  "evolution": {
+    "max_generations": 20,
+    "max_children_per_generation": 16
+  },
+  "budget": {
+    "max_total_cost": 50.0
+  },
+  "default_child_llm_alias": "flash",
+  "calibration_notes_file": "/Users/sahan/conductor/workspaces/tetris_evolve/perth/experiments/circle_packing_gemini_3_mixed_20260107_230427/calibration_notes.yaml"
+}

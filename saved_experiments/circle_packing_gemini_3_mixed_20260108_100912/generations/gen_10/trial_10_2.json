@@ -1,0 +1,25 @@
+{
+  "trial_id": "trial_10_2",
+  "generation": 10,
+  "parent_id": "trial_9_0",
+  "code": "",
+  "metrics": {},
+  "prompt": "Refine the Hybrid strategy from {CODE_TRIAL_9_0}. \n\nNew Strategy: **Ensemble Hybrid**.\n- Wrap the entire `construct_packing` logic in a loop.\n- Run the full (Physics -> Remove 6 -> Re-add) pipeline **5 times**.\n- Keep the best result.\n- This mitigates the randomness of the physics initialization.\n\nCRITICAL: You must output ONLY a single Python code block (```python ... ```). \nDO NOT write any introduction. \nDO NOT write 'Here is the code'. \nDO NOT write any explanation after. \nJust the code block.",
+  "response": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    # Packing 26 circles in a unit square to maximize the sum of radii\n    num_keep = 26\n    num_total = 32\n    best_sum = -1\n    best_centers = None\n    best_radii = None\n    \n    # Precompute triangular indices for the overlap constraint (325 pairs for 26 circles)\n    triu_idx = np.triu_indices(num_keep, k=1)\n\n    # Ensemble strategy: Run the full pipeline 5 times and keep the best result\n    for _ in range(5):\n        # 1. Physics Step: Use repulsion forces to spread out 32 points in the unit square\n        points = np.random.rand(num_total, 2)\n        for step_idx in range(100):\n            # Annealing step size\n            step_size = 0.005 * (1.0 - step_idx / 100.0)\n            \n            # Pairwise repulsion force (1/d^2)\n            diff = points[:, np.newaxis, :] - points[np.newaxis, :, :]\n            dist_sq = np.sum(diff**2, axis=-1)\n            dist_sq[np.diag_indices(num_total)] = 1.0\n            dist = np.sqrt(dist_sq)\n            force_mag = 1.0 / (dist_sq + 1e-6)\n            force_dir = diff / (dist[:, :, np.newaxis] + 1e-9)\n            force = np.sum(force_mag[:, :, np.newaxis] * force_dir, axis=1)\n            \n            # Boundary repulsion forces\n            force[:, 0] += 1.0 / (points[:, 0]**2 + 1e-6)\n            force[:, 0] -= 1.0 / ((1 - points[:, 0])**2 + 1e-6)\n            force[:, 1] += 1.0 / (points[:, 1]**2 + 1e-6)\n            force[:, 1] -= 1.0 / ((1 - points[:, 1])**2 + 1e-6)\n            \n            # Update positions and clip to stay within bounds\n            points += step_size * force\n            points = np.clip(points, 0.01, 0.99)\n\n        # 2. Selection Step: Remove the 6 points that are most \"crowded\"\n        # Crowdedness is determined by the distance to the nearest neighbor\n        min_dist_sq = []\n        for i in range(num_total):\n            dists = np.sum((points[i] - points)**2, axis=1)\n            dists",
+  "reasoning": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    # Packing 26 circles in a unit square to maximize the sum of radii\n    num_keep = 26\n    num_total = 32\n    best_sum = -1\n    best_centers = None\n    best_radii = None\n    \n    # Precompute triangular indices for the overlap constraint (325 pairs for 26 circles)\n    triu_idx = np.triu_indices(num_keep, k=1)\n\n    # Ensemble strategy: Run the full pipeline 5 times and keep the best result\n    for _ in range(5):\n        # 1. Physics Step: Use repulsion forces to spread out 32 points in the unit square\n        points = np.random.rand(num_total, 2)\n        for step_idx in range(100):\n            # Annealing step size\n            step_size = 0.005 * (1.0 - step_idx / 100.0)\n            \n            # Pairwise repulsion force (1/d^2)\n            diff = points[:, np.newaxis, :] - points[np.newaxis, :, :]\n            dist_sq = np.sum(diff**2, axis=-1)\n            dist_sq[np.diag_indices(num_total)] = 1.0\n            dist = np.sqrt(dist_sq)\n            force_mag = 1.0 / (dist_sq + 1e-6)\n            force_dir = diff / (dist[:, :, np.newaxis] + 1e-9)\n            force = np.sum(force_mag[:, :, np.newaxis] * force_dir, axis=1)\n            \n            # Boundary repulsion forces\n            force[:, 0] += 1.0 / (points[:, 0]**2 + 1e-6)\n            force[:, 0] -= 1.0 / ((1 - points[:, 0])**2 + 1e-6)\n            force[:, 1] += 1.0 / (points[:, 1]**2 + 1e-6)\n            force[:, 1] -= 1.0 / ((1 - points[:, 1])**2 + 1e-6)\n            \n            # Update positions and clip to stay within bounds\n            points += step_size * force\n            points = np.clip(points, 0.01, 0.99)\n\n        # 2. Selection Step: Remove the 6 points that are most \"crowded\"\n        # Crowdedness is determined by the distance to the nearest neighbor\n        min_dist_sq = []\n        for i in range(num_total):\n            dists = np.sum((points[i] - points)**2, axis=1)\n            dists",
+  "timestamp": "2026-01-08T10:58:24.610540",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "MAX_TOKENS",
+      "usage_metadata": {
+        "prompt_token_count": 357,
+        "candidates_token_count": 653,
+        "thoughts_token_count": 15727
+      },
+      "response_text_len": 1974
+    }
+  }
+}

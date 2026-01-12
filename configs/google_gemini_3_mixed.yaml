@@ -1,0 +1,65 @@
+# Native Google Gemini 3 Mixed Config
+# Root: Gemini 3 Pro Preview (high quality reasoning)
+# Children: Both Flash (fast) and Pro (strong) models
+#
+# Requires: GEMINI_API_KEY environment variable
+# Get your API key from: https://aistudio.google.com/apikey
+#
+# Reasoning effort levels:
+#   - minimal: ~10% of max_tokens for thinking
+#   - low: ~20% of max_tokens for thinking
+#   - medium: ~50% of max_tokens for thinking
+#   - high: ~80% of max_tokens for thinking
+#   - xhigh: ~95% of max_tokens for thinking (ultrathink!)
+
+experiment:
+  name: "circle_packing_gemini_3_mixed"
+  output_dir: "./experiments"
+
+root_llm:
+  provider: "google"
+  model: "gemini-3-pro-preview"
+  cost_per_million_input_tokens: 2.00
+  cost_per_million_output_tokens: 12.00
+  max_iterations: 30
+  reasoning:
+    enabled: true
+    effort: "xhigh"
+
+child_llms:
+  - alias: "flash"
+    model: "gemini-3-flash-preview"
+    provider: "google"
+    cost_per_million_input_tokens: 0.50
+    cost_per_million_output_tokens: 3.00
+    calibration_calls: 2
+    reasoning:
+      enabled: true
+      effort: "high"
+
+  - alias: "pro"
+    model: "gemini-3-pro-preview"
+    provider: "google"
+    cost_per_million_input_tokens: 2.00
+    cost_per_million_output_tokens: 12.00
+    calibration_calls: 1
+    reasoning:
+      enabled: true
+      effort: "high"
+
+default_child_llm_alias: "flash"
+
+calibration_notes_file: "/Users/sahan/conductor/workspaces/tetris_evolve/perth/experiments/circle_packing_gemini_3_mixed_20260107_230427/calibration_notes.yaml"
+
+evaluation:
+  evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    timeout_seconds: 300
+
+evolution:
+  max_generations: 20
+  max_children_per_generation: 16
+
+budget:
+  max_total_cost: 50.0

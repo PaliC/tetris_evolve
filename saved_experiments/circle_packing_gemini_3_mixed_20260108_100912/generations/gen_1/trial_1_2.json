@@ -1,0 +1,25 @@
+{
+  "trial_id": "trial_1_2",
+  "generation": 1,
+  "parent_id": "trial_0_3",
+  "code": "",
+  "metrics": {},
+  "prompt": "Modify the physics packing from {CODE_TRIAL_0_3}.\n\nChanges:\n1. Implement 'Shake and Bake': Periodically reducing the radii slightly and shaking positions violently, then re-inflating. This helps escape jamming configurations.\n2. Ensure boundary conditions are strictly enforced (hard walls).\n\nIMPORTANT: Output ONLY the Python code in a ```python``` block. Do not add explanations or text outside the block.",
+  "response": "```python\nimport numpy as np\n\ndef construct_packing():\n    \"\"\"\n    Constructs a packing of 26 circles in a unit square to maximize the sum of radii.\n    The target sum is approximately 2.6359850561146603.\n    This corresponds to 26 circles of radius r \u2248 0.1013840406.\n    \"\"\"\n    n = 26\n    # Best known radius for equal packing of 26 circles\n    r_target = 0.10138404062\n    \n    # Initialize centers in a layout likely to converge to a good packing.\n    # We use a 5x5 grid and tuck the 26th circle in a gap.\n    # To facilitate 'Shake and Bake', we add slight noise.\n    centers = []\n    for i in range(5):\n        for j in range(5):\n            centers.append([0.1 + i*0.2, 0.1 + j*0.2])\n    centers.append([0.95, 0.95])\n    centers = np.array(centers)\n    centers += np.random.normal(0, 0.005, centers.shape)\n    \n    # Shake and Bake optimization loop\n    # Bake: Use force-directed relaxation to resolve overlaps and boundary violations.\n    # Shake: Periodically add noise to escape local minima.\n    best_centers = centers.copy()\n    min_overlap = float('inf')\n    \n    for cycle in range(8):\n        # Bake (Refinement)\n        step = 0.02\n        r_current = r_target * (0.95 + 0.05 * (cycle / 7))\n        for _ in range(1500):\n            forces = np.zeros_like(centers)\n            # Overlap forces\n            for i in range(n):\n                for j in range(i + 1, n):\n                    d = centers[i] - centers[j]\n                    dist = np.linalg.norm(d)\n                    if dist < 2 * r_current:\n                        f = (2 * r_current - dist) * (d / (dist + 1e-12))\n                        forces[i] += f\n                        forces[j] -= f\n                \n                # Boundary forces (Hard walls)\n                forces[i, 0] += np.maximum(0, r_current - centers[i, 0])\n                forces[i, 0] -= np.maximum(0, centers[i, 0] - (1 - r_current))\n                forces[i, 1] += np.maximum(0, r_current - centers[i, 1])\n                forces[i, 1] -= np.maximum(0, centers",
+  "reasoning": "```python\nimport numpy as np\n\ndef construct_packing():\n    \"\"\"\n    Constructs a packing of 26 circles in a unit square to maximize the sum of radii.\n    The target sum is approximately 2.6359850561146603.\n    This corresponds to 26 circles of radius r \u2248 0.1013840406.\n    \"\"\"\n    n = 26\n    # Best known radius for equal packing of 26 circles\n    r_target = 0.10138404062\n    \n    # Initialize centers in a layout likely to converge to a good packing.\n    # We use a 5x5 grid and tuck the 26th circle in a gap.\n    # To facilitate 'Shake and Bake', we add slight noise.\n    centers = []\n    for i in range(5):\n        for j in range(5):\n            centers.append([0.1 + i*0.2, 0.1 + j*0.2])\n    centers.append([0.95, 0.95])\n    centers = np.array(centers)\n    centers += np.random.normal(0, 0.005, centers.shape)\n    \n    # Shake and Bake optimization loop\n    # Bake: Use force-directed relaxation to resolve overlaps and boundary violations.\n    # Shake: Periodically add noise to escape local minima.\n    best_centers = centers.copy()\n    min_overlap = float('inf')\n    \n    for cycle in range(8):\n        # Bake (Refinement)\n        step = 0.02\n        r_current = r_target * (0.95 + 0.05 * (cycle / 7))\n        for _ in range(1500):\n            forces = np.zeros_like(centers)\n            # Overlap forces\n            for i in range(n):\n                for j in range(i + 1, n):\n                    d = centers[i] - centers[j]\n                    dist = np.linalg.norm(d)\n                    if dist < 2 * r_current:\n                        f = (2 * r_current - dist) * (d / (dist + 1e-12))\n                        forces[i] += f\n                        forces[j] -= f\n                \n                # Boundary forces (Hard walls)\n                forces[i, 0] += np.maximum(0, r_current - centers[i, 0])\n                forces[i, 0] -= np.maximum(0, centers[i, 0] - (1 - r_current))\n                forces[i, 1] += np.maximum(0, r_current - centers[i, 1])\n                forces[i, 1] -= np.maximum(0, centers",
+  "timestamp": "2026-01-08T10:17:57.401831",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "MAX_TOKENS",
+      "usage_metadata": {
+        "prompt_token_count": 310,
+        "candidates_token_count": 655,
+        "thoughts_token_count": 15725
+      },
+      "response_text_len": 2017
+    }
+  }
+}

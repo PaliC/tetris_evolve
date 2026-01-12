@@ -1,0 +1,638 @@
+{
+  "experiment_id": "openevolve_config_gemini_flash_20260111_191309",
+  "config": {
+    "experiment": {
+      "name": "openevolve_config_gemini_flash",
+      "output_dir": "./experiments",
+      "seed": null
+    },
+    "root_llm": {
+      "model": "gemini-3-flash-preview",
+      "cost_per_million_input_tokens": 0.5,
+      "cost_per_million_output_tokens": 3.0,
+      "provider": "google",
+      "max_iterations": null,
+      "reasoning": {
+        "enabled": true,
+        "effort": "xhigh",
+        "max_tokens": null,
+        "exclude": false
+      }
+    },
+    "child_llms": [
+      {
+        "model": "claude-3.7-sonnet",
+        "cost_per_million_input_tokens": 3.0,
+        "cost_per_million_output_tokens": 15.0,
+        "alias": "sonnet",
+        "provider": "openrouter",
+        "calibration_calls": 5,
+        "reasoning": {
+          "enabled": false,
+          "effort": null,
+          "max_tokens": null,
+          "exclude": false
+        }
+      },
+      {
+        "model": "gemini-2.0-flash-001",
+        "cost_per_million_input_tokens": 0.1,
+        "cost_per_million_output_tokens": 0.4,
+        "alias": "gemini",
+        "provider": "google",
+        "calibration_calls": 5,
+        "reasoning": {
+          "enabled": false,
+          "effort": null,
+          "max_tokens": null,
+          "exclude": false
+        }
+      }
+    ],
+    "evaluation": {
+      "evaluator_fn": "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+      "evaluator_kwargs": {
+        "n_circles": 26,
+        "timeout_seconds": 90
+      }
+    },
+    "evolution": {
+      "max_generations": 47,
+      "max_children_per_generation": 10
+    },
+    "budget": {
+      "max_total_cost": 10.0
+    },
+    "default_child_llm_alias": "gemini",
+    "calibration_notes_file": null
+  },
+  "start_time": "2026-01-11T19:13:09.813300",
+  "end_time": "2026-01-11T19:48:52.276672",
+  "termination_reason": "max_iterations_reached (with errors: gen0: RetryError: RetryError[<Future at 0x10f0b7ee0 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f0f40d0 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f10b050 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f10a650 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f0c9650 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f057e50 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10ea624d0 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f0576d0 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f0caed0 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10ea623d0 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10ea623d0 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f10b250 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10e90f450 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f0c8850 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f10b1d0 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f10b450 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10f10b350 state=finished returned GenerateContentResponse>]; gen0: RetryError: RetryError[<Future at 0x10eb11cd0 state=finished returned GenerateContentResponse>]; gen7: RetryError: RetryError[<Future at 0x10ea623d0 state=finished returned GenerateContentResponse>]; gen9: RetryError: RetryError[<Future at 0x10f231b50 state=finished returned GenerateContentResponse>]; gen10: RetryError: RetryError[<Future at 0x10f2f2150 state=finished returned GenerateContentResponse>]; gen10: RetryError: RetryError[<Future at 0x10f2f34d0 state=finished returned GenerateContentResponse>]; gen13: RetryError: RetryError[<Future at 0x10f43bbd0 state=finished returned GenerateContentResponse>]; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 25.322387706s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '25s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 25.037389884s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '25s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 24.811921139s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '24s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 24.587636457s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '24s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 24.357786629s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '24s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 24.127815181s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '24s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 23.888962606s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '23s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 23.651352886s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '23s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 23.427871044s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '23s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 23.197397566s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '23s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 22.979118745s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '22s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 22.75969496s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '22s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 22.547795577s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '22s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 22.318406489s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '22s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 22.101855389s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '22s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 21.88000916s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '21s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 21.662632209s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '21s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 21.434502118s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '21s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 21.159990738s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '21s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 20.94224676s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '20s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 20.715830441s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '20s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 20.487018011s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '20s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 20.26144888s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '20s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 20.03224156s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '20s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 19.799379185s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '19s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 19.570651273s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '19s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 19.325734758s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '19s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 19.12438901s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '19s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 18.894160516s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '18s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 18.660816156s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '18s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 18.428750047s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '18s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 18.208866723s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '18s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 17.98562033s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '17s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 17.765512051s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '17s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 17.517209862s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '17s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 17.284675468s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '17s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 17.087396515s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '17s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 16.871533799s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '16s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 16.660541683s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '16s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 16.446126533s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '16s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 16.23178337s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '16s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 16.011966761s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '16s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 15.814525208s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '15s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 15.591276378s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '15s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 15.451985209s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '15s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 15.234307814s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '15s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 14.979870776s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '14s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 14.731632512s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '14s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 14.489158087s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '14s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 14.236509473s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '14s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 13.98665962s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '13s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 13.731783296s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '13s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 13.485958389s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '13s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 13.243490369s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '13s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 12.998117991s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 12.747144238s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 12.509810116s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 12.269542986s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 12.025530298s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 11.771809507s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '11s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 11.512097493s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '11s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 11.272548966s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '11s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 11.03939426s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '11s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 10.803938876s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '10s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 10.583889463s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '10s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 10.363492206s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '10s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 10.13427836s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '10s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 9.886447671s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 9.636421269s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 9.382150713s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 9.230971758s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 8.996333674s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '8s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 8.753799729s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '8s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 8.513114638s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '8s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 8.262976545s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'model': 'gemini-3-flash', 'location': 'global'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '8s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 8.017116702s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '8s'}]}}; gen13: ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count, limit: 1000000, model: gemini-3-flash\\nPlease retry in 7.762415898s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_paid_tier_input_token_count', 'quotaId': 'GenerateContentPaidTierInputTokensPerModelPerMinute', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-flash'}, 'quotaValue': '1000000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '7s'}]}})",
+  "num_generations": 13,
+  "total_trials": 0,
+  "best_trial": {
+    "trial_id": "trial_12_0",
+    "score": 2.6359830853750683,
+    "generation": 12
+  },
+  "scratchpad": "\n# Generation 12: Precision Polishing & Hybridization\nCurrent benchmark: 2.633035 (trial_5_2). Target: 2.635985.\nAnalysis of Gen 11 suggests that the 0.15 radius bound is a critical stability limit for SLSQP. \nHowever, Linear Programming (LP) is the mathematically optimal way to find radii for fixed centers.\n\n## Strategic Focus:\n1. **Post-Optimization LP Polish**: Run the successful trial_5_2 framework and apply a single, robust LP solve at the very end to maximize radii for the final centers.\n2. **Robust Hybrid BH+LP**: Basin Hopping for centers where the objective is LP-optimized radii. Use a small epsilon (1e-9) in constraints to ensure the LP solver doesn't fail due to numerical precision.\n3. **Coordinate Descent (Micro-Polish)**: Sequentially adjust each center's X and Y coordinates in microscopic increments (1e-6), re-solving the LP for radii at each step.\n4. **Intensive Sobol-BH (Stable)**: Scale up trial_5_2 with 8192 Sobol samples and niter=400, strictly keeping the 0.15 radius bound and adding the final LP polish.\n5. **Differential Evolution + LP**: Use global evolutionary search for centers to avoid gradient-related local minima, while using LP for mathematically optimal radii.\n",
+  "generations": [
+    {
+      "generation_num": 0,
+      "num_trials": 1,
+      "num_successful_trials": 1,
+      "best_trial_id": null,
+      "best_score": 0.0,
+      "selected_trial_ids": [
+        "trial_0_0"
+      ],
+      "selection_reasoning": "The system is now operational. I am selecting the single successful diagnostic trial to advance to Generation 1, where I will implement the full suite of circle packing strategies.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_0_0",
+          "reasoning": "This was a diagnostic trial to confirm system connectivity. While its score is 0.0, it provides the necessary baseline to begin actual optimization in the next generation.",
+          "category": "potential",
+          "source_generation": 0
+        }
+      ],
+      "parents_used": [],
+      "parents_used_counts": {},
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:20:51.964093"
+    },
+    {
+      "generation_num": 1,
+      "num_trials": 10,
+      "num_successful_trials": 3,
+      "best_trial_id": "trial_1_5",
+      "best_score": 2.483721458464593,
+      "selected_trial_ids": [
+        "trial_1_5",
+        "trial_1_4",
+        "trial_1_6"
+      ],
+      "selection_reasoning": "I am carrying forward the top performer (trial_1_5) and two trials with high structural potential (trial_1_4 and trial_1_6). The next generation will focus on refining these strategies, particularly by improving the initialization of the Basin Hopping and Coordinate Descent methods to match the robustness of the Greedy Filling approach.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_1_5",
+          "reasoning": "Highest score (2.48). Its success stems from a robust greedy initialization that provides a valid starting point for SLSQP. This avoids the 'INVALID' errors seen in other trials.",
+          "category": "performance",
+          "source_generation": 1
+        },
+        {
+          "trial_id": "trial_1_4",
+          "reasoning": "Second highest score (1.26). Uses Basin Hopping, which has high potential for escaping local optima. With better constraint handling and initialization, this could surpass the greedy approach.",
+          "category": "potential",
+          "source_generation": 1
+        },
+        {
+          "trial_id": "trial_1_6",
+          "reasoning": "Valid trial (score 0.0). Uses coordinate descent. It provides a different optimization framework that can be improved by fixing its initialization logic.",
+          "category": "diversity",
+          "source_generation": 1
+        }
+      ],
+      "parents_used": [
+        "trial_0_0"
+      ],
+      "parents_used_counts": {
+        "trial_0_0": 10
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:21:42.449020"
+    },
+    {
+      "generation_num": 2,
+      "num_trials": 10,
+      "num_successful_trials": 6,
+      "best_trial_id": "trial_2_1",
+      "best_score": 2.6253258451515347,
+      "selected_trial_ids": [
+        "trial_2_1",
+        "trial_2_8",
+        "trial_2_5"
+      ],
+      "selection_reasoning": "Carrying forward the top-performing Basin Hopping trial (2_1), the mathematically rigorous Nested LP trial (2_8), and the diverse Compression trial (2_5). The next generation will focus on hybridizing the global search of Basin Hopping with the optimal radii calculation of Linear Programming.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_2_1",
+          "reasoning": "Highest score (2.625). Successfully combined greedy initialization with Basin Hopping. It is the closest to the record and provides the most robust framework for further refinement.",
+          "category": "performance",
+          "source_generation": 2
+        },
+        {
+          "trial_id": "trial_2_8",
+          "reasoning": "Uses a nested approach with Linear Programming for radii. This is mathematically optimal for radii given fixed centers. Combining this with a global center optimizer (like Basin Hopping) is a high-potential strategy.",
+          "category": "potential",
+          "source_generation": 2
+        },
+        {
+          "trial_id": "trial_2_5",
+          "reasoning": "Uses a 'Shrinking Boundaries' compression strategy. This unique heuristic reached 2.53 and provides a different path for escaping local optima compared to the standard greedy/SA approaches.",
+          "category": "diversity",
+          "source_generation": 2
+        }
+      ],
+      "parents_used": [
+        "trial_1_5"
+      ],
+      "parents_used_counts": {
+        "trial_1_5": 10
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:22:40.489714"
+    },
+    {
+      "generation_num": 3,
+      "num_trials": 10,
+      "num_successful_trials": 3,
+      "best_trial_id": "trial_3_0",
+      "best_score": 2.631936897500395,
+      "selected_trial_ids": [
+        "trial_3_0",
+        "trial_3_6",
+        "trial_2_8"
+      ],
+      "selection_reasoning": "Trial 3_0 is extremely close to the best-known solution. I am carrying it forward for high-precision parameter tuning (radius bounds, step sizes, and sampling density). I am also retaining the Compression (3_6) and Nested LP (2_8) strategies to maintain algorithmic diversity.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_3_0",
+          "reasoning": "Highest score (2.6319). It successfully combined Halton-sequence greedy initialization with an intensive Basin Hopping search. It is the strongest candidate for final convergence.",
+          "category": "performance",
+          "source_generation": 3
+        },
+        {
+          "trial_id": "trial_3_6",
+          "reasoning": "A strong alternative approach (2.575) using a 'Shrinking Boundaries' (Compression) cycle. This diversity is important if the greedy-start Basin Hopping approach plateaus.",
+          "category": "diversity",
+          "source_generation": 3
+        },
+        {
+          "trial_id": "trial_2_8",
+          "reasoning": "The 'Nested LP' approach. Although it struggled in Gen 3 due to infeasibility issues, the mathematical principle of using LP for radii is sound. Refinement of the center-movement logic could make it a winner.",
+          "category": "potential",
+          "source_generation": 2
+        }
+      ],
+      "parents_used": [
+        "trial_2_1",
+        "trial_2_5",
+        "trial_2_8"
+      ],
+      "parents_used_counts": {
+        "trial_2_1": 7,
+        "trial_2_5": 1,
+        "trial_2_8": 2
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:24:57.727621"
+    },
+    {
+      "generation_num": 4,
+      "num_trials": 10,
+      "num_successful_trials": 5,
+      "best_trial_id": "trial_4_3",
+      "best_score": 2.6244021932822004,
+      "selected_trial_ids": [
+        "trial_3_0",
+        "trial_4_3",
+        "trial_4_6",
+        "trial_2_8"
+      ],
+      "selection_reasoning": "I am carrying forward the current champion (trial_3_0) and three diverse high-potential strategies. The next generation will focus on 'micro-refinement' of trial_3_0 (tuning the radius bound and step-size) and hybridizing the successful Basin Hopping framework with the precision of Linear Programming for radii.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_3_0",
+          "reasoning": "Still the highest score (2.6319). Its parameters (radius bound 0.15, fixed step-size) represent the current best-known 'sweet spot'. All Gen 4 attempts to refine it either regressed or failed.",
+          "category": "performance",
+          "source_generation": 3
+        },
+        {
+          "trial_id": "trial_4_3",
+          "reasoning": "Second highest score (2.6244). The adaptive step-size logic is sound but likely needs a more conservative decay rate to avoid premature convergence. It remains a strong candidate for global search.",
+          "category": "potential",
+          "source_generation": 4
+        },
+        {
+          "trial_id": "trial_4_6",
+          "reasoning": "Highest score for the 'Shrinking Boundaries' approach (2.599). This strategy provides important algorithmic diversity and is showing steady improvement across generations.",
+          "category": "diversity",
+          "source_generation": 4
+        },
+        {
+          "trial_id": "trial_2_8",
+          "reasoning": "The Nested LP approach. Mathematically, using LP for radii is the most precise method. We need to find a way to stabilize the center-optimization to unlock its full potential.",
+          "category": "potential",
+          "source_generation": 2
+        }
+      ],
+      "parents_used": [
+        "trial_3_0",
+        "trial_3_6"
+      ],
+      "parents_used_counts": {
+        "trial_3_0": 9,
+        "trial_3_6": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:27:15.898620"
+    },
+    {
+      "generation_num": 5,
+      "num_trials": 10,
+      "num_successful_trials": 4,
+      "best_trial_id": "trial_5_2",
+      "best_score": 2.633035162944876,
+      "selected_trial_ids": [
+        "trial_5_2",
+        "trial_5_6",
+        "trial_5_5",
+        "trial_3_0"
+      ],
+      "selection_reasoning": "I am carrying forward the new benchmark (trial_5_2) which utilized Sobol initialization, along with its multi-start variant (5_6) and the steadily improving Compression strategy (5_5). The next generation will focus on 'Super-Intensive' refinement of 5_2, including increased iterations, adaptive step sizes, and micro-tuning of the radius constraints to bridge the final 0.003 gap.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_5_2",
+          "reasoning": "New highest score (2.6330). The switch to Sobol sequence initialization (4096 samples) provided a superior starting configuration for the Basin Hopping search. This is the strongest candidate for the final push.",
+          "category": "performance",
+          "source_generation": 5
+        },
+        {
+          "trial_id": "trial_5_6",
+          "reasoning": "Strong performance (2.6108) using a multi-start Sobol-SLSQP approach. It demonstrates that the Sobol initialization is robust and that exploring multiple starting basins is a viable strategy.",
+          "category": "potential",
+          "source_generation": 5
+        },
+        {
+          "trial_id": "trial_5_5",
+          "reasoning": "Highest score for the 'Shrinking Boundaries' approach (2.602). This strategy provides important algorithmic diversity and has shown consistent improvement, now crossing the 2.60 threshold.",
+          "category": "diversity",
+          "source_generation": 5
+        },
+        {
+          "trial_id": "trial_3_0",
+          "reasoning": "The previous champion (2.6319). It serves as a high-quality baseline and a potential parent for crossover or further micro-tuning of the radius bounds.",
+          "category": "performance",
+          "source_generation": 3
+        }
+      ],
+      "parents_used": [
+        "trial_2_8",
+        "trial_3_0",
+        "trial_4_6"
+      ],
+      "parents_used_counts": {
+        "trial_2_8": 1,
+        "trial_3_0": 8,
+        "trial_4_6": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:29:35.430443"
+    },
+    {
+      "generation_num": 6,
+      "num_trials": 10,
+      "num_successful_trials": 2,
+      "best_trial_id": "trial_6_4",
+      "best_score": 2.616058314701505,
+      "selected_trial_ids": [
+        "trial_5_2",
+        "trial_6_4",
+        "trial_5_6"
+      ],
+      "selection_reasoning": "I am carrying forward the current champion (trial_5_2) and two strong alternative strategies (6_4 and 5_6). The failures in Gen 6 were largely due to implementation errors (syntax) and over-aggressive parameter tuning. The next generation will focus on 'Clean Refinement'\u2014fixing the syntax in the intensive search logic and cautiously increasing search depth while maintaining the valid constraint set of 5_2.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_5_2",
+          "reasoning": "Highest score (2.6330). The Sobol-initialization + Basin Hopping framework remains the most robust and high-performing approach. Gen 6 attempts failed to improve it, likely due to syntax errors (e.g., trial_6_2 had a bracket typo) or over-aggressive parameter changes.",
+          "category": "performance",
+          "source_generation": 5
+        },
+        {
+          "trial_id": "trial_6_4",
+          "reasoning": "Best score for the 'Shrinking Boundaries' approach (2.616). It successfully integrated Basin Hopping as a post-processing step, showing that this hybrid heuristic is competitive and provides important diversity.",
+          "category": "diversity",
+          "source_generation": 6
+        },
+        {
+          "trial_id": "trial_5_6",
+          "reasoning": "Solid multi-start performance (2.6108). It provides a robust alternative to the single long run of 5_2 and is less prone to the 'INVALID' failures seen in the more complex Gen 6 attempts.",
+          "category": "potential",
+          "source_generation": 5
+        }
+      ],
+      "parents_used": [
+        "trial_5_2",
+        "trial_5_5"
+      ],
+      "parents_used_counts": {
+        "trial_5_2": 9,
+        "trial_5_5": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:32:05.673289"
+    },
+    {
+      "generation_num": 7,
+      "num_trials": 5,
+      "num_successful_trials": 2,
+      "best_trial_id": "trial_7_3",
+      "best_score": 2.6265719933337617,
+      "selected_trial_ids": [
+        "trial_5_2",
+        "trial_7_3",
+        "trial_6_4"
+      ],
+      "selection_reasoning": "I am carrying forward the champion (5_2), the best adaptive variant (7_3), and the best compression variant (6_4). The strategy for the next generation is 'Micro-Precision': instead of large search iterations, I will focus on extremely small Gaussian perturbations of the 5_2 layout combined with Linear Programming to find the optimal radii for those tiny shifts.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_5_2",
+          "reasoning": "Highest score (2.6330). It remains the most stable and effective framework. Subsequent attempts to refine its parameters in Gen 6 and 7 have mostly regressed or failed, highlighting the sensitivity of its current 'sweet spot'.",
+          "category": "performance",
+          "source_generation": 5
+        },
+        {
+          "trial_id": "trial_7_3",
+          "reasoning": "Best score from Gen 7 (2.626). It successfully implemented an adaptive step-size Basin Hopping. While it didn't beat 5_2, it proves the validity of the adaptive logic and provides a strong alternative for global search.",
+          "category": "potential",
+          "source_generation": 7
+        },
+        {
+          "trial_id": "trial_6_4",
+          "reasoning": "Best score for the 'Shrinking Boundaries' approach (2.616). This strategy offers the most significant algorithmic diversity compared to the Basin Hopping family.",
+          "category": "diversity",
+          "source_generation": 6
+        }
+      ],
+      "parents_used": [
+        "trial_5_2",
+        "trial_6_4"
+      ],
+      "parents_used_counts": {
+        "trial_5_2": 4,
+        "trial_6_4": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:34:51.753436"
+    },
+    {
+      "generation_num": 8,
+      "num_trials": 10,
+      "num_successful_trials": 6,
+      "best_trial_id": "trial_8_4",
+      "best_score": 2.628457135516106,
+      "selected_trial_ids": [
+        "trial_5_2",
+        "trial_8_4",
+        "trial_6_4"
+      ],
+      "selection_reasoning": "I am carrying forward the champion (5_2), the best adaptive variant (8_4), and the best compression variant (6_4). The strategy for the next generation is to focus on 'Micro-Perturbations' of the 5_2 layout. Instead of large search iterations, I will use the 5_2 centers as a fixed seed and apply extremely small Gaussian shifts combined with Linear Programming to find the mathematically optimal radii for those tiny movements, aiming to bridge the final 0.003 gap.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_5_2",
+          "reasoning": "Current champion (2.6330). It remains the most stable and effective framework. All subsequent attempts to refine it have regressed, indicating that its specific combination of Sobol initialization and Basin Hopping parameters is a strong local optimum.",
+          "category": "performance",
+          "source_generation": 5
+        },
+        {
+          "trial_id": "trial_8_4",
+          "reasoning": "Highest score of Gen 8 (2.628). It successfully integrated adaptive step-size logic with Sobol initialization. While it didn't beat 5_2, it proves the framework's robustness and offers a different search dynamic.",
+          "category": "potential",
+          "source_generation": 8
+        },
+        {
+          "trial_id": "trial_6_4",
+          "reasoning": "Best score for the 'Shrinking Boundaries' approach (2.616). This strategy provides the most significant algorithmic diversity compared to the Basin Hopping family.",
+          "category": "diversity",
+          "source_generation": 6
+        }
+      ],
+      "parents_used": [
+        "trial_5_2",
+        "trial_6_4"
+      ],
+      "parents_used_counts": {
+        "trial_5_2": 9,
+        "trial_6_4": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:37:18.599115"
+    },
+    {
+      "generation_num": 9,
+      "num_trials": 5,
+      "num_successful_trials": 1,
+      "best_trial_id": null,
+      "best_score": 0.0,
+      "selected_trial_ids": [
+        "trial_5_2",
+        "trial_8_4",
+        "trial_6_4"
+      ],
+      "selection_reasoning": "I am carrying forward the stable champion (5_2) and its successful variants (8_4, 6_4). Gen 9 demonstrated that the 'Hybrid LP' approach is currently failing, likely due to infeasibility issues or solver timeouts. The next generation will focus on 'Conservative Scaling'\u2014increasing the search depth of the successful trial_5_2 framework without introducing the unstable LP-radii component.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_5_2",
+          "reasoning": "Highest score (2.6330). It remains the most stable and effective framework. All Gen 9 attempts to refine it with LP-based local search or Differential Evolution either failed or returned 0.0, suggesting the LP-radii approach is currently too unstable in this implementation.",
+          "category": "performance",
+          "source_generation": 5
+        },
+        {
+          "trial_id": "trial_8_4",
+          "reasoning": "Best adaptive variant (2.628). It provides a robust alternative to the fixed step-size of 5_2 and is less prone to the 'INVALID' errors seen in the LP-hybrid attempts.",
+          "category": "potential",
+          "source_generation": 8
+        },
+        {
+          "trial_id": "trial_6_4",
+          "reasoning": "Best compression-based score (2.616). Maintains algorithmic diversity.",
+          "category": "diversity",
+          "source_generation": 6
+        }
+      ],
+      "parents_used": [
+        "trial_5_2"
+      ],
+      "parents_used_counts": {
+        "trial_5_2": 5
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:40:27.531089"
+    },
+    {
+      "generation_num": 10,
+      "num_trials": 1,
+      "num_successful_trials": 0,
+      "best_trial_id": null,
+      "best_score": 0.0,
+      "selected_trial_ids": [
+        "trial_5_2",
+        "trial_8_4",
+        "trial_6_4"
+      ],
+      "selection_reasoning": "I am carrying forward the champion (5_2) and the best alternative strategies (8_4, 6_4). Analysis of the Gen 10 failure shows that relaxing the radius bound to 0.2 was too aggressive and led to 'INVALID' results. The next generation will focus on 'Micro-Tuning' of the radius bound (e.g., 0.151, 0.152) and increasing search intensity while strictly maintaining the proven valid constraint framework.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_5_2",
+          "reasoning": "Highest score (2.6330). It remains the most stable and effective framework. The failure of trial_10_0 confirms that the radius bound of 0.15 is a critical 'sweet spot' for validity in this specific optimization setup.",
+          "category": "performance",
+          "source_generation": 5
+        },
+        {
+          "trial_id": "trial_8_4",
+          "reasoning": "Best adaptive variant (2.628). It provides a robust alternative to the fixed step-size of 5_2 and serves as a secondary high-quality baseline.",
+          "category": "potential",
+          "source_generation": 8
+        },
+        {
+          "trial_id": "trial_6_4",
+          "reasoning": "Best score for the 'Shrinking Boundaries' approach (2.616). Maintains algorithmic diversity by exploring a fundamentally different packing heuristic.",
+          "category": "diversity",
+          "source_generation": 6
+        }
+      ],
+      "parents_used": [
+        "trial_5_2"
+      ],
+      "parents_used_counts": {
+        "trial_5_2": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:43:10.455638"
+    },
+    {
+      "generation_num": 11,
+      "num_trials": 10,
+      "num_successful_trials": 3,
+      "best_trial_id": "trial_11_4",
+      "best_score": 2.6244760869075834,
+      "selected_trial_ids": [
+        "trial_5_2",
+        "trial_11_4",
+        "trial_6_4",
+        "trial_8_4"
+      ],
+      "selection_reasoning": "I am carrying forward the champion (5_2) and the best variants from recent generations (11_4, 6_4, 8_4). Gen 11 showed that even minor modifications to 5_2's bounds or the introduction of LP-radii during the search can trigger 'INVALID' statuses. The next generation will focus on 'Post-Optimization Polishing'\u2014running the successful 5_2 code and only applying the LP-radii optimization as a final, single-step refinement to ensure validity.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_5_2",
+          "reasoning": "Highest score (2.6330). It remains the most stable and effective framework. All Gen 11 attempts to refine it with micro-tuned bounds or LP-hybrid logic resulted in INVALID solutions, suggesting the current search parameters are at a critical stability limit.",
+          "category": "performance",
+          "source_generation": 5
+        },
+        {
+          "trial_id": "trial_11_4",
+          "reasoning": "Best score of Gen 11 (2.624). It successfully implemented a multi-start Sobol-SLSQP approach with an LP polish. While it didn't beat 5_2, it proves the robustness of the multi-start framework.",
+          "category": "potential",
+          "source_generation": 11
+        },
+        {
+          "trial_id": "trial_6_4",
+          "reasoning": "Best score for the 'Shrinking Boundaries' approach (2.616). Maintains algorithmic diversity.",
+          "category": "diversity",
+          "source_generation": 6
+        },
+        {
+          "trial_id": "trial_8_4",
+          "reasoning": "Best adaptive variant (2.628). It provides a robust alternative to the fixed step-size of 5_2.",
+          "category": "potential",
+          "source_generation": 8
+        }
+      ],
+      "parents_used": [
+        "trial_5_2",
+        "trial_6_4"
+      ],
+      "parents_used_counts": {
+        "trial_5_2": 9,
+        "trial_6_4": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:45:25.321252"
+    },
+    {
+      "generation_num": 12,
+      "num_trials": 10,
+      "num_successful_trials": 4,
+      "best_trial_id": "trial_12_0",
+      "best_score": 2.6359830853750683,
+      "selected_trial_ids": [
+        "trial_12_0",
+        "trial_5_2",
+        "trial_6_4"
+      ],
+      "selection_reasoning": "Trial 12_0 has achieved a near-record score. The focus for the next generation is 'Hyper-Precision Tuning' of the trial_12_0 framework. This includes increasing the radius bound in the Basin Hopping stage (which was identified as a bottleneck), increasing SLSQP iterations, and applying microscopic center jitters before the final LP polish to capture the remaining 0.000002.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_12_0",
+          "reasoning": "Breakthrough score of 2.635983, which is extremely close to the best known solution (2.635985). This trial proved that the combination of Sobol-initialization, Basin Hopping, and a final LP polish is the winning formula.",
+          "category": "performance",
+          "source_generation": 12
+        },
+        {
+          "trial_id": "trial_5_2",
+          "reasoning": "The previous champion (2.6330). It provided the robust foundation for the trial_12_0 breakthrough and remains a reliable reference point.",
+          "category": "performance",
+          "source_generation": 5
+        },
+        {
+          "trial_id": "trial_6_4",
+          "reasoning": "Best compression-based score (2.616). While not as high as the Basin Hopping results, it maintains algorithmic diversity in the population.",
+          "category": "diversity",
+          "source_generation": 6
+        }
+      ],
+      "parents_used": [
+        "trial_5_2",
+        "trial_6_4"
+      ],
+      "parents_used_counts": {
+        "trial_5_2": 9,
+        "trial_6_4": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-11T19:47:44.792409"
+    }
+  ]
+}

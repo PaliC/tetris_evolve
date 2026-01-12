@@ -1,0 +1,25 @@
+{
+  "trial_id": "trial_11_7",
+  "generation": 11,
+  "parent_id": null,
+  "code": "",
+  "metrics": {},
+  "prompt": "Solve circle packing (26 circles). \n\nStrategy: **Spiral Gravity**.\n- Place circles in a spiral pattern.\n- Apply a strong central gravity force.\n- Apply strong repulsive forces.\n- Slowly lower the gravity and increase the radius of the circles.\n- This effectively 'winds' the packing into the box.\n\nCRITICAL: Output ONLY a single Python code block (```python ... ```). \nNO intro text. NO explanation. NO 'Here is the code'. \nJust the code.",
+  "response": "```python\nimport numpy as np\n\ndef construct_packing():\n    n = 26\n    # The best known sum for 26 equal circles is 2.6359850561146603.\n    # This corresponds to a radius of approximately 0.1013840406.\n    target_r = 0.10138404061979463\n    \n    # Spiral initialization to provide a good starting layout.\n    np.random.seed(42)\n    indices = np.arange(n)\n    phi = indices * (np.pi * (3 - np.sqrt(5)))  # Golden angle\n    dist = 0.45 * np.sqrt(indices / n)\n    x = 0.5 + dist * np.cos(phi)\n    y = 0.5 + dist * np.sin(phi)\n    \n    # Parameters for the Spiral Gravity simulation.\n    steps = 30000\n    dt = 0.05\n    # Slightly larger target radius to ensure circles press tightly against each other.\n    pressure_r = target_r * 1.01\n    \n    for step in range(steps):\n        # Calculate pairwise distances.\n        dx = x[:, np.newaxis] - x[np.newaxis, :]\n        dy = y[:, np.newaxis] - y[np.newaxis, :]\n        d = np.sqrt(dx*dx + dy*dy)\n        np.fill_diagonal(d, 1.0)\n        \n        # Repulsive forces between overlapping circles.\n        mask = d < 2 * pressure_r\n        force_mag = (2 * pressure_r - d) * mask\n        d_safe = np.where(d == 0, 1e-9, d)\n        fx = np.sum(force_mag * dx / d_safe, axis=1)\n        fy = np.sum(force_mag * dy / d_safe, axis=1)\n        \n        # Boundary forces to keep circles inside the unit square.\n        fx += np.where(x < pressure_r, pressure_r - x, 0)\n        fx += np.where(x > 1 - pressure_r, 1 - pressure_r - x, 0)\n        fy += np.where(y < pressure_r, pressure_r - y, 0)\n        fy += np.where(y > 1 - pressure_r, 1 - pressure_r - y, 0)\n        \n        # Gravity force pulling towards the center (decreases over time).\n        grav = 0.05 * (1 - step / steps)\n        fx -= grav * (x - 0.5)\n        fy -= grav * (y - 0.5)\n",
+  "reasoning": "```python\nimport numpy as np\n\ndef construct_packing():\n    n = 26\n    # The best known sum for 26 equal circles is 2.6359850561146603.\n    # This corresponds to a radius of approximately 0.1013840406.\n    target_r = 0.10138404061979463\n    \n    # Spiral initialization to provide a good starting layout.\n    np.random.seed(42)\n    indices = np.arange(n)\n    phi = indices * (np.pi * (3 - np.sqrt(5)))  # Golden angle\n    dist = 0.45 * np.sqrt(indices / n)\n    x = 0.5 + dist * np.cos(phi)\n    y = 0.5 + dist * np.sin(phi)\n    \n    # Parameters for the Spiral Gravity simulation.\n    steps = 30000\n    dt = 0.05\n    # Slightly larger target radius to ensure circles press tightly against each other.\n    pressure_r = target_r * 1.01\n    \n    for step in range(steps):\n        # Calculate pairwise distances.\n        dx = x[:, np.newaxis] - x[np.newaxis, :]\n        dy = y[:, np.newaxis] - y[np.newaxis, :]\n        d = np.sqrt(dx*dx + dy*dy)\n        np.fill_diagonal(d, 1.0)\n        \n        # Repulsive forces between overlapping circles.\n        mask = d < 2 * pressure_r\n        force_mag = (2 * pressure_r - d) * mask\n        d_safe = np.where(d == 0, 1e-9, d)\n        fx = np.sum(force_mag * dx / d_safe, axis=1)\n        fy = np.sum(force_mag * dy / d_safe, axis=1)\n        \n        # Boundary forces to keep circles inside the unit square.\n        fx += np.where(x < pressure_r, pressure_r - x, 0)\n        fx += np.where(x > 1 - pressure_r, 1 - pressure_r - x, 0)\n        fy += np.where(y < pressure_r, pressure_r - y, 0)\n        fy += np.where(y > 1 - pressure_r, 1 - pressure_r - y, 0)\n        \n        # Gravity force pulling towards the center (decreases over time).\n        grav = 0.05 * (1 - step / steps)\n        fx -= grav * (x - 0.5)\n        fy -= grav * (y - 0.5)",
+  "timestamp": "2026-01-08T11:01:10.586207",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "MAX_TOKENS",
+      "usage_metadata": {
+        "prompt_token_count": 329,
+        "candidates_token_count": 656,
+        "thoughts_token_count": 15724
+      },
+      "response_text_len": 1778
+    }
+  }
+}

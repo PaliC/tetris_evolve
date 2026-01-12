@@ -72,6 +72,8 @@ child_llms:
 
 default_child_llm_alias: "gpt41-mini"
 
+path_to_calibration_notes: "/Users/sahan/conductor/workspaces/tetris_evolve/perth/experiments/shinka_evolve_circle_packing_20260108_002218/calibration_notes.yaml"
+
 evaluation:
   evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
   evaluator_kwargs:
@@ -80,7 +82,7 @@ evaluation:
 
 evolution:
   max_generations: 20
-  max_children_per_generation: 16
+  max_children_per_generation: 8
 
 budget:
   max_total_cost: 50.0

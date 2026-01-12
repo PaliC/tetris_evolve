@@ -1,0 +1,25 @@
+{
+  "trial_id": "trial_2_15",
+  "generation": 2,
+  "parent_id": null,
+  "code": "",
+  "metrics": {},
+  "prompt": "Solve the circle packing problem (26 circles). \n\nStrategy: **Particle Swarm Optimization (PSO)**.\n- Implement a simple PSO.\n- Particles = entire configuration (52 coordinates + 26 radii).\n- Fitness = sum(radii) - penalty * overlap.\n- Good for global search.\n\nIMPORTANT: Your response must contain ONLY the Python code block. No introductory text, no explanations, no markdown outside the code block. The code must be self-contained.",
+  "response": "```python\nimport numpy as np\nfrom scipy.spatial.distance import pdist, squareform\n\ndef construct_packing():\n    n = 26\n    num_particles = 20\n    iterations = 150\n    \n    # Initialize particles\n    particles = np.random.rand(num_particles, n, 2)\n    \n    # Seed some particles with a slightly perturbed 5x5 grid + 1 extra\n    for i in range(5):\n        grid = np.linspace(0.1, 0.9, 5)\n        gx, gy = np.meshgrid(grid, grid)\n        particles[i, :25, :] = np.column_stack([gx.ravel(), gy.ravel()])\n        particles[i, 25, :] = np.random.rand(2)\n        particles[i] += np.random.normal(0, 0.02, (n, 2))\n    \n    def get_r(centers):\n        # Distance to boundaries\n        r_b = np.min([np.min(centers), np.min(1 - centers)])\n        # Pairwise distances\n        dists = pdist(centers)\n        if len(dists) == 0:\n            return r_b\n        r_p = np.min(dists) / 2\n        return min(r_b, r_p)\n\n    # PSO components\n    pbest = np.copy(particles)\n    pbest_fit = np.array([get_r(p) for p in particles])\n    gbest_idx = np.argmax(pbest_fit)\n    gbest = np.copy(pbest[gbest_idx])\n    gbest_fit = pbest_fit[gbest_idx]\n    \n    velocities = np.zeros_like(particles)\n    \n    # PSO Main Loop\n    for _ in range(iterations):\n        w, c1, c2 = 0.5, 1.5, 1.5\n        r1, r2 = np.random.rand(num_particles, n, 1), np.random.rand(num_particles, n, 1)\n        velocities = w * velocities + c1 * r1 * (pbest - particles) + c2 * r2 * (gbest - particles)\n        particles = np.clip(particles + velocities, 0, 1)\n        \n        for i in range(num_particles):\n            fit = get_r(particles[i])\n            if fit > pbest_fit[i]:\n                pbest_fit[i] = fit\n                pbest[i] = np.copy(particles[i])\n                if fit > gbest_fit:\n                    gbest_fit = fit\n                    gbest = np.copy(particles[i])\n\n    # Local Search Refinement (",
+  "reasoning": "```python\nimport numpy as np\nfrom scipy.spatial.distance import pdist, squareform\n\ndef construct_packing():\n    n = 26\n    num_particles = 20\n    iterations = 150\n    \n    # Initialize particles\n    particles = np.random.rand(num_particles, n, 2)\n    \n    # Seed some particles with a slightly perturbed 5x5 grid + 1 extra\n    for i in range(5):\n        grid = np.linspace(0.1, 0.9, 5)\n        gx, gy = np.meshgrid(grid, grid)\n        particles[i, :25, :] = np.column_stack([gx.ravel(), gy.ravel()])\n        particles[i, 25, :] = np.random.rand(2)\n        particles[i] += np.random.normal(0, 0.02, (n, 2))\n    \n    def get_r(centers):\n        # Distance to boundaries\n        r_b = np.min([np.min(centers), np.min(1 - centers)])\n        # Pairwise distances\n        dists = pdist(centers)\n        if len(dists) == 0:\n            return r_b\n        r_p = np.min(dists) / 2\n        return min(r_b, r_p)\n\n    # PSO components\n    pbest = np.copy(particles)\n    pbest_fit = np.array([get_r(p) for p in particles])\n    gbest_idx = np.argmax(pbest_fit)\n    gbest = np.copy(pbest[gbest_idx])\n    gbest_fit = pbest_fit[gbest_idx]\n    \n    velocities = np.zeros_like(particles)\n    \n    # PSO Main Loop\n    for _ in range(iterations):\n        w, c1, c2 = 0.5, 1.5, 1.5\n        r1, r2 = np.random.rand(num_particles, n, 1), np.random.rand(num_particles, n, 1)\n        velocities = w * velocities + c1 * r1 * (pbest - particles) + c2 * r2 * (gbest - particles)\n        particles = np.clip(particles + velocities, 0, 1)\n        \n        for i in range(num_particles):\n            fit = get_r(particles[i])\n            if fit > pbest_fit[i]:\n                pbest_fit[i] = fit\n                pbest[i] = np.copy(particles[i])\n                if fit > gbest_fit:\n                    gbest_fit = fit\n                    gbest = np.copy(particles[i])\n\n    # Local Search Refinement (",
+  "timestamp": "2026-01-08T10:20:35.207508",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "MAX_TOKENS",
+      "usage_metadata": {
+        "prompt_token_count": 324,
+        "candidates_token_count": 654,
+        "thoughts_token_count": 15726
+      },
+      "response_text_len": 1867
+    }
+  }
+}

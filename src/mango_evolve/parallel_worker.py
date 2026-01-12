@@ -4,7 +4,7 @@ Parallel worker for child LLM calls.
 This module contains the worker function that runs in a separate process
 to make LLM calls and evaluate the results.
 
-Supports multiple providers (Anthropic and OpenRouter).
+Supports multiple providers (Anthropic, OpenRouter, and Google).
 """
 
 import json
@@ -13,7 +13,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import anthropic
 from openai import APIConnectionError as OpenAIAPIConnectionError
@@ -48,6 +48,245 @@ class WorkerResult:
     call_id: str
     cache_creation_input_tokens: int = 0
     cache_read_input_tokens: int = 0
+
+
+def _parse_worker_args(args: tuple) -> tuple:
+    """Normalize worker args to the latest signature."""
+    # Handle different arg formats for backwards compatibility
+    # 9 args: original format (no system_prompt, no provider, no model_alias)
+    # 10 args: with system_prompt (no provider, no model_alias)
+    # 11 args: with system_prompt and provider (no model_alias)
+    # 12 args: with system_prompt, provider, and model_alias
+    model_alias: str | None = None
+
+    if len(args) == 9:
+        (
+            prompt,
+            parent_id,
+            model,
+            evaluator_kwargs,
+            max_tokens,
+            temperature,
+            trial_id,
+            generation,
+            experiment_dir,
+        ) = args
+        system_prompt = None
+        provider = "anthropic"
+    elif len(args) == 10:
+        (
+            prompt,
+            parent_id,
+            model,
+            evaluator_kwargs,
+            max_tokens,
+            temperature,
+            trial_id,
+            generation,
+            experiment_dir,
+            system_prompt,
+        ) = args
+        provider = "anthropic"
+    elif len(args) == 11:
+        (
+            prompt,
+            parent_id,
+            model,
+            evaluator_kwargs,
+            max_tokens,
+            temperature,
+            trial_id,
+            generation,
+            experiment_dir,
+            system_prompt,
+            provider,
+        ) = args
+    else:
+        (
+            prompt,
+            parent_id,
+            model,
+            evaluator_kwargs,
+            max_tokens,
+            temperature,
+            trial_id,
+            generation,
+            experiment_dir,
+            system_prompt,
+            provider,
+            model_alias,
+        ) = args
+
+    return (
+        prompt,
+        parent_id,
+        model,
+        evaluator_kwargs,
+        max_tokens,
+        temperature,
+        trial_id,
+        generation,
+        experiment_dir,
+        system_prompt,
+        provider,
+        model_alias,
+    )
+
+
+def query_llm(args: tuple) -> dict[str, Any]:
+    """
+    Submit an LLM query with no evaluation or file I/O.
+
+    Uses the same inputs/outputs as spawn_child.
+    """
+    (
+        prompt,
+        parent_id,
+        model,
+        _evaluator_kwargs,
+        max_tokens,
+        temperature,
+        trial_id,
+        _generation,
+        _experiment_dir,
+        system_prompt,
+        provider,
+        model_alias,
+    ) = _parse_worker_args(args)
+
+    model_config = {
+        "model": model,
+        "temperature": temperature,
+    }
+
+    call_id = str(uuid.uuid4())
+    response_text = ""
+    input_tokens = 0
+    output_tokens = 0
+    cache_creation_input_tokens = 0
+    cache_read_input_tokens = 0
+    error: str | None = None
+    provider_debug: dict[str, Any] | None = None
+
+    try:
+        if provider == "openrouter":
+            api_key = os.environ.get("OPENROUTER_API_KEY")
+            if not api_key:
+                raise ValueError("OPENROUTER_API_KEY environment variable not set")
+
+            client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=api_key,
+            )
+
+            response = _make_openrouter_call_with_retry(
+                client=client,
+                model=model,
+                prompt=prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system_prompt=system_prompt,
+            )
+
+            response_text = response.choices[0].message.content or ""
+            input_tokens = response.usage.prompt_tokens if response.usage else 0
+            output_tokens = response.usage.completion_tokens if response.usage else 0
+        elif provider == "google":
+            api_key = os.environ.get("GEMINI_API_KEY")
+            if not api_key:
+                raise ValueError("GEMINI_API_KEY environment variable not set")
+
+            from google import genai
+            from google.genai import types
+
+            client = genai.Client(api_key=api_key)
+
+            contents = [types.Content(role="user", parts=[types.Part(text=prompt)])]
+            config_kwargs: dict[str, Any] = {
+                "max_output_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            if system_prompt:
+                config_kwargs["system_instruction"] = system_prompt
+
+            response = _make_google_call_with_retry(
+                client=client,
+                model=model,
+                contents=contents,
+                config=types.GenerateContentConfig(**config_kwargs),
+            )
+
+            response_text = _extract_google_text(response)
+            finish_reason = None
+            if response.candidates:
+                finish_reason = response.candidates[0].finish_reason
+                if finish_reason is not None:
+                    finish_reason = getattr(finish_reason, "name", str(finish_reason))
+
+            usage_metadata: dict[str, Any] = {}
+            if response.usage_metadata:
+                input_tokens = response.usage_metadata.prompt_token_count or 0
+                output_tokens = response.usage_metadata.candidates_token_count or 0
+                usage_metadata = {
+                    "prompt_token_count": response.usage_metadata.prompt_token_count,
+                    "candidates_token_count": response.usage_metadata.candidates_token_count,
+                    "thoughts_token_count": getattr(
+                        response.usage_metadata, "thoughts_token_count", 0
+                    )
+                    or 0,
+                }
+
+            provider_debug = {
+                "finish_reason": finish_reason,
+                "usage_metadata": usage_metadata,
+                "response_text_len": len(response_text),
+            }
+        else:
+            anthropic_client = anthropic.Anthropic()
+
+            response = _make_anthropic_call_with_retry(
+                client=anthropic_client,
+                model=model,
+                prompt=prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system_prompt=system_prompt,
+            )
+
+            if response.content:
+                response_text = response.content[0].text
+            input_tokens = response.usage.input_tokens
+            output_tokens = response.usage.output_tokens
+            cache_creation_input_tokens = (
+                getattr(response.usage, "cache_creation_input_tokens", 0) or 0
+            )
+            cache_read_input_tokens = getattr(response.usage, "cache_read_input_tokens", 0) or 0
+    except Exception as e:
+        error = f"LLM call failed: {str(e)}"
+
+    success = error is None
+    reasoning = response_text if success else ""
+    if provider_debug:
+        model_config["provider_debug"] = provider_debug
+
+    return {
+        "trial_id": trial_id,
+        "prompt": prompt,
+        "parent_id": parent_id,
+        "response_text": response_text,
+        "code": "",
+        "reasoning": reasoning,
+        "metrics": {},
+        "success": success,
+        "error": error,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "call_id": call_id,
+        "cache_creation_input_tokens": cache_creation_input_tokens,
+        "cache_read_input_tokens": cache_read_input_tokens,
+        "model_alias": model_alias,
+        "model_config": model_config,
+    }
 
 
 def _write_trial_file(
@@ -202,7 +441,63 @@ def _make_openrouter_call_with_retry(
     return _call()
 
 
-def child_worker(args: tuple) -> dict[str, Any]:
+def _is_empty_google_response(response: Any) -> bool:
+    """Check if Google response content is empty (triggers retry)."""
+    if not response.candidates:
+        return True
+    candidate = response.candidates[0]
+    if not candidate.content or not candidate.content.parts:
+        return True
+    text = "".join(
+        part.text or ""
+        for part in candidate.content.parts
+        if not getattr(part, "thought", False)
+    )
+    return not text.strip()
+
+
+def _make_google_call_with_retry(
+    client: Any,
+    model: str,
+    contents: Any,
+    config: Any,
+    max_retries: int = 3,
+):
+    """Make a Google Gemini API call with retry logic."""
+
+    @retry(
+        stop=stop_after_attempt(max_retries + 1),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=(
+            retry_if_exception_type((ConnectionError, TimeoutError))
+            | retry_if_result(_is_empty_google_response)
+        ),
+        reraise=True,
+    )
+    def _call():
+        return client.models.generate_content(
+            model=model,
+            contents=cast(Any, contents),
+            config=config,
+        )
+
+    return _call()
+
+
+def _extract_google_text(response: Any) -> str:
+    """Extract non-thinking content from a Gemini response."""
+    content = ""
+    if response.candidates:
+        candidate = response.candidates[0]
+        if candidate.content and candidate.content.parts:
+            for part in candidate.content.parts:
+                if getattr(part, "thought", False):
+                    continue
+                content += part.text or ""
+    return content
+
+
+def spawn_child(args: tuple) -> dict[str, Any]:
     """
     Worker function for parallel child LLM calls.
 
@@ -222,203 +517,90 @@ def child_worker(args: tuple) -> dict[str, Any]:
     Returns:
         Dictionary with all results needed to record the trial
     """
-    # Handle different arg formats for backwards compatibility
-    # 9 args: original format (no system_prompt, no provider, no model_alias)
-    # 10 args: with system_prompt (no provider, no model_alias)
-    # 11 args: with system_prompt and provider (no model_alias)
-    # 12 args: with system_prompt, provider, and model_alias
-    model_alias: str | None = None
+    (
+        prompt,
+        parent_id,
+        _model,
+        evaluator_kwargs,
+        _max_tokens,
+        _temperature,
+        trial_id,
+        generation,
+        experiment_dir,
+        _system_prompt,
+        _provider,
+        _model_alias,
+    ) = _parse_worker_args(args)
 
-    if len(args) == 9:
-        (
-            prompt,
-            parent_id,
-            model,
-            evaluator_kwargs,
-            max_tokens,
-            temperature,
-            trial_id,
-            generation,
-            experiment_dir,
-        ) = args
-        system_prompt = None
-        provider = "anthropic"
-    elif len(args) == 10:
-        (
-            prompt,
-            parent_id,
-            model,
-            evaluator_kwargs,
-            max_tokens,
-            temperature,
-            trial_id,
-            generation,
-            experiment_dir,
-            system_prompt,
-        ) = args
-        provider = "anthropic"
-    elif len(args) == 11:
-        (
-            prompt,
-            parent_id,
-            model,
-            evaluator_kwargs,
-            max_tokens,
-            temperature,
-            trial_id,
-            generation,
-            experiment_dir,
-            system_prompt,
-            provider,
-        ) = args
-    else:
-        # 12 args: full new format with model_alias
-        (
-            prompt,
-            parent_id,
-            model,
-            evaluator_kwargs,
-            max_tokens,
-            temperature,
-            trial_id,
-            generation,
-            experiment_dir,
-            system_prompt,
-            provider,
-            model_alias,
-        ) = args
+    result = query_llm(args)
 
-    # Build model config for trial metadata
-    model_config = {
-        "model": model,
-        "temperature": temperature,
-    }
+    # If LLM call failed, write trial file and return as-is
+    if result["error"]:
+        _write_trial_file(
+            trial_id=trial_id,
+            generation=generation,
+            experiment_dir=experiment_dir,
+            code="",
+            metrics={},
+            prompt=prompt,
+            response=result["response_text"],
+            reasoning=result["reasoning"],
+            parent_id=parent_id,
+            model_config=result.get("model_config"),
+        )
+        return result
 
-    call_id = str(uuid.uuid4())
-    response_text = ""
-    code = ""
-    reasoning = ""
-    metrics: dict[str, Any] = {}
-    success = False
-    error: str | None = None
-    input_tokens = 0
-    output_tokens = 0
-    cache_creation_input_tokens = 0
-    cache_read_input_tokens = 0
+    response_text = result["response_text"]
+    code = extract_python_code(response_text)
+    reasoning = extract_reasoning(response_text)
 
-    try:
-        # Make the LLM call based on provider
-        if provider == "openrouter":
-            # Create OpenRouter client (OpenAI SDK with custom base_url)
-            api_key = os.environ.get("OPENROUTER_API_KEY")
-            if not api_key:
-                raise ValueError("OPENROUTER_API_KEY environment variable not set")
-
-            client = OpenAI(
-                base_url="https://openrouter.ai/api/v1",
-                api_key=api_key,
-            )
-
-            response = _make_openrouter_call_with_retry(
-                client=client,
-                model=model,
-                prompt=prompt,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                system_prompt=system_prompt,
-            )
-
-            # Extract content and token counts (OpenAI format)
-            response_text = response.choices[0].message.content or ""
-            input_tokens = response.usage.prompt_tokens if response.usage else 0
-            output_tokens = response.usage.completion_tokens if response.usage else 0
-
-            # OpenRouter doesn't support caching
-            cache_creation_input_tokens = 0
-            cache_read_input_tokens = 0
-        else:
-            # Anthropic provider (default)
-            anthropic_client = anthropic.Anthropic()
-
-            response = _make_anthropic_call_with_retry(
-                client=anthropic_client,
-                model=model,
-                prompt=prompt,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                system_prompt=system_prompt,
-            )
-
-            # Extract content and token counts (Anthropic format)
-            if response.content:
-                response_text = response.content[0].text
-            input_tokens = response.usage.input_tokens
-            output_tokens = response.usage.output_tokens
-
-            # Extract cache statistics
-            cache_creation_input_tokens = (
-                getattr(response.usage, "cache_creation_input_tokens", 0) or 0
-            )
-            cache_read_input_tokens = getattr(response.usage, "cache_read_input_tokens", 0) or 0
-
-        # Extract code from response
-        code = extract_python_code(response_text)
-        reasoning = extract_reasoning(response_text)
-
-        if not code:
-            error = "No Python code block found in response"
-            # Write trial file for tracking even on failure
-            _write_trial_file(
-                trial_id=trial_id,
-                generation=generation,
-                experiment_dir=experiment_dir,
-                code="",
-                metrics={},
-                prompt=prompt,
-                response=response_text,
-                reasoning=reasoning,
-                parent_id=parent_id,
-                model_config=model_config,
-            )
-            return {
-                "trial_id": trial_id,
-                "prompt": prompt,
-                "parent_id": parent_id,
-                "response_text": response_text,
+    if not code:
+        result.update(
+            {
                 "code": "",
                 "reasoning": reasoning,
                 "metrics": {},
                 "success": False,
-                "error": error,
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-                "call_id": call_id,
-                "cache_creation_input_tokens": cache_creation_input_tokens,
-                "cache_read_input_tokens": cache_read_input_tokens,
-                "model_alias": model_alias,
-                "model_config": model_config,
+                "error": "No Python code block found in response",
             }
+        )
+        _write_trial_file(
+            trial_id=trial_id,
+            generation=generation,
+            experiment_dir=experiment_dir,
+            code="",
+            metrics={},
+            prompt=prompt,
+            response=response_text,
+            reasoning=reasoning,
+            parent_id=parent_id,
+            model_config=result.get("model_config"),
+        )
+        return result
 
-        # Create evaluator and evaluate the code
-        evaluator = CirclePackingEvaluator(**evaluator_kwargs)
-        try:
-            metrics = evaluator.evaluate(code)
-        except Exception as e:
-            metrics = {
-                "valid": False,
-                "error": f"Evaluation error: {str(e)}",
-            }
-
-        # Determine success
-        success = bool(metrics.get("valid", False))
-        if not success:
-            error_value = metrics.get("error")
-            error = str(error_value) if error_value is not None else None
-
+    evaluator = CirclePackingEvaluator(**evaluator_kwargs)
+    try:
+        metrics = evaluator.evaluate(code)
     except Exception as e:
-        error = f"LLM call failed: {str(e)}"
+        metrics = {
+            "valid": False,
+            "error": f"Evaluation error: {str(e)}",
+        }
 
-    # Write trial file for real-time progress tracking
+    success = bool(metrics.get("valid", False))
+    error_value = metrics.get("error") if not success else None
+    error = str(error_value) if error_value is not None else None
+
+    result.update(
+        {
+            "code": code,
+            "reasoning": reasoning,
+            "metrics": metrics,
+            "success": success,
+            "error": error,
+        }
+    )
+
     _write_trial_file(
         trial_id=trial_id,
         generation=generation,
@@ -429,24 +611,12 @@ def child_worker(args: tuple) -> dict[str, Any]:
         response=response_text,
         reasoning=reasoning,
         parent_id=parent_id,
-        model_config=model_config,
+        model_config=result.get("model_config"),
     )
 
-    return {
-        "trial_id": trial_id,
-        "prompt": prompt,
-        "parent_id": parent_id,
-        "response_text": response_text,
-        "code": code,
-        "reasoning": reasoning,
-        "metrics": metrics,
-        "success": success,
-        "error": error,
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
-        "call_id": call_id,
-        "cache_creation_input_tokens": cache_creation_input_tokens,
-        "cache_read_input_tokens": cache_read_input_tokens,
-        "model_alias": model_alias,
-        "model_config": model_config,
-    }
+    return result
+
+
+def child_worker(args: tuple) -> dict[str, Any]:
+    """Backward compatible alias for spawn_child."""
+    return spawn_child(args)

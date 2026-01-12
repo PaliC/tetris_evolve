@@ -1,0 +1,25 @@
+{
+  "trial_id": "trial_16_4",
+  "generation": 16,
+  "parent_id": "trial_13_9",
+  "code": "",
+  "metrics": {},
+  "prompt": "Refine {CODE_TRIAL_13_9}. \n\nStrategy: **Iterative Perturbation**.\n- The parent code uses a 'shake' method.\n- Wrap this in a loop: Shake -> Polish -> Shake -> Polish.\n- Repeat 20 times.\n- Decrease the shake amplitude slightly each time.\n\nCRITICAL: Output ONLY a single Python code block starting with ```python and ending with ```. Do not write any text before or after the block.",
+  "response": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    \"\"\"\n    Constructs a packing of 26 circles in a unit square to maximize the sum of their radii.\n    Strategy: Iterative Perturbation (Shake -> Polish -> Shake -> Polish).\n    \"\"\"\n    N = 26\n    \n    # Initial placement: Use a 6x5 grid to get 26 starting points\n    x_grid = np.linspace(0.1, 0.9, 6)\n    y_grid = np.linspace(0.1, 0.9, 5)\n    xv, yv = np.meshgrid(x_grid, y_grid)\n    cx = xv.flatten()[:N]\n    cy = yv.flatten()[:N]\n    cr = np.full(N, 0.03) # Start with small radii\n    \n    # Initial variable vector: [x1, y1, r1, x2, y2, r2, ...]\n    v0 = np.zeros(3 * N)\n    v0[0::3] = cx\n    v0[1::3] = cy\n    v0[2::3] = cr\n    \n    # Pre-calculate indices for non-overlap constraints\n    iu = np.triu_indices(N, k=1)\n    \n    def objective(v):\n        # Maximize sum of radii = Minimize -sum(radii)\n        return -np.sum(v[2::3])\n    \n    def constraints(v):\n        cx, cy, cr = v[0::3], v[1::3], v[2::3]\n        \n        # Boundary constraints: r_i <= x_i, r_i <= 1-x_i, r_i <= y_i, r_i <= 1-y_i\n        # Equivalent to x_i - r_i >= 0, etc.\n        b1 = cx - cr\n        b2 = 1.0 - cx - cr\n        b3 = cy - cr\n        b4 = 1.0 - cy - cr\n        \n        # Non-overlap constraints: dist(c_i, c_j) >= r_i + r_j\n        dx = cx[iu[0]] - cx[iu[1]]\n        dy = cy[iu[0]] - cy[iu[1]]\n        dist = np.sqrt(dx*dx + dy*dy + 1e-9) # 1e-9 to prevent sqrt(0)\n        o_cons = dist - (cr[iu[0]] + cr[iu[1]])\n        \n        return np.concatenate([b1, b2, b3, b4, o_cons])\n\n    cons = {'type': 'ineq', 'fun': constraints}\n    # Bounds for x, y,",
+  "reasoning": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    \"\"\"\n    Constructs a packing of 26 circles in a unit square to maximize the sum of their radii.\n    Strategy: Iterative Perturbation (Shake -> Polish -> Shake -> Polish).\n    \"\"\"\n    N = 26\n    \n    # Initial placement: Use a 6x5 grid to get 26 starting points\n    x_grid = np.linspace(0.1, 0.9, 6)\n    y_grid = np.linspace(0.1, 0.9, 5)\n    xv, yv = np.meshgrid(x_grid, y_grid)\n    cx = xv.flatten()[:N]\n    cy = yv.flatten()[:N]\n    cr = np.full(N, 0.03) # Start with small radii\n    \n    # Initial variable vector: [x1, y1, r1, x2, y2, r2, ...]\n    v0 = np.zeros(3 * N)\n    v0[0::3] = cx\n    v0[1::3] = cy\n    v0[2::3] = cr\n    \n    # Pre-calculate indices for non-overlap constraints\n    iu = np.triu_indices(N, k=1)\n    \n    def objective(v):\n        # Maximize sum of radii = Minimize -sum(radii)\n        return -np.sum(v[2::3])\n    \n    def constraints(v):\n        cx, cy, cr = v[0::3], v[1::3], v[2::3]\n        \n        # Boundary constraints: r_i <= x_i, r_i <= 1-x_i, r_i <= y_i, r_i <= 1-y_i\n        # Equivalent to x_i - r_i >= 0, etc.\n        b1 = cx - cr\n        b2 = 1.0 - cx - cr\n        b3 = cy - cr\n        b4 = 1.0 - cy - cr\n        \n        # Non-overlap constraints: dist(c_i, c_j) >= r_i + r_j\n        dx = cx[iu[0]] - cx[iu[1]]\n        dy = cy[iu[0]] - cy[iu[1]]\n        dist = np.sqrt(dx*dx + dy*dy + 1e-9) # 1e-9 to prevent sqrt(0)\n        o_cons = dist - (cr[iu[0]] + cr[iu[1]])\n        \n        return np.concatenate([b1, b2, b3, b4, o_cons])\n\n    cons = {'type': 'ineq', 'fun': constraints}\n    # Bounds for x, y,",
+  "timestamp": "2026-01-08T11:27:00.378795",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "MAX_TOKENS",
+      "usage_metadata": {
+        "prompt_token_count": 322,
+        "candidates_token_count": 655,
+        "thoughts_token_count": 15725
+      },
+      "response_text_len": 1635
+    }
+  }
+}

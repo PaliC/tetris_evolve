@@ -1,0 +1,25 @@
+{
+  "trial_id": "trial_14_5",
+  "generation": 14,
+  "parent_id": null,
+  "code": "",
+  "metrics": {},
+  "prompt": "Solve circle packing (26 circles). \n\nStrategy: **Dual Annealing**.\n- Use `scipy.optimize.dual_annealing`.\n- This combines Simulated Annealing with local search.\n- Max iter: 500.\n\nCRITICAL: Return the solution in valid JSON format with a single key 'code' containing the Python string.\nExample:\n```json\n{\"code\": \"import numpy as np\\ndef construct_packing():\\n    ...\"}\n```\nDo not output markdown text outside the JSON block.",
+  "response": "```json\n{\"code\": \"import numpy as np\\nfrom scipy.optimize import dual_annealing, linprog\\n\\ndef construct_packing():\\n    N = 26\\n    # Define bounds for (x, y, r) per circle\\n    # x, y in [0, 1], r in [0.001, 0.25]\\n    bounds = []\\n    for _ in range(N):\\n        bounds.extend([(0, 1), (0, 1), (0.001, 0.25)])\\n\\n    def objective(p):\\n        # Reshape to (N, 3)\\n        p = p.reshape((N, 3))\\n        x, y, r = p[:, 0], p[:, 1], p[:, 2]\\n        \\n        # Boundary penalty: r <= x, r <= 1-x, r <= y, r <= 1-y\\n        v_b = np.sum(np.maximum(0, r - x)**2) + \\\\\\n              np.sum(np.maximum(0, x + r - 1)**2) + \\\\\\n              np.sum(np.maximum(0, r - y)**2) + \\\\\\n              np.sum(np.maximum(0, y + r - 1)**2)\\n        \\n        # Overlap penalty: r_i + r_j <= d_ij\\n        dx = x[:, None] - x[None, :]\\n        dy = y[:, None] - y[None, :]\\n        d = np.sqrt(dx**2 + dy**2 + 1e-12)\\n        r_sum = r[:, None] + r[None, :]\\n        \\n        # Upper triangle mask\\n        mask = np.triu(np.ones((N, N), dtype=bool), k=1)\\n        v_o = np.sum(np.maximum(0, r_sum - d)[mask]**2)\\n        \\n        # Maximize sum(r) => Minimize -sum(r)\\n        return -np.sum(r) + 1e5 * (v_b + v_o)\\n\\n    # Initial guess: 5x5 grid + 1 point\\n    x0 = np.zeros(3 * N)\\n    idx = 0\\n    for i in range(5):\\n        for j in range(5):\\n            x0[3*idx] = (i + 0.5) / 5.0\\n            x0[3*idx+1] = (j + 0.5) / 5.0\\n            x0[3*idx+2] = 0.08\\n            idx += 1\\n    x0[3*idx:] = [0.5, 0.5, 0.08]\\n\\n    # Run Dual Annealing\\n    res = dual_annealing(objective, bounds, maxiter=500, x0=x0, seed=42)\\n    \\n    # Extract centers\\n    p_opt = res.x.reshape((N, 3))\\n    centers = p_opt[:, :2]\\n    \\n    # Refine radii using LP with fixed centers to ensure validity and optimality\\n    c = -np.ones(N)\\n    A_ub = []\\n    b_ub = []\\n    \\n    dx = centers[:, 0][:, None] - centers[:, 0][None, :]\\n    dy = centers[:, 1][:, None] - centers[:, 1][None, :]\\n    d_mat = np.sqrt(dx**2 + dy**2)\\n    \\n    for i in range(N):\\n        for j in range(i+1, N):\\n            row = np.zeros(N)\\n            row[i] = 1\\n            row[j] = 1\\n            A_ub.append(row)\\n            b_ub.append(d_mat[i, j])\\n            \\n    bounds_lp = []\\n    for i in range(N):\\n        cx, cy = centers[i]\\n        lim = min(cx, 1-cx, cy, 1-cy)\\n        bounds_lp.append((0, lim))\\n        \\n    # Solve LP\\n    res_lp = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds_lp, method='highs')\\n    \\n    radii = res_lp.x if res_lp.success else p_opt[:, 2]\\n    \\n    return centers, radii, np.sum(radii)\\n\\ndef run_packing():\\n    return construct_packing()\"}\n```",
+  "reasoning": "",
+  "timestamp": "2026-01-08T11:17:30.211744",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-pro-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "STOP",
+      "usage_metadata": {
+        "prompt_token_count": 336,
+        "candidates_token_count": 1107,
+        "thoughts_token_count": 11986
+      },
+      "response_text_len": 2653
+    }
+  }
+}

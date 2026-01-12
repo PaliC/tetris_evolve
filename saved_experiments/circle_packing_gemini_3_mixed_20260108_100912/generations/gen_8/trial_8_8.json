@@ -1,0 +1,30 @@
+{
+  "trial_id": "trial_8_8",
+  "generation": 8,
+  "parent_id": null,
+  "code": "import numpy as np\nfrom scipy.optimize import minimize, basinhopping\nfrom scipy.spatial.distance import pdist\n\ndef construct_packing():\n    n = 26\n    # Fermat Spiral initialization\n    phi = np.pi * (3.0 - np.sqrt(5.0))\n    pts = np.zeros((n, 2))\n    for i in range(n):\n        dist_from_center = 0.5 * np.sqrt((i + 0.5) / n)\n        angle = i * phi\n        pts[i, 0] = 0.5 + dist_from_center * np.cos(angle)\n        pts[i, 1] = 0.5 + dist_from_center * np.sin(angle)\n\n    def objective(coords):\n        p = coords.reshape((n, 2))\n        dists_sq = pdist(p, 'sqeuclidean')\n        min_d_sq = np.min(dists_sq)\n        # Log-sum-exp trick for numerical stability to maximize minimum distance\n        return np.log(np.sum(np.exp(-1000.0 * (dists_sq - min_d_sq)))) - 1000.0 * min_d_sq\n\n    class MyStep:\n        def __init__(self, n_circles, stepsize=0.02):\n            self.n = n_circles\n            self.stepsize = stepsize\n        def __call__(self, x):\n            x_new = x.copy()\n            idx = np.random.randint(0, self.n)\n            x_new[2*idx] += np.random.uniform(-self.stepsize, self.stepsize)\n            x_new[2*idx+1] += np.random.uniform(-self.stepsize, self.stepsize)\n            return np.clip(x_new, 0, 1)\n\n    # Basin hopping to search for the global maximum of minimum distance\n    res = basinhopping(\n        objective, \n        pts.flatten(), \n        niter=50,\n        minimizer_kwargs={\"method\": \"L-BFGS-B\", \"bounds\": [(0, 1)] * (2 * n)},\n        take_step=MyStep(n)\n    )\n    \n    # Local refinement of the best configuration found\n    res = minimize(objective, res.x, method='L-BFGS-B', bounds=[(0, 1)] * (2 * n))\n    \n    # Extract refined points and calculate the minimum distance\n    final_pts = res.x.reshape((n, 2))\n    dists_sq = pdist(final_pts, 'sqeuclidean')\n    d_min = np.sqrt(np.min(dists_sq))\n    \n    # Calculate radius and transform points to circle centers\n    # This transformation ensures all circles are within the [0,1]x[0,1] square\n    # if the points are in [0,1]x[0,1] and have minimum distance d_min.\n    r = d_min / (2.0 * (1.0 + d_min))\n    centers = r + (1.0 - 2.0 * r) * final_pts\n    radii = np.full(n, r)\n    sum_radii = np.sum(radii)\n    \n    return centers, radii, sum_radii\n\ndef run_packing():\n    return construct_packing()",
+  "metrics": {
+    "valid": true,
+    "score": 2.4705786182273286,
+    "eval_time": 2.317548990249634,
+    "error": null
+  },
+  "prompt": "Solve the circle packing problem (26 circles). \n\nStrategy: **Spiral Seed + Basin Hopping**.\n- Initialize circles in a Fermat Spiral.\n- Run `scipy.optimize.basinhopping` with `niter=50`.\n- Use a custom step function that moves a random circle by a small amount.\n- Optimize.\n\nCRITICAL: You must output ONLY a single Python code block (```python ... ```). \nDO NOT write any introduction. \nDO NOT write 'Here is the code'. \nDO NOT write any explanation after. \nJust the code block.",
+  "response": "```python\nimport numpy as np\nfrom scipy.optimize import minimize, basinhopping\nfrom scipy.spatial.distance import pdist\n\ndef construct_packing():\n    n = 26\n    # Fermat Spiral initialization\n    phi = np.pi * (3.0 - np.sqrt(5.0))\n    pts = np.zeros((n, 2))\n    for i in range(n):\n        dist_from_center = 0.5 * np.sqrt((i + 0.5) / n)\n        angle = i * phi\n        pts[i, 0] = 0.5 + dist_from_center * np.cos(angle)\n        pts[i, 1] = 0.5 + dist_from_center * np.sin(angle)\n\n    def objective(coords):\n        p = coords.reshape((n, 2))\n        dists_sq = pdist(p, 'sqeuclidean')\n        min_d_sq = np.min(dists_sq)\n        # Log-sum-exp trick for numerical stability to maximize minimum distance\n        return np.log(np.sum(np.exp(-1000.0 * (dists_sq - min_d_sq)))) - 1000.0 * min_d_sq\n\n    class MyStep:\n        def __init__(self, n_circles, stepsize=0.02):\n            self.n = n_circles\n            self.stepsize = stepsize\n        def __call__(self, x):\n            x_new = x.copy()\n            idx = np.random.randint(0, self.n)\n            x_new[2*idx] += np.random.uniform(-self.stepsize, self.stepsize)\n            x_new[2*idx+1] += np.random.uniform(-self.stepsize, self.stepsize)\n            return np.clip(x_new, 0, 1)\n\n    # Basin hopping to search for the global maximum of minimum distance\n    res = basinhopping(\n        objective, \n        pts.flatten(), \n        niter=50,\n        minimizer_kwargs={\"method\": \"L-BFGS-B\", \"bounds\": [(0, 1)] * (2 * n)},\n        take_step=MyStep(n)\n    )\n    \n    # Local refinement of the best configuration found\n    res = minimize(objective, res.x, method='L-BFGS-B', bounds=[(0, 1)] * (2 * n))\n    \n    # Extract refined points and calculate the minimum distance\n    final_pts = res.x.reshape((n, 2))\n    dists_sq = pdist(final_pts, 'sqeuclidean')\n    d_min = np.sqrt(np.min(dists_sq))\n    \n    # Calculate radius and transform points to circle centers\n    # This transformation ensures all circles are within the [0,1]x[0,1] square\n    # if the points are in [0,1]x[0,1] and have minimum distance d_min.\n    r = d_min / (2.0 * (1.0 + d_min))\n    centers = r + (1.0 - 2.0 * r) * final_pts\n    radii = np.full(n, r)\n    sum_radii = np.sum(radii)\n    \n    return centers, radii, sum_radii\n\ndef run_packing():\n    return construct_packing()\n```",
+  "reasoning": "",
+  "timestamp": "2026-01-08T10:48:01.203611",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "STOP",
+      "usage_metadata": {
+        "prompt_token_count": 349,
+        "candidates_token_count": 814,
+        "thoughts_token_count": 15150
+      },
+      "response_text_len": 2300
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "trial_id": "trial_8_5",
+  "generation": 8,
+  "parent_id": "trial_6_5",
+  "code": "",
+  "metrics": {},
+  "prompt": "Refine the code from {CODE_TRIAL_6_5}. \n\nStrategy: **Ensemble Search**.\n- Instead of 1 perturbed grid, generate 50 different perturbed hex grids.\n- Run a quick `minimize` (maxiter=100) on ALL of them.\n- Pick the best result.\n- Run a full `minimize` (maxiter=2000) on that winner.\n- This increases the chance of finding the right basin of attraction.\n\nCRITICAL: You must output ONLY a single Python code block (```python ... ```). \nDO NOT write any introduction. \nDO NOT write 'Here is the code'. \nDO NOT write any explanation after. \nJust the code block.",
+  "response": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    n = 26\n    triu_idx = np.triu_indices(n, k=1)\n\n    def objective(params):\n        # params is [r1, ..., r26, x1, ..., x26, y1, ..., y26]\n        return -np.sum(params[:n])\n\n    def cons_func(params):\n        r = params[:n]\n        xc = params[n:2*n]\n        yc = params[2*n:3*n]\n        \n        # Boundary constraints: circle must stay inside [0, 1] x [0, 1]\n        # xc_i - r_i >= 0, 1 - xc_i - r_i >= 0, etc.\n        c_boundary = np.zeros(4 * n)\n        c_boundary[0:n] = xc - r\n        c_boundary[n:2*n] = 1.0 - xc - r\n        c_boundary[2*n:3*n] = yc - r\n        c_boundary[3*n:4*n] = 1.0 - yc - r\n        \n        # Overlap constraints: distance between centers >= sum of radii\n        # (xi - xj)^2 + (yi - yj)^2 >= (ri + rj)^2\n        ri, rj = triu_idx\n        dx = xc[ri] - xc[rj]\n        dy = yc[ri] - yc[rj]\n        sr = r[ri] + r[rj]\n        c_overlap = dx**2 + dy**2 - sr**2\n        \n        return np.concatenate([c_boundary, c_overlap])\n\n    best_params = None\n    best_sum = -np.inf\n    \n    # Ensemble search: 50 different initializations to explore basins of attraction\n    for i in range(50):\n        # Generate initial centers using different strategies\n        if i < 20:\n            # Strategy 1: Perturbed Rectangular Grid (6x5 or 5x6)\n            nx, ny = (6, 5) if i % 2 == 0 else (5, 6)\n            xs = np.linspace(0.1, 0.9, nx)\n            ys = np.linspace(0.1, 0.9, ny)\n            grid = np.array([[x, y] for x in xs for y in ys])\n            indices = np.random.choice(len(grid), n, replace=False)\n            centers = grid[indices] + np.random.uniform(-0.02, 0.02, size=(n, 2))\n        elif i < 40:\n            # Strategy 2: Perturbed Hexagonal Grid\n",
+  "reasoning": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    n = 26\n    triu_idx = np.triu_indices(n, k=1)\n\n    def objective(params):\n        # params is [r1, ..., r26, x1, ..., x26, y1, ..., y26]\n        return -np.sum(params[:n])\n\n    def cons_func(params):\n        r = params[:n]\n        xc = params[n:2*n]\n        yc = params[2*n:3*n]\n        \n        # Boundary constraints: circle must stay inside [0, 1] x [0, 1]\n        # xc_i - r_i >= 0, 1 - xc_i - r_i >= 0, etc.\n        c_boundary = np.zeros(4 * n)\n        c_boundary[0:n] = xc - r\n        c_boundary[n:2*n] = 1.0 - xc - r\n        c_boundary[2*n:3*n] = yc - r\n        c_boundary[3*n:4*n] = 1.0 - yc - r\n        \n        # Overlap constraints: distance between centers >= sum of radii\n        # (xi - xj)^2 + (yi - yj)^2 >= (ri + rj)^2\n        ri, rj = triu_idx\n        dx = xc[ri] - xc[rj]\n        dy = yc[ri] - yc[rj]\n        sr = r[ri] + r[rj]\n        c_overlap = dx**2 + dy**2 - sr**2\n        \n        return np.concatenate([c_boundary, c_overlap])\n\n    best_params = None\n    best_sum = -np.inf\n    \n    # Ensemble search: 50 different initializations to explore basins of attraction\n    for i in range(50):\n        # Generate initial centers using different strategies\n        if i < 20:\n            # Strategy 1: Perturbed Rectangular Grid (6x5 or 5x6)\n            nx, ny = (6, 5) if i % 2 == 0 else (5, 6)\n            xs = np.linspace(0.1, 0.9, nx)\n            ys = np.linspace(0.1, 0.9, ny)\n            grid = np.array([[x, y] for x in xs for y in ys])\n            indices = np.random.choice(len(grid), n, replace=False)\n            centers = grid[indices] + np.random.uniform(-0.02, 0.02, size=(n, 2))\n        elif i < 40:\n            # Strategy 2: Perturbed Hexagonal Grid",
+  "timestamp": "2026-01-08T10:49:30.015887",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "MAX_TOKENS",
+      "usage_metadata": {
+        "prompt_token_count": 381,
+        "candidates_token_count": 656,
+        "thoughts_token_count": 15724
+      },
+      "response_text_len": 1779
+    }
+  }
+}

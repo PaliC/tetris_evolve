@@ -1,0 +1,45 @@
+{
+  "generation_num": 16,
+  "num_trials": 16,
+  "num_successful_trials": 3,
+  "best_trial_id": "trial_16_0",
+  "best_score": 2.6096536397322487,
+  "selected_trial_ids": [
+    "trial_11_11",
+    "trial_16_0",
+    "trial_13_9"
+  ],
+  "selection_reasoning": "Selecting the champion and the valid offspring that successfully implemented the perturbation strategy. The goal is to tune the perturbation parameters to beat the champion.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_11_11",
+      "reasoning": "All-Time Best (2.6313).",
+      "category": "performance",
+      "source_generation": 11
+    },
+    {
+      "trial_id": "trial_16_0",
+      "reasoning": "Successful Perturbation implementation (2.610). Valid code structure to build upon.",
+      "category": "potential",
+      "source_generation": 16
+    },
+    {
+      "trial_id": "trial_13_9",
+      "reasoning": "Best Constructive/Alternative lineage (2.628).",
+      "category": "diversity",
+      "source_generation": 13
+    }
+  ],
+  "parents_used": [
+    "trial_11_11",
+    "trial_13_9",
+    "trial_6_6"
+  ],
+  "parents_used_counts": {
+    "trial_11_11": 5,
+    "trial_13_9": 1,
+    "trial_6_6": 1
+  },
+  "parents_not_selected_prev_gen": [],
+  "timestamp": "2026-01-08T11:27:51.780487"
+}

@@ -1,0 +1,62 @@
+# Native Google Gemini Flash with Extended Thinking
+# Uses the google-genai SDK directly (not via OpenRouter)
+#
+# Requires: GEMINI_API_KEY environment variable
+# Get your API key from: https://aistudio.google.com/apikey
+#
+# Reasoning effort levels:
+#   - minimal: ~10% of max_tokens for thinking
+#   - low: ~20% of max_tokens for thinking
+#   - medium: ~50% of max_tokens for thinking
+#   - high: ~80% of max_tokens for thinking
+#   - xhigh: ~95% of max_tokens for thinking (ultrathink!)
+
+experiment:
+  name: "openevolve_config_gemini_flash"
+  output_dir: "./experiments"
+
+root_llm:
+    # model: "gemini-3-flash-preview"
+    model: "anthropic/claude-3.7-sonnet"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 3.00
+    cost_per_million_output_tokens: 15.00
+    reasoning:
+      enabled: true
+      effort: "xhigh"
+
+child_llms:
+  - alias: "sonnet"
+    model: "anthropic/claude-3.7-sonnet"
+    provider: "openrouter"
+    cost_per_million_input_tokens: 3.00
+    cost_per_million_output_tokens: 15.00
+    calibration_calls: 5
+    reasoning:
+      enabled: false
+
+      
+  - alias: "gemini"
+    model: "gemini-2.0-flash-001"
+    provider: "google"
+    cost_per_million_input_tokens: 0.10
+    cost_per_million_output_tokens: 0.40
+    calibration_calls: 5
+    reasoning:
+      enabled: false
+
+default_child_llm_alias: "gemini"
+
+
+evaluation:
+  evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"
+  evaluator_kwargs:
+    n_circles: 26
+    timeout_seconds: 90
+
+evolution:
+  max_generations: 47
+  max_children_per_generation: 10
+
+budget:
+  max_total_cost: 10.0

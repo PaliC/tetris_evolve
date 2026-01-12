@@ -82,7 +82,7 @@ class OpenRouterProvider(BaseLLMProvider):
         self,
         messages: list[dict[str, Any]],
         system: str | list[dict[str, Any]] | None = None,
-        max_tokens: int = 4096,
+        max_tokens: int = 8192,
         temperature: float = 0.7,
         enable_caching: bool = True,  # noqa: ARG002 - Ignored for OpenRouter
     ) -> LLMResponse:

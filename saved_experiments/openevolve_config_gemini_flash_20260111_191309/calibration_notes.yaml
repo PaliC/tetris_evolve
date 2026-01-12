@@ -1,0 +1,33 @@
+# MangoEvolve Calibration Notes
+# The root LLM only sees the 'notes' section during evolution.
+# Metadata is stored for validation purposes.
+
+notes: "\n## Model Observations\n\n### Gemini (gemini-2.0-flash-001)\n- **Strengths**:\
+  \ Excellent at explaining optimization concepts (SA, L-BFGS-B, Hybrid). Code is\
+  \ clean, well-documented, and mathematically sound. Follows instructions well (e.g.,\
+  \ penalty functions, specific constraints). \n- **Coding Style**: Prefers standard\
+  \ libraries but can use scipy. Uses clear variable names and logical structures.\n\
+  - **Reasoning**: Good grasp of geometry and the nuances of circle packing (e.g.,\
+  \ non-overlap vs. containment).\n- **Temperatures**: 0.2-0.3 seems best for code\
+  \ generation; 0.7+ for brainstorming strategies.\n\n### Sonnet (claude-3.7-sonnet)\n\
+  - **Status**: Consistently failed with a 400 error (Invalid Model ID). \n- **Strategy**:\
+  \ Will rely primarily on Gemini for the evolution phase unless the Sonnet connection\
+  \ is restored.\n\n## Strategic Plan for Evolution\n- Use Gemini for generating initial\
+  \ populations using diverse heuristics (random, grid-based, greedy).\n- Implement\
+  \ a Hybrid approach: Simulated Annealing for global exploration followed by L-BFGS-B\
+  \ for local refinement.\n- Use a penalty-based fitness function where `fitness =\
+  \ sum(radii) - lambda * (overlap_penalty + boundary_penalty)`.\n"
+metadata:
+  child_llms:
+  - alias: sonnet
+    model: claude-3.7-sonnet
+    provider: openrouter
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
+  - alias: gemini
+    model: gemini-2.0-flash-001
+    provider: google
+    cost_per_million_input_tokens: 0.1
+    cost_per_million_output_tokens: 0.4
+  created_at: '2026-01-12T00:14:14.879922+00:00'
+  experiment_name: openevolve_config_gemini_flash

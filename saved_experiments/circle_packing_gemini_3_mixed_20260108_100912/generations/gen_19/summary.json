@@ -1,0 +1,45 @@
+{
+  "generation_num": 19,
+  "num_trials": 16,
+  "num_successful_trials": 3,
+  "best_trial_id": "trial_19_0",
+  "best_score": 2.621719112798426,
+  "selected_trial_ids": [
+    "trial_18_3",
+    "trial_19_0",
+    "trial_19_4"
+  ],
+  "selection_reasoning": "Going all-in on polishing the champion trial_18_3 for the final generation. The goal is to squeeze out the last few micro-units of performance.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_18_3",
+      "reasoning": "Unbeaten Champion (2.635983).",
+      "category": "performance",
+      "source_generation": 18
+    },
+    {
+      "trial_id": "trial_19_0",
+      "reasoning": "High precision refinement (2.622). Valid code.",
+      "category": "potential",
+      "source_generation": 19
+    },
+    {
+      "trial_id": "trial_19_4",
+      "reasoning": "SQP approach (2.589). Valid code.",
+      "category": "diversity",
+      "source_generation": 19
+    }
+  ],
+  "parents_used": [
+    "trial_11_11",
+    "trial_18_3",
+    "trial_18_8"
+  ],
+  "parents_used_counts": {
+    "trial_11_11": 1,
+    "trial_18_3": 9,
+    "trial_18_8": 1
+  },
+  "parents_not_selected_prev_gen": [],
+  "timestamp": "2026-01-08T11:42:40.920660"
+}

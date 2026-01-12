@@ -57,18 +57,8 @@ child_llms:
       enabled: true
       effort: "high"
 
-  # Grok 4.1 Fast - fast thinking, very cost-effective
-  - alias: "grok-fast"
-    model: "x-ai/grok-4.1-fast"
-    provider: "openrouter"
-    cost_per_million_input_tokens: 0.20
-    cost_per_million_output_tokens: 0.50
-    calibration_calls: 5
-    reasoning:
-      enabled: true
-      effort: "high"
-
 default_child_llm_alias: "gemini-flash"
+calibration_notes_file: "/Users/sahan/conductor/workspaces/tetris_evolve/perth/experiments/circle_packing_opus_thinking_mixed_20260111_071624/calibration_notes.yaml"
 
 evaluation:
   evaluator_fn: "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator"

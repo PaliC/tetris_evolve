@@ -9,13 +9,6 @@ from .code_extraction import (
     extract_python_code,
     extract_reasoning,
 )
-from .prompt_substitution import (
-    TRIAL_CODE_PATTERN,
-    find_trial_code_tokens,
-    load_trial_code_from_disk,
-    substitute_trial_codes,
-    substitute_trial_codes_batch,
-)
 
 __all__ = [
     "CodeBlock",
@@ -23,9 +16,4 @@ __all__ = [
     "extract_python_blocks",
     "extract_reasoning",
     "extract_python_code",
-    "TRIAL_CODE_PATTERN",
-    "find_trial_code_tokens",
-    "load_trial_code_from_disk",
-    "substitute_trial_codes",
-    "substitute_trial_codes_batch",
 ]

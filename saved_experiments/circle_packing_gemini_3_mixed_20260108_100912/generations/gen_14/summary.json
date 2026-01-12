@@ -1,0 +1,45 @@
+{
+  "generation_num": 14,
+  "num_trials": 16,
+  "num_successful_trials": 0,
+  "best_trial_id": null,
+  "best_score": 0.0,
+  "selected_trial_ids": [
+    "trial_11_11",
+    "trial_13_9",
+    "trial_6_6"
+  ],
+  "selection_reasoning": "The JSON formatting experiment failed. Reverting to standard prompting but focusing on the 'Perturbation' strategy which showed promise in Gen 13.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_11_11",
+      "reasoning": "Champion (2.6313). Random Search + Local Polish.",
+      "category": "performance",
+      "source_generation": 11
+    },
+    {
+      "trial_id": "trial_13_9",
+      "reasoning": "Constructive + Perturbation (2.6281).",
+      "category": "potential",
+      "source_generation": 13
+    },
+    {
+      "trial_id": "trial_6_6",
+      "reasoning": "Constructive Champion (2.6299).",
+      "category": "diversity",
+      "source_generation": 6
+    }
+  ],
+  "parents_used": [
+    "trial_11_11",
+    "trial_12_3",
+    "trial_13_9"
+  ],
+  "parents_used_counts": {
+    "trial_11_11": 3,
+    "trial_12_3": 1,
+    "trial_13_9": 1
+  },
+  "parents_not_selected_prev_gen": [],
+  "timestamp": "2026-01-08T11:18:40.351713"
+}

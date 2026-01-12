@@ -1,0 +1,66 @@
+{
+  "experiment": {
+    "name": "openevolve_config_gemini_flash",
+    "output_dir": "./experiments",
+    "seed": null
+  },
+  "root_llm": {
+    "model": "gemini-3-flash-preview",
+    "cost_per_million_input_tokens": 0.5,
+    "cost_per_million_output_tokens": 3.0,
+    "provider": "google",
+    "max_iterations": null,
+    "reasoning": {
+      "enabled": true,
+      "effort": "xhigh",
+      "max_tokens": null,
+      "exclude": false
+    }
+  },
+  "child_llms": [
+    {
+      "model": "claude-3.7-sonnet",
+      "cost_per_million_input_tokens": 3.0,
+      "cost_per_million_output_tokens": 15.0,
+      "alias": "sonnet",
+      "provider": "openrouter",
+      "calibration_calls": 5,
+      "reasoning": {
+        "enabled": false,
+        "effort": null,
+        "max_tokens": null,
+        "exclude": false
+      }
+    },
+    {
+      "model": "gemini-2.0-flash-001",
+      "cost_per_million_input_tokens": 0.1,
+      "cost_per_million_output_tokens": 0.4,
+      "alias": "gemini",
+      "provider": "google",
+      "calibration_calls": 5,
+      "reasoning": {
+        "enabled": false,
+        "effort": null,
+        "max_tokens": null,
+        "exclude": false
+      }
+    }
+  ],
+  "evaluation": {
+    "evaluator_fn": "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+    "evaluator_kwargs": {
+      "n_circles": 26,
+      "timeout_seconds": 90
+    }
+  },
+  "evolution": {
+    "max_generations": 47,
+    "max_children_per_generation": 10
+  },
+  "budget": {
+    "max_total_cost": 10.0
+  },
+  "default_child_llm_alias": "gemini",
+  "calibration_notes_file": null
+}

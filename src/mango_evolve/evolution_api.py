@@ -19,8 +19,7 @@ from .cost_tracker import CostTracker
 from .exceptions import CalibrationBudgetError, ChildrenLimitError, GenerationLimitError
 from .llm.prompts import CHILD_LLM_SYSTEM_PROMPT
 from .logger import ExperimentLogger
-from .parallel_worker import child_worker
-from .utils.prompt_substitution import substitute_trial_codes
+from .parallel_worker import query_llm as query_llm_worker, spawn_child
 
 
 class Evaluator(Protocol):
@@ -613,25 +612,6 @@ class EvolutionAPI:
         # Get experiment directory for workers to write trial files
         experiment_dir = str(self.logger.base_dir)
 
-        # Substitute {{CODE_TRIAL_X_Y}} tokens in all prompts before passing to workers
-        substituted_prompts: dict[int, str] = {}
-        for orig_idx, child in indexed_children:
-            prompt = child.get("prompt", "")
-            substituted_prompt, substitution_report = substitute_trial_codes(
-                prompt,
-                all_trials=self.all_trials,
-                experiment_dir=experiment_dir,
-            )
-            substituted_prompts[orig_idx] = substituted_prompt
-            if substitution_report:
-                for sub in substitution_report:
-                    if sub["success"]:
-                        tqdm.write(
-                            f"       → Substituted {sub['token']} with code from {sub['trial_id']}"
-                        )
-                    else:
-                        tqdm.write(f"       ⚠ Failed to substitute {sub['token']}: {sub['error']}")
-
         # Prepare worker arguments in sorted order (by parent_id) for cache optimization
         # Each worker gets: (prompt, parent_id, model, evaluator_kwargs, max_tokens, temperature,
         #                    trial_id, generation, experiment_dir, system_prompt, provider, model_alias)
@@ -641,15 +621,18 @@ class EvolutionAPI:
             parent_id = child.get("parent_id")
             temperature = child.get("temperature", 0.7)
             model_alias, config = resolved_models[orig_idx]
+            max_tokens = 8192
+            if config.provider == "google":
+                # Gemini thinking tokens count against max_output_tokens; 8192 truncates code.
+                max_tokens = 65536
 
-            # Serialize model config for worker
             worker_args.append(
                 (
-                    substituted_prompts[orig_idx],  # Use substituted prompt
+                    child.get("prompt", ""),
                     parent_id,
                     config.model,  # Actual model name
                     self.evaluator_kwargs,
-                    4096,  # max_tokens
+                    max_tokens,
                     temperature,
                     trial_ids[orig_idx],
                     trial_generation,
@@ -668,8 +651,10 @@ class EvolutionAPI:
             num_workers = min(len(children), num_cores)
 
         # Run workers in parallel
+        worker_fn = query_llm_worker if self.in_calibration_phase else spawn_child
+        worker_wrote_files = not self.in_calibration_phase
         with multiprocessing.Pool(processes=num_workers) as pool:
-            worker_results = pool.map(child_worker, worker_args)
+            worker_results = pool.map(worker_fn, worker_args)
 
         # Process results and record trials
         # Results come back in sorted order, we'll return them in original order
@@ -708,7 +693,7 @@ class EvolutionAPI:
                 model_config=worker_result.get("model_config"),
             )
 
-            self._record_trial(trial, skip_file_write=True)
+            self._record_trial(trial, skip_file_write=worker_wrote_files)
             results_by_trial_id[trial_id] = TrialView.from_trial_result(trial)
 
         # Return results in original order (by trial_id which preserves input order)
@@ -1085,6 +1070,129 @@ class EvolutionAPI:
             "available_models": list(self.child_llm_configs.keys()),
         }
 
+    def query_llm(
+        self,
+        queries: list[dict[str, Any]],
+        num_workers: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Query child LLMs without code evaluation or trial records.
+
+        Use this for:
+        - Analyzing and comparing trials ("Why did trial_0_5 score higher?")
+        - Understanding methodology ("What optimization technique is used here?")
+        - Exploring diversity ("How do these two approaches differ?")
+        - Strategic planning ("What should I try next given these results?")
+        - Looking through trials for interesting patterns
+
+        During calibration phase, this uses the calibration budget.
+        During evolution, this uses the regular cost budget.
+
+        Args:
+            queries: List of dicts with keys:
+                - 'prompt': The prompt to send to the LLM
+                - 'model': Optional model alias (defaults to default_child_llm_alias)
+                - 'temperature': Optional temperature (defaults to 0.7)
+            num_workers: Number of parallel workers (defaults to number of queries)
+
+        Returns:
+            List of dicts with keys:
+                - 'model': The model alias used
+                - 'prompt': The prompt sent
+                - 'response': The LLM's response text
+                - 'temperature': The temperature used
+                - 'success': Whether the call succeeded
+                - 'error': Error message if failed
+
+        Raises:
+            CalibrationBudgetError: If calibration budget is exhausted (calibration phase only)
+        """
+        # Check budget
+        self.cost_tracker.raise_if_over_budget()
+
+        # Resolve model aliases and check calibration budget if in calibration phase
+        resolved_models: dict[int, tuple[str, ChildLLMConfig]] = {}
+        for i, query in enumerate(queries):
+            model_alias = self._resolve_model_alias(query.get("model"))
+            config = self.child_llm_configs[model_alias]
+            resolved_models[i] = (model_alias, config)
+
+            # Only check/decrement calibration budget during calibration phase
+            if self.in_calibration_phase:
+                if self.calibration_calls_remaining[model_alias] <= 0:
+                    raise CalibrationBudgetError(
+                        f"Calibration budget exhausted for model '{model_alias}'. "
+                        f"Remaining calls: {self.calibration_calls_remaining}"
+                    )
+                self.calibration_calls_remaining[model_alias] -= 1
+
+        # Show progress
+        phase = "calibration" if self.in_calibration_phase else "analysis"
+        tqdm.write(f"  └─ Querying {len(queries)} LLMs in parallel: {phase}")
+
+        # Prepare worker arguments
+        worker_args = []
+        for i, query in enumerate(queries):
+            model_alias, config = resolved_models[i]
+            temperature = query.get("temperature", 0.7)
+            max_tokens = 8192
+            if config.provider == "google":
+                max_tokens = 65536
+
+            # Use query_llm worker (no evaluation, no file I/O)
+            worker_args.append(
+                (
+                    query.get("prompt", ""),
+                    None,  # parent_id
+                    config.model,
+                    self.evaluator_kwargs,
+                    max_tokens,
+                    temperature,
+                    f"calibration_{i}",  # placeholder trial_id
+                    -1,  # generation
+                    str(self.logger.base_dir),
+                    None,  # no system prompt for calibration
+                    config.provider,
+                    model_alias,
+                )
+            )
+
+        # Determine number of workers
+        if num_workers is None:
+            num_cores = multiprocessing.cpu_count()
+            num_workers = min(len(queries), num_cores)
+
+        # Run workers in parallel using query_llm (no evaluation)
+        with multiprocessing.Pool(processes=num_workers) as pool:
+            worker_results = pool.map(query_llm_worker, worker_args)
+
+        # Process results into simple response format
+        results = []
+        for i, (query, worker_result) in enumerate(zip(queries, worker_results)):
+            model_alias, _ = resolved_models[i]
+            success = worker_result.get("error") is None
+            response_text = worker_result.get("response_text", "")
+
+            result = {
+                "model": model_alias,
+                "prompt": query.get("prompt", ""),
+                "response": response_text,
+                "temperature": query.get("temperature", 0.7),
+                "success": success,
+                "error": worker_result.get("error"),
+            }
+            results.append(result)
+
+            # Show result
+            if success:
+                preview = response_text[:100].replace("\n", " ")
+                tqdm.write(f"       ✓ {model_alias}: {preview}...")
+            else:
+                error_short = (worker_result.get("error") or "unknown")[:50]
+                tqdm.write(f"       ✗ {model_alias}: {error_short}")
+
+        return results
+
     def _build_lineage_map(self) -> str:
         """
         Build a visual lineage map from parent_id relationships.
@@ -1209,6 +1317,7 @@ class EvolutionAPI:
         - update_scratchpad: Update persistent notes across generations
         - end_calibration_phase: End calibration and start evolution
         - get_calibration_status: Check calibration phase status
+        - query_llm: Query LLMs for analysis (no evaluation, works during both phases)
 
         Objects exposed:
         - scratchpad: ScratchpadProxy for direct scratchpad access
@@ -1225,6 +1334,7 @@ class EvolutionAPI:
             "update_scratchpad": self.update_scratchpad,
             "end_calibration_phase": self.end_calibration_phase,
             "get_calibration_status": self.get_calibration_status,
+            "query_llm": self.query_llm,
             "scratchpad": ScratchpadProxy(self),
         }
 

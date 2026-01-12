@@ -1,0 +1,25 @@
+{
+  "trial_id": "trial_12_0",
+  "generation": 12,
+  "parent_id": "trial_11_11",
+  "code": "",
+  "metrics": {},
+  "prompt": "Refine {CODE_TRIAL_11_11}. \n\nStrategy: **Massive Random Search**.\n- Increase the number of random initializations from 100 to **1000**.\n- Keep the local polish logic (short optimization for each, long optimization for best).\n- This simply throws more compute at the problem.\n\nCRITICAL: Output ONLY a single Python code block (```python ... ```). \nNO intro text. NO explanation. NO 'Here is the code'. \nJust the code.",
+  "response": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    N = 26\n    \n    def get_D(pts):\n        \"\"\"Calculate the minimum pairwise distance between points.\"\"\"\n        dists = np.linalg.norm(pts[:, None, :] - pts[None, :, :], axis=-1)\n        np.fill_diagonal(dists, np.inf)\n        return np.min(dists)\n\n    best_D = 0\n    best_pts = None\n\n    # 1. Massive Random Search Phase\n    # We use many starts to find a configuration that can be polished.\n    for _ in range(1000):\n        # Initialize 26 points randomly in a unit square\n        pts = np.random.rand(N, 2)\n        \n        # Fast repulsion heuristic to spread points out\n        for _ in range(15):\n            diff = pts[:, None, :] - pts[None, :, :]\n            dist_sq = np.sum(diff**2, axis=-1)\n            np.fill_diagonal(dist_sq, 1.0)\n            # Apply force only to points that are very close\n            mask = dist_sq < 0.08\n            force = np.sum(mask[:, :, None] * diff / (dist_sq[:, :, None] + 1e-8), axis=1)\n            pts = np.clip(pts + force * 0.015, 0, 1)\n        \n        D = get_D(pts)\n        if D > best_D:\n            best_D = D\n            best_pts = pts\n\n    # 2. Add a structured variant (5x5 grid + 1)\n    # The 5x5 grid is a strong baseline for N=25.\n    grid = np.linspace(0, 1, 5)\n    gx, gy = np.meshgrid(grid, grid)\n    pts_grid = np.vstack([gx.flatten(), gy.flatten()]).T\n    for p26 in [[0.5, 0.5], [0.0, 0.5], [0.5, 0.0]]:\n        pts_26 = np.vstack([pts_grid, p26])\n        D_26 = get_D(pts_26)\n        if D_26 > best_D:\n            best_D = D_26\n            best_pts = pts_26\n\n    # 3. Local Polish using SLSQP\n    # We maximize the minimum distance D between points in a unit square.\n    # The radius r of the circles in the original unit square is then r = D / (2 * (1 + D)).\n    triu_idx = np.triu_indices(N, k=1)\n    \n    def obj(x):\n        return -",
+  "reasoning": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    N = 26\n    \n    def get_D(pts):\n        \"\"\"Calculate the minimum pairwise distance between points.\"\"\"\n        dists = np.linalg.norm(pts[:, None, :] - pts[None, :, :], axis=-1)\n        np.fill_diagonal(dists, np.inf)\n        return np.min(dists)\n\n    best_D = 0\n    best_pts = None\n\n    # 1. Massive Random Search Phase\n    # We use many starts to find a configuration that can be polished.\n    for _ in range(1000):\n        # Initialize 26 points randomly in a unit square\n        pts = np.random.rand(N, 2)\n        \n        # Fast repulsion heuristic to spread points out\n        for _ in range(15):\n            diff = pts[:, None, :] - pts[None, :, :]\n            dist_sq = np.sum(diff**2, axis=-1)\n            np.fill_diagonal(dist_sq, 1.0)\n            # Apply force only to points that are very close\n            mask = dist_sq < 0.08\n            force = np.sum(mask[:, :, None] * diff / (dist_sq[:, :, None] + 1e-8), axis=1)\n            pts = np.clip(pts + force * 0.015, 0, 1)\n        \n        D = get_D(pts)\n        if D > best_D:\n            best_D = D\n            best_pts = pts\n\n    # 2. Add a structured variant (5x5 grid + 1)\n    # The 5x5 grid is a strong baseline for N=25.\n    grid = np.linspace(0, 1, 5)\n    gx, gy = np.meshgrid(grid, grid)\n    pts_grid = np.vstack([gx.flatten(), gy.flatten()]).T\n    for p26 in [[0.5, 0.5], [0.0, 0.5], [0.5, 0.0]]:\n        pts_26 = np.vstack([pts_grid, p26])\n        D_26 = get_D(pts_26)\n        if D_26 > best_D:\n            best_D = D_26\n            best_pts = pts_26\n\n    # 3. Local Polish using SLSQP\n    # We maximize the minimum distance D between points in a unit square.\n    # The radius r of the circles in the original unit square is then r = D / (2 * (1 + D)).\n    triu_idx = np.triu_indices(N, k=1)\n    \n    def obj(x):\n        return -",
+  "timestamp": "2026-01-08T11:06:56.453573",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "MAX_TOKENS",
+      "usage_metadata": {
+        "prompt_token_count": 335,
+        "candidates_token_count": 656,
+        "thoughts_token_count": 15724
+      },
+      "response_text_len": 1896
+    }
+  }
+}

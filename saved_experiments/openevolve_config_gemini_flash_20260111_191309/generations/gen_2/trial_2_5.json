@@ -1,0 +1,30 @@
+{
+  "trial_id": "trial_2_5",
+  "generation": 2,
+  "parent_id": "trial_1_5",
+  "code": "import numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    n_circles = 26\n    \n    # Initial placement in a slightly larger square\n    initial_side = 1.2\n    centers = np.random.rand(n_circles, 2) * initial_side\n    radii = np.random.rand(n_circles) * 0.05  # Initial small radii\n\n    def objective(x):\n        r = x[-n_circles:]\n        return -np.sum(r)  # Maximize sum of radii\n\n    def constraint_overlap(x):\n        c = x[:2*n_circles].reshape(n_circles, 2)\n        r = x[-n_circles:]\n        distances = np.sqrt(np.sum((c[:, None, :] - c[None, :, :])**2, axis=2))\n        return distances[np.triu_indices(n_circles, k=1)] - (r[:, None] + r[None, :])[np.triu_indices(n_circles, k=1)]\n\n    def constraint_boundary(x):\n        c = x[:2*n_circles].reshape(n_circles, 2)\n        r = x[-n_circles:]\n        return np.concatenate([\n            c[:, 0] - r,  # x >= r\n            c[:, 1] - r,  # y >= r\n            1 - c[:, 0] - r,  # x <= 1 - r\n            1 - c[:, 1] - r   # y <= 1 - r\n        ])\n\n    # Initial guess\n    x0 = np.concatenate([centers.flatten(), radii])\n\n    # Bounds\n    bounds_centers = [(0, 1)] * (2 * n_circles)  # Centers within [0, 1]\n    bounds_radii = [(0.001, 0.2)] * n_circles  # Radii > 0\n    bounds = bounds_centers + bounds_radii\n    \n    # Constraints\n    constraints = ({'type': 'ineq', 'fun': constraint_overlap},\n                   {'type': 'ineq', 'fun': constraint_boundary})\n\n    # Optimization\n    result = minimize(objective, x0, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': 500})\n\n    optimized_centers = result.x[:2*n_circles].reshape(n_circles, 2)\n    optimized_radii = result.x[-n_circles:]\n    optimized_sum_radii = -result.fun\n\n    return optimized_centers, optimized_radii, optimized_sum_radii\n\ndef run_packing():\n    return construct_packing()",
+  "metrics": {
+    "valid": true,
+    "score": 2.534694098616325,
+    "eval_time": 0.6052758693695068,
+    "error": null
+  },
+  "prompt": "Implement a 'Shrinking Boundaries' approach for 26 circles. Start with 26 circles in a larger square [0, 1.2]x[0, 1.2] where they can easily fit. Gradually shrink the square back to [0,1]x[0,1] while using SLSQP to maintain non-overlap. This 'compression' might lead to a better packing density than starting from random points.",
+  "response": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    n_circles = 26\n    \n    # Initial placement in a slightly larger square\n    initial_side = 1.2\n    centers = np.random.rand(n_circles, 2) * initial_side\n    radii = np.random.rand(n_circles) * 0.05  # Initial small radii\n\n    def objective(x):\n        r = x[-n_circles:]\n        return -np.sum(r)  # Maximize sum of radii\n\n    def constraint_overlap(x):\n        c = x[:2*n_circles].reshape(n_circles, 2)\n        r = x[-n_circles:]\n        distances = np.sqrt(np.sum((c[:, None, :] - c[None, :, :])**2, axis=2))\n        return distances[np.triu_indices(n_circles, k=1)] - (r[:, None] + r[None, :])[np.triu_indices(n_circles, k=1)]\n\n    def constraint_boundary(x):\n        c = x[:2*n_circles].reshape(n_circles, 2)\n        r = x[-n_circles:]\n        return np.concatenate([\n            c[:, 0] - r,  # x >= r\n            c[:, 1] - r,  # y >= r\n            1 - c[:, 0] - r,  # x <= 1 - r\n            1 - c[:, 1] - r   # y <= 1 - r\n        ])\n\n    # Initial guess\n    x0 = np.concatenate([centers.flatten(), radii])\n\n    # Bounds\n    bounds_centers = [(0, 1)] * (2 * n_circles)  # Centers within [0, 1]\n    bounds_radii = [(0.001, 0.2)] * n_circles  # Radii > 0\n    bounds = bounds_centers + bounds_radii\n    \n    # Constraints\n    constraints = ({'type': 'ineq', 'fun': constraint_overlap},\n                   {'type': 'ineq', 'fun': constraint_boundary})\n\n    # Optimization\n    result = minimize(objective, x0, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': 500})\n\n    optimized_centers = result.x[:2*n_circles].reshape(n_circles, 2)\n    optimized_radii = result.x[-n_circles:]\n    optimized_sum_radii = -result.fun\n\n    return optimized_centers, optimized_radii, optimized_sum_radii\n\ndef run_packing():\n    return construct_packing()\n```",
+  "reasoning": "",
+  "timestamp": "2026-01-11T19:22:02.820636",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-2.0-flash-001",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "STOP",
+      "usage_metadata": {
+        "prompt_token_count": 311,
+        "candidates_token_count": 633,
+        "thoughts_token_count": 0
+      },
+      "response_text_len": 1861
+    }
+  }
+}

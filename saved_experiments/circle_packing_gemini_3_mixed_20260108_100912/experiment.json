@@ -1,0 +1,953 @@
+{
+  "experiment_id": "circle_packing_gemini_3_mixed_20260108_100912",
+  "config": {
+    "experiment": {
+      "name": "circle_packing_gemini_3_mixed",
+      "output_dir": "./experiments",
+      "seed": null
+    },
+    "root_llm": {
+      "model": "gemini-3-pro-preview",
+      "cost_per_million_input_tokens": 2.0,
+      "cost_per_million_output_tokens": 12.0,
+      "provider": "google",
+      "max_iterations": 30,
+      "reasoning": {
+        "enabled": true,
+        "effort": "xhigh",
+        "max_tokens": null,
+        "exclude": false
+      }
+    },
+    "child_llms": [
+      {
+        "model": "gemini-3-flash-preview",
+        "cost_per_million_input_tokens": 0.5,
+        "cost_per_million_output_tokens": 3.0,
+        "alias": "flash",
+        "provider": "google",
+        "calibration_calls": 2,
+        "reasoning": {
+          "enabled": true,
+          "effort": "high",
+          "max_tokens": null,
+          "exclude": false
+        }
+      },
+      {
+        "model": "gemini-3-pro-preview",
+        "cost_per_million_input_tokens": 2.0,
+        "cost_per_million_output_tokens": 12.0,
+        "alias": "pro",
+        "provider": "google",
+        "calibration_calls": 1,
+        "reasoning": {
+          "enabled": true,
+          "effort": "high",
+          "max_tokens": null,
+          "exclude": false
+        }
+      }
+    ],
+    "evaluation": {
+      "evaluator_fn": "mango_evolve.evaluation.circle_packing:CirclePackingEvaluator",
+      "evaluator_kwargs": {
+        "n_circles": 26,
+        "timeout_seconds": 300
+      }
+    },
+    "evolution": {
+      "max_generations": 20,
+      "max_children_per_generation": 16
+    },
+    "budget": {
+      "max_total_cost": 50.0
+    },
+    "default_child_llm_alias": "flash",
+    "calibration_notes_file": "/Users/sahan/conductor/workspaces/tetris_evolve/perth/experiments/circle_packing_gemini_3_mixed_20260107_230427/calibration_notes.yaml"
+  },
+  "start_time": "2026-01-08T10:09:12.083594",
+  "end_time": "2026-01-08T11:42:40.929367",
+  "termination_reason": "max_generations_reached (with errors: gen13: ```\nupdate_scratchpad(\"\"\"\n## Generation 13 Strategy\n- **Status**: High invalid rate in Gen 12 (87%). Formatting instructions were too strict or ignored.\n- **Pivot**: Relaxing the \"NO TEXT\" constraint )",
+  "num_generations": 20,
+  "total_trials": 0,
+  "best_trial": {
+    "trial_id": "trial_18_3",
+    "score": 2.635983084917486,
+    "generation": 18
+  },
+  "scratchpad": "\n## Generation 19 Strategy\n- **Status**: SOLVED (practically). `trial_18_3` score: 2.63598308. Best known: 2.63598505. Gap: ~2e-6.\n- **Champion**: `trial_18_3` (2.635983).\n- **Goal**: Close the 6th decimal place gap.\n- **Strategy**: \n    1. **Precision Polishing**: Run the champion code with extremely tight tolerances (`1e-12`) and more iterations.\n    2. **Solver Variation**: Switch the local minimizer (e.g., to `trust-constr` or `L-BFGS-B`) before final `SLSQP` polish.\n    3. **Micro-Perturbation**: Jitter the best solution by `1e-6` and re-optimize to nudge it into the absolute minimum.\n",
+  "generations": [
+    {
+      "generation_num": 0,
+      "num_trials": 16,
+      "num_successful_trials": 1,
+      "best_trial_id": "trial_0_3",
+      "best_score": 1.257941013293884,
+      "selected_trial_ids": [
+        "trial_0_3"
+      ],
+      "selection_reasoning": "Carrying forward the sole survivor. The physics simulation works but needs tuning. I will re-attempt the other strategies with stricter formatting prompts in the next generation.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_0_3",
+          "reasoning": "Only successful trial. Uses physics-based inflation. Score 1.25 is a valid baseline but significant room for improvement (target ~2.63).",
+          "category": "performance",
+          "source_generation": 0
+        }
+      ],
+      "parents_used": [],
+      "parents_used_counts": {},
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T10:14:20.212450"
+    },
+    {
+      "generation_num": 1,
+      "num_trials": 16,
+      "num_successful_trials": 2,
+      "best_trial_id": "trial_1_6",
+      "best_score": 2.606700010296205,
+      "selected_trial_ids": [
+        "trial_1_6",
+        "trial_1_0"
+      ],
+      "selection_reasoning": "Auto-selected top performing trials",
+      "trial_selections": [
+        {
+          "trial_id": "trial_1_6",
+          "reasoning": "Auto-selected for high score",
+          "category": "performance",
+          "source_generation": 1
+        },
+        {
+          "trial_id": "trial_1_0",
+          "reasoning": "Auto-selected for high score",
+          "category": "performance",
+          "source_generation": 1
+        }
+      ],
+      "parents_used": [
+        "trial_0_3"
+      ],
+      "parents_used_counts": {
+        "trial_0_3": 3
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T10:18:25.323582"
+    },
+    {
+      "generation_num": 2,
+      "num_trials": 16,
+      "num_successful_trials": 2,
+      "best_trial_id": "trial_2_1",
+      "best_score": 2.6044527224734093,
+      "selected_trial_ids": [
+        "trial_1_6",
+        "trial_2_1",
+        "trial_2_2"
+      ],
+      "selection_reasoning": "Consolidating around Hexagonal Initialization + Gradient Descent. The strategy is now to fine-tune this: perturbation, different optimizers (IPOPT via scipy interface if possible, or just better scipy settings), and hybridizing with the physics approach for pre-conditioning.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_1_6",
+          "reasoning": "Best score (2.6067). Hex init + SLSQP. The gold standard so far.",
+          "category": "performance",
+          "source_generation": 1
+        },
+        {
+          "trial_id": "trial_2_1",
+          "reasoning": "Very close second (2.6044). Used Trust-Constr with Hex init. Confirms the geometric initialization is key.",
+          "category": "performance",
+          "source_generation": 2
+        },
+        {
+          "trial_id": "trial_2_2",
+          "reasoning": "Best non-gradient result (1.46). Physics/Variable Radius. Kept for diversity but lower priority.",
+          "category": "diversity",
+          "source_generation": 2
+        }
+      ],
+      "parents_used": [
+        "trial_1_0",
+        "trial_1_6"
+      ],
+      "parents_used_counts": {
+        "trial_1_0": 2,
+        "trial_1_6": 3
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T10:22:28.826456"
+    },
+    {
+      "generation_num": 3,
+      "num_trials": 16,
+      "num_successful_trials": 5,
+      "best_trial_id": "trial_3_0",
+      "best_score": 2.6282124136505556,
+      "selected_trial_ids": [
+        "trial_3_0",
+        "trial_3_1",
+        "trial_3_3"
+      ],
+      "selection_reasoning": "The Hexagonal + Global Search strategy is working excellently. I will now focus on fine-tuning Basin Hopping parameters and integrating the 'Corner' constraint to reach the theoretical maximum.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_3_0",
+          "reasoning": "New Best Score (2.6282). Basin Hopping + Hex Init proved superior to simple SLSQP. This is the new baseline.",
+          "category": "performance",
+          "source_generation": 3
+        },
+        {
+          "trial_id": "trial_3_1",
+          "reasoning": "Score 2.610. Validates that perturbing the Hex grid is robust.",
+          "category": "performance",
+          "source_generation": 3
+        },
+        {
+          "trial_id": "trial_3_3",
+          "reasoning": "Score 2.573. 'Corner Augmented' strategy. While score is lower, the geometric insight (corners are critical) might be the missing piece if combined with Basin Hopping.",
+          "category": "diversity",
+          "source_generation": 3
+        }
+      ],
+      "parents_used": [
+        "trial_1_0",
+        "trial_1_6"
+      ],
+      "parents_used_counts": {
+        "trial_1_0": 1,
+        "trial_1_6": 4
+      },
+      "parents_not_selected_prev_gen": [
+        "trial_1_0"
+      ],
+      "timestamp": "2026-01-08T10:27:20.967286"
+    },
+    {
+      "generation_num": 4,
+      "num_trials": 16,
+      "num_successful_trials": 3,
+      "best_trial_id": "trial_4_6",
+      "best_score": 2.629189042164051,
+      "selected_trial_ids": [
+        "trial_4_6",
+        "trial_4_0",
+        "trial_3_3"
+      ],
+      "selection_reasoning": "We are within 0.007 of the best known solution. The strategy is to take trial_4_6 and 'polish' it using high-precision local search and minor perturbations.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_4_6",
+          "reasoning": "New All-Time Best (2.6292). The Hex+BasinHopping strategy continues to yield improvements.",
+          "category": "performance",
+          "source_generation": 4
+        },
+        {
+          "trial_id": "trial_4_0",
+          "reasoning": "Score 2.616. A strong variant of the winning strategy.",
+          "category": "performance",
+          "source_generation": 4
+        },
+        {
+          "trial_id": "trial_3_3",
+          "reasoning": "Corner Bias strategy (Score 2.57). Still the most promising alternative geometric approach.",
+          "category": "diversity",
+          "source_generation": 3
+        }
+      ],
+      "parents_used": [
+        "trial_1_0",
+        "trial_3_0",
+        "trial_3_3"
+      ],
+      "parents_used_counts": {
+        "trial_1_0": 1,
+        "trial_3_0": 3,
+        "trial_3_3": 1
+      },
+      "parents_not_selected_prev_gen": [
+        "trial_1_0"
+      ],
+      "timestamp": "2026-01-08T10:31:19.035931"
+    },
+    {
+      "generation_num": 5,
+      "num_trials": 16,
+      "num_successful_trials": 1,
+      "best_trial_id": "trial_5_1",
+      "best_score": 2.5969703019003187,
+      "selected_trial_ids": [
+        "trial_4_6",
+        "trial_3_0",
+        "trial_5_1"
+      ],
+      "selection_reasoning": "Sticking to the Physics (trial_4_6) and Hex (trial_3_0) lineages. The main challenge is code validity, so I will focus on parameter tuning of these proven codes rather than requesting complex new logic.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_4_6",
+          "reasoning": "All-time best (2.6292). Physics-based approach. The only reliable high-performer.",
+          "category": "performance",
+          "source_generation": 4
+        },
+        {
+          "trial_id": "trial_3_0",
+          "reasoning": "Best Hex-based result (2.6282). Keeping the geometric lineage alive.",
+          "category": "diversity",
+          "source_generation": 3
+        },
+        {
+          "trial_id": "trial_5_1",
+          "reasoning": "Score 2.597. A variation of the physics approach. Good backup.",
+          "category": "potential",
+          "source_generation": 5
+        }
+      ],
+      "parents_used": [
+        "trial_3_0",
+        "trial_4_6"
+      ],
+      "parents_used_counts": {
+        "trial_3_0": 2,
+        "trial_4_6": 3
+      },
+      "parents_not_selected_prev_gen": [
+        "trial_3_0"
+      ],
+      "timestamp": "2026-01-08T10:35:25.920080"
+    },
+    {
+      "generation_num": 6,
+      "num_trials": 16,
+      "num_successful_trials": 7,
+      "best_trial_id": "trial_6_6",
+      "best_score": 2.6298836126426313,
+      "selected_trial_ids": [
+        "trial_6_6",
+        "trial_4_6",
+        "trial_6_5"
+      ],
+      "selection_reasoning": "We have a new champion from a constructive strategy (Iterative Deepening). I will focus on refining this new approach while keeping the Physics and Hex lineages alive as strong alternatives.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_6_6",
+          "reasoning": "New All-Time Best (2.6299). The 'Iterative Deepening' strategy (constructive packing) beat the global search methods. This is a new, highly promising lineage.",
+          "category": "performance",
+          "source_generation": 6
+        },
+        {
+          "trial_id": "trial_4_6",
+          "reasoning": "Previous Best (2.6292). Physics-based approach. Remains a top contender.",
+          "category": "performance",
+          "source_generation": 4
+        },
+        {
+          "trial_id": "trial_6_5",
+          "reasoning": "Best of the Hex lineage (2.625). Validates that perturbing the hex grid is robust.",
+          "category": "diversity",
+          "source_generation": 6
+        }
+      ],
+      "parents_used": [
+        "trial_3_0",
+        "trial_4_6"
+      ],
+      "parents_used_counts": {
+        "trial_3_0": 2,
+        "trial_4_6": 4
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T10:40:58.028418"
+    },
+    {
+      "generation_num": 7,
+      "num_trials": 16,
+      "num_successful_trials": 1,
+      "best_trial_id": "trial_7_2",
+      "best_score": 2.539697601158217,
+      "selected_trial_ids": [
+        "trial_6_6",
+        "trial_4_6",
+        "trial_6_5"
+      ],
+      "selection_reasoning": "The Constructive strategy (trial_6_6) is the current champion. I will focus on refining it, specifically the local optimization step for each added circle. I will also keep the Physics and Geometric lineages active.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_6_6",
+          "reasoning": "All-time best (2.6299). Constructive strategy. I will continue to refine this.",
+          "category": "performance",
+          "source_generation": 6
+        },
+        {
+          "trial_id": "trial_4_6",
+          "reasoning": "Best Physics strategy (2.6292). Reliable alternative.",
+          "category": "performance",
+          "source_generation": 4
+        },
+        {
+          "trial_id": "trial_6_5",
+          "reasoning": "Best Geometric strategy (2.625). Keeping diversity.",
+          "category": "diversity",
+          "source_generation": 6
+        }
+      ],
+      "parents_used": [
+        "trial_4_6",
+        "trial_6_5",
+        "trial_6_6"
+      ],
+      "parents_used_counts": {
+        "trial_4_6": 2,
+        "trial_6_5": 1,
+        "trial_6_6": 4
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T10:45:51.139357"
+    },
+    {
+      "generation_num": 8,
+      "num_trials": 16,
+      "num_successful_trials": 4,
+      "best_trial_id": "trial_8_1",
+      "best_score": 2.6105628829518386,
+      "selected_trial_ids": [
+        "trial_6_6",
+        "trial_4_6",
+        "trial_8_1"
+      ],
+      "selection_reasoning": "Sticking with the top performers. The Constructive and Physics lineages are the only ones producing valid, high-scoring results. I will try to hybridize them.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_6_6",
+          "reasoning": "Still the champion (2.6299). Constructive strategy.",
+          "category": "performance",
+          "source_generation": 6
+        },
+        {
+          "trial_id": "trial_4_6",
+          "reasoning": "Best Physics strategy (2.6292).",
+          "category": "performance",
+          "source_generation": 4
+        },
+        {
+          "trial_id": "trial_8_1",
+          "reasoning": "Best-of-K insertion (2.610). A valid variation of the constructive approach.",
+          "category": "potential",
+          "source_generation": 8
+        }
+      ],
+      "parents_used": [
+        "trial_4_6",
+        "trial_6_5",
+        "trial_6_6"
+      ],
+      "parents_used_counts": {
+        "trial_4_6": 2,
+        "trial_6_5": 1,
+        "trial_6_6": 3
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T10:50:50.585204"
+    },
+    {
+      "generation_num": 9,
+      "num_trials": 16,
+      "num_successful_trials": 3,
+      "best_trial_id": "trial_9_0",
+      "best_score": 2.6089742805404335,
+      "selected_trial_ids": [
+        "trial_6_6",
+        "trial_9_0",
+        "trial_4_6"
+      ],
+      "selection_reasoning": "The Hybrid strategy (trial_9_0) is working. It takes the robustness of Physics and the precision of Constructive. I will focus on optimizing this hybrid pipeline.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_6_6",
+          "reasoning": "Champion (2.6299). Constructive strategy.",
+          "category": "performance",
+          "source_generation": 6
+        },
+        {
+          "trial_id": "trial_9_0",
+          "reasoning": "Hybrid Physics-Constructive (2.609). Successfully combined the two best lineages.",
+          "category": "potential",
+          "source_generation": 9
+        },
+        {
+          "trial_id": "trial_4_6",
+          "reasoning": "Physics base (2.6292). Essential for the hybrid strategy.",
+          "category": "diversity",
+          "source_generation": 4
+        }
+      ],
+      "parents_used": [
+        "trial_4_6",
+        "trial_6_5",
+        "trial_6_6"
+      ],
+      "parents_used_counts": {
+        "trial_4_6": 2,
+        "trial_6_5": 1,
+        "trial_6_6": 1
+      },
+      "parents_not_selected_prev_gen": [
+        "trial_6_5"
+      ],
+      "timestamp": "2026-01-08T10:54:47.558065"
+    },
+    {
+      "generation_num": 10,
+      "num_trials": 16,
+      "num_successful_trials": 3,
+      "best_trial_id": "trial_10_3",
+      "best_score": 2.6267567625649884,
+      "selected_trial_ids": [
+        "trial_6_6",
+        "trial_10_3",
+        "trial_9_0"
+      ],
+      "selection_reasoning": "The Look-Ahead strategy (trial_10_3) is a breakthrough. It's nearly as good as the champion. I will focus on extending the look-ahead horizon and combining it with the ensemble approach.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_6_6",
+          "reasoning": "Champion (2.6299). Constructive strategy.",
+          "category": "performance",
+          "source_generation": 6
+        },
+        {
+          "trial_id": "trial_10_3",
+          "reasoning": "Look-Ahead Constructive (2.6268). Very strong performance, validates the look-ahead concept.",
+          "category": "potential",
+          "source_generation": 10
+        },
+        {
+          "trial_id": "trial_9_0",
+          "reasoning": "Hybrid Physics-Constructive (2.609). Good diversity.",
+          "category": "diversity",
+          "source_generation": 9
+        }
+      ],
+      "parents_used": [
+        "trial_4_6",
+        "trial_6_6",
+        "trial_9_0"
+      ],
+      "parents_used_counts": {
+        "trial_4_6": 1,
+        "trial_6_6": 2,
+        "trial_9_0": 3
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T10:59:10.419793"
+    },
+    {
+      "generation_num": 11,
+      "num_trials": 16,
+      "num_successful_trials": 4,
+      "best_trial_id": "trial_11_11",
+      "best_score": 2.631286133396214,
+      "selected_trial_ids": [
+        "trial_11_11",
+        "trial_6_6",
+        "trial_10_3"
+      ],
+      "selection_reasoning": "Simplicity wins. The random search strategy beat the complex constructive ones. I will double down on global search strategies (Random, Quasi-Random) followed by intense local polishing.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_11_11",
+          "reasoning": "New All-Time Best (2.6313). Simple Random Search with Local Polish outperformed complex heuristics.",
+          "category": "performance",
+          "source_generation": 11
+        },
+        {
+          "trial_id": "trial_6_6",
+          "reasoning": "Constructive Champion (2.6299).",
+          "category": "performance",
+          "source_generation": 6
+        },
+        {
+          "trial_id": "trial_10_3",
+          "reasoning": "Look-Ahead Champion (2.6268).",
+          "category": "potential",
+          "source_generation": 10
+        }
+      ],
+      "parents_used": [
+        "trial_10_3",
+        "trial_6_6",
+        "trial_9_0"
+      ],
+      "parents_used_counts": {
+        "trial_10_3": 3,
+        "trial_6_6": 1,
+        "trial_9_0": 2
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T11:03:32.667861"
+    },
+    {
+      "generation_num": 12,
+      "num_trials": 16,
+      "num_successful_trials": 2,
+      "best_trial_id": "trial_12_3",
+      "best_score": 2.624374671287826,
+      "selected_trial_ids": [
+        "trial_11_11",
+        "trial_12_3",
+        "trial_6_6"
+      ],
+      "selection_reasoning": "The random search and ensemble approaches are dominating. I will focus on scaling these up while fixing the invalid output rate using JSON formatting.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_11_11",
+          "reasoning": "Champion (2.6313). Random Search + Local Polish.",
+          "category": "performance",
+          "source_generation": 11
+        },
+        {
+          "trial_id": "trial_12_3",
+          "reasoning": "Constructive Seed Ensemble (2.6244). Good potential.",
+          "category": "potential",
+          "source_generation": 12
+        },
+        {
+          "trial_id": "trial_6_6",
+          "reasoning": "Constructive Champion (2.6299).",
+          "category": "diversity",
+          "source_generation": 6
+        }
+      ],
+      "parents_used": [
+        "trial_10_3",
+        "trial_11_11",
+        "trial_6_6"
+      ],
+      "parents_used_counts": {
+        "trial_10_3": 1,
+        "trial_11_11": 3,
+        "trial_6_6": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T11:07:56.660062"
+    },
+    {
+      "generation_num": 13,
+      "num_trials": 16,
+      "num_successful_trials": 4,
+      "best_trial_id": "trial_13_9",
+      "best_score": 2.628069777803295,
+      "selected_trial_ids": [
+        "trial_11_11",
+        "trial_13_9",
+        "trial_12_3"
+      ],
+      "selection_reasoning": "The 'Perturbation' strategy (trial_13_9) is a great addition. It suggests that we are close to the global optimum and just need to shake the solution a bit. I will apply this perturbation logic to the best random-search result.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_11_11",
+          "reasoning": "All-Time Best (2.6313). Random Search + Local Polish.",
+          "category": "performance",
+          "source_generation": 11
+        },
+        {
+          "trial_id": "trial_13_9",
+          "reasoning": "Constructive + Perturbation (2.6281). Very strong result.",
+          "category": "potential",
+          "source_generation": 13
+        },
+        {
+          "trial_id": "trial_12_3",
+          "reasoning": "Constructive Ensemble (2.6244).",
+          "category": "diversity",
+          "source_generation": 12
+        }
+      ],
+      "parents_used": [
+        "trial_11_11",
+        "trial_12_3",
+        "trial_6_6"
+      ],
+      "parents_used_counts": {
+        "trial_11_11": 3,
+        "trial_12_3": 2,
+        "trial_6_6": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T11:14:32.641717"
+    },
+    {
+      "generation_num": 14,
+      "num_trials": 16,
+      "num_successful_trials": 0,
+      "best_trial_id": null,
+      "best_score": 0.0,
+      "selected_trial_ids": [
+        "trial_11_11",
+        "trial_13_9",
+        "trial_6_6"
+      ],
+      "selection_reasoning": "The JSON formatting experiment failed. Reverting to standard prompting but focusing on the 'Perturbation' strategy which showed promise in Gen 13.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_11_11",
+          "reasoning": "Champion (2.6313). Random Search + Local Polish.",
+          "category": "performance",
+          "source_generation": 11
+        },
+        {
+          "trial_id": "trial_13_9",
+          "reasoning": "Constructive + Perturbation (2.6281).",
+          "category": "potential",
+          "source_generation": 13
+        },
+        {
+          "trial_id": "trial_6_6",
+          "reasoning": "Constructive Champion (2.6299).",
+          "category": "diversity",
+          "source_generation": 6
+        }
+      ],
+      "parents_used": [
+        "trial_11_11",
+        "trial_12_3",
+        "trial_13_9"
+      ],
+      "parents_used_counts": {
+        "trial_11_11": 3,
+        "trial_12_3": 1,
+        "trial_13_9": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T11:18:40.351713"
+    },
+    {
+      "generation_num": 15,
+      "num_trials": 16,
+      "num_successful_trials": 1,
+      "best_trial_id": "trial_15_5",
+      "best_score": 2.3497915954585364,
+      "selected_trial_ids": [
+        "trial_11_11",
+        "trial_13_9",
+        "trial_6_6"
+      ],
+      "selection_reasoning": "High failure rate due to formatting. Sticking with the proven champions and refining the prompt to ensure valid code blocks.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_11_11",
+          "reasoning": "Champion (2.6313).",
+          "category": "performance",
+          "source_generation": 11
+        },
+        {
+          "trial_id": "trial_13_9",
+          "reasoning": "Constructive + Perturbation (2.6281).",
+          "category": "potential",
+          "source_generation": 13
+        },
+        {
+          "trial_id": "trial_6_6",
+          "reasoning": "Constructive Champion (2.6299).",
+          "category": "diversity",
+          "source_generation": 6
+        }
+      ],
+      "parents_used": [
+        "trial_11_11",
+        "trial_12_3",
+        "trial_13_9"
+      ],
+      "parents_used_counts": {
+        "trial_11_11": 3,
+        "trial_12_3": 1,
+        "trial_13_9": 1
+      },
+      "parents_not_selected_prev_gen": [
+        "trial_12_3"
+      ],
+      "timestamp": "2026-01-08T11:23:30.326148"
+    },
+    {
+      "generation_num": 16,
+      "num_trials": 16,
+      "num_successful_trials": 3,
+      "best_trial_id": "trial_16_0",
+      "best_score": 2.6096536397322487,
+      "selected_trial_ids": [
+        "trial_11_11",
+        "trial_16_0",
+        "trial_13_9"
+      ],
+      "selection_reasoning": "Selecting the champion and the valid offspring that successfully implemented the perturbation strategy. The goal is to tune the perturbation parameters to beat the champion.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_11_11",
+          "reasoning": "All-Time Best (2.6313).",
+          "category": "performance",
+          "source_generation": 11
+        },
+        {
+          "trial_id": "trial_16_0",
+          "reasoning": "Successful Perturbation implementation (2.610). Valid code structure to build upon.",
+          "category": "potential",
+          "source_generation": 16
+        },
+        {
+          "trial_id": "trial_13_9",
+          "reasoning": "Best Constructive/Alternative lineage (2.628).",
+          "category": "diversity",
+          "source_generation": 13
+        }
+      ],
+      "parents_used": [
+        "trial_11_11",
+        "trial_13_9",
+        "trial_6_6"
+      ],
+      "parents_used_counts": {
+        "trial_11_11": 5,
+        "trial_13_9": 1,
+        "trial_6_6": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T11:27:51.780487"
+    },
+    {
+      "generation_num": 17,
+      "num_trials": 16,
+      "num_successful_trials": 3,
+      "best_trial_id": "trial_17_3",
+      "best_score": 2.6207815565348223,
+      "selected_trial_ids": [
+        "trial_11_11",
+        "trial_17_3",
+        "trial_17_5"
+      ],
+      "selection_reasoning": "Focusing on the successful Basin Hopping implementation. It's robust and valid. Tuning its temperature and step size might find the global optimum.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_11_11",
+          "reasoning": "Champion (2.6313).",
+          "category": "performance",
+          "source_generation": 11
+        },
+        {
+          "trial_id": "trial_17_3",
+          "reasoning": "Successful Basin Hopping (2.621). Good candidate for tuning.",
+          "category": "potential",
+          "source_generation": 17
+        },
+        {
+          "trial_id": "trial_17_5",
+          "reasoning": "Successful Hybrid/Perturbation (2.606).",
+          "category": "diversity",
+          "source_generation": 17
+        }
+      ],
+      "parents_used": [
+        "trial_11_11",
+        "trial_13_9",
+        "trial_16_0"
+      ],
+      "parents_used_counts": {
+        "trial_11_11": 1,
+        "trial_13_9": 1,
+        "trial_16_0": 3
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T11:34:46.543545"
+    },
+    {
+      "generation_num": 18,
+      "num_trials": 11,
+      "num_successful_trials": 6,
+      "best_trial_id": "trial_18_3",
+      "best_score": 2.635983084917486,
+      "selected_trial_ids": [
+        "trial_18_3",
+        "trial_11_11",
+        "trial_18_8"
+      ],
+      "selection_reasoning": "We have effectively solved the problem with trial_18_3. The goal now is to 'polish the diamond' to hit the theoretical maximum and to see if the random lineage can be brought up to the same level using the successful Basin Hopping strategy.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_18_3",
+          "reasoning": "NEW CHAMPION (2.635983). Practically solved the problem (within 2e-6 of best known).",
+          "category": "performance",
+          "source_generation": 18
+        },
+        {
+          "trial_id": "trial_11_11",
+          "reasoning": "Previous Champion (2.6313). Keeping for lineage diversity.",
+          "category": "diversity",
+          "source_generation": 11
+        },
+        {
+          "trial_id": "trial_18_8",
+          "reasoning": "Successful Physics-based approach (2.601).",
+          "category": "potential",
+          "source_generation": 18
+        }
+      ],
+      "parents_used": [
+        "trial_11_11",
+        "trial_13_9",
+        "trial_17_3"
+      ],
+      "parents_used_counts": {
+        "trial_11_11": 2,
+        "trial_13_9": 1,
+        "trial_17_3": 3
+      },
+      "parents_not_selected_prev_gen": [
+        "trial_13_9"
+      ],
+      "timestamp": "2026-01-08T11:38:50.222272"
+    },
+    {
+      "generation_num": 19,
+      "num_trials": 16,
+      "num_successful_trials": 3,
+      "best_trial_id": "trial_19_0",
+      "best_score": 2.621719112798426,
+      "selected_trial_ids": [
+        "trial_18_3",
+        "trial_19_0",
+        "trial_19_4"
+      ],
+      "selection_reasoning": "Going all-in on polishing the champion trial_18_3 for the final generation. The goal is to squeeze out the last few micro-units of performance.",
+      "trial_selections": [
+        {
+          "trial_id": "trial_18_3",
+          "reasoning": "Unbeaten Champion (2.635983).",
+          "category": "performance",
+          "source_generation": 18
+        },
+        {
+          "trial_id": "trial_19_0",
+          "reasoning": "High precision refinement (2.622). Valid code.",
+          "category": "potential",
+          "source_generation": 19
+        },
+        {
+          "trial_id": "trial_19_4",
+          "reasoning": "SQP approach (2.589). Valid code.",
+          "category": "diversity",
+          "source_generation": 19
+        }
+      ],
+      "parents_used": [
+        "trial_11_11",
+        "trial_18_3",
+        "trial_18_8"
+      ],
+      "parents_used_counts": {
+        "trial_11_11": 1,
+        "trial_18_3": 9,
+        "trial_18_8": 1
+      },
+      "parents_not_selected_prev_gen": [],
+      "timestamp": "2026-01-08T11:42:40.920660"
+    }
+  ]
+}

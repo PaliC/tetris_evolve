@@ -1,0 +1,45 @@
+{
+  "generation_num": 13,
+  "num_trials": 16,
+  "num_successful_trials": 4,
+  "best_trial_id": "trial_13_9",
+  "best_score": 2.628069777803295,
+  "selected_trial_ids": [
+    "trial_11_11",
+    "trial_13_9",
+    "trial_12_3"
+  ],
+  "selection_reasoning": "The 'Perturbation' strategy (trial_13_9) is a great addition. It suggests that we are close to the global optimum and just need to shake the solution a bit. I will apply this perturbation logic to the best random-search result.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_11_11",
+      "reasoning": "All-Time Best (2.6313). Random Search + Local Polish.",
+      "category": "performance",
+      "source_generation": 11
+    },
+    {
+      "trial_id": "trial_13_9",
+      "reasoning": "Constructive + Perturbation (2.6281). Very strong result.",
+      "category": "potential",
+      "source_generation": 13
+    },
+    {
+      "trial_id": "trial_12_3",
+      "reasoning": "Constructive Ensemble (2.6244).",
+      "category": "diversity",
+      "source_generation": 12
+    }
+  ],
+  "parents_used": [
+    "trial_11_11",
+    "trial_12_3",
+    "trial_6_6"
+  ],
+  "parents_used_counts": {
+    "trial_11_11": 3,
+    "trial_12_3": 2,
+    "trial_6_6": 1
+  },
+  "parents_not_selected_prev_gen": [],
+  "timestamp": "2026-01-08T11:14:32.641717"
+}

@@ -1,0 +1,25 @@
+{
+  "trial_id": "trial_12_11",
+  "generation": 12,
+  "parent_id": null,
+  "code": "",
+  "metrics": {},
+  "prompt": "Write a Python function `construct_packing` that packs 26 circles. \n\nStrategy: **Swarm Intelligence**.\n- 50 particles (packings).\n- Each particle moves towards its personal best and the global best.\n- Use standard PSO (Particle Swarm Optimization) logic on the 52-dimensional coordinate space.\n\nCRITICAL: Output ONLY a single Python code block (```python ... ```). \nNO intro text. NO explanation. NO 'Here is the code'. \nJust the code.",
+  "response": "```python\nimport numpy as np\n\ndef construct_packing():\n    \"\"\"\n    Packs 26 circles into a unit square [0,1]x[0,1] to maximize the sum of radii\n    using Particle Swarm Optimization (PSO).\n    \"\"\"\n    n_circles = 26\n    n_particles = 50\n    n_iterations = 800\n    \n    # PSO Parameters\n    w = 0.6   # Inertia weight\n    c1 = 1.2  # Cognitive weight\n    c2 = 1.6  # Social weight\n    \n    # Initialize particle positions (centers of 26 circles)\n    # Dimensions: (n_particles, n_circles, 2)\n    centers = np.random.uniform(0.1, 0.9, (n_particles, n_circles, 2))\n    \n    # Seed one particle with a near-optimal hexagonal layout to guide the swarm\n    for p in range(n_particles):\n        for i in range(n_circles):\n            row = i // 5\n            col = i % 5\n            centers[p, i, 0] = 0.1 + col * 0.18 + np.random.normal(0, 0.01)\n            centers[p, i, 1] = 0.1 + row * 0.18 + np.random.normal(0, 0.01)\n            if row % 2 == 1:\n                centers[p, i, 0] += 0.09\n    \n    centers = np.clip(centers, 0, 1)\n    velocities = (np.random.rand(n_particles, n_circles, 2) - 0.5) * 0.01\n    \n    def get_fitness_all(pos_all):\n        \"\"\"Calculates the sum of radii for a batch of particles.\"\"\"\n        n_p = pos_all.shape[0]\n        fits = np.zeros(n_p)\n        rs = np.zeros(n_p)\n        for i in range(n_p):\n            p = pos_all[i]\n            # Distance to boundary: radius must be <= distance to any wall\n            d_wall = min(np.min(p), 1.0 - np.max(p))\n            \n            # Distance between centers: radius1 + radius2 <= distance between centers\n            # For sum of radii maximization, we assume equal radii r = dist/2\n            diff = p[:, np.newaxis, :] - p[np.newaxis, :, :]\n            dist_sq = np.sum(diff**2, axis=-1)\n            np.fill_diagonal(dist_sq, np.inf)\n            d_centers = np.sqrt(np.min(dist_sq))\n            \n            #",
+  "reasoning": "```python\nimport numpy as np\n\ndef construct_packing():\n    \"\"\"\n    Packs 26 circles into a unit square [0,1]x[0,1] to maximize the sum of radii\n    using Particle Swarm Optimization (PSO).\n    \"\"\"\n    n_circles = 26\n    n_particles = 50\n    n_iterations = 800\n    \n    # PSO Parameters\n    w = 0.6   # Inertia weight\n    c1 = 1.2  # Cognitive weight\n    c2 = 1.6  # Social weight\n    \n    # Initialize particle positions (centers of 26 circles)\n    # Dimensions: (n_particles, n_circles, 2)\n    centers = np.random.uniform(0.1, 0.9, (n_particles, n_circles, 2))\n    \n    # Seed one particle with a near-optimal hexagonal layout to guide the swarm\n    for p in range(n_particles):\n        for i in range(n_circles):\n            row = i // 5\n            col = i % 5\n            centers[p, i, 0] = 0.1 + col * 0.18 + np.random.normal(0, 0.01)\n            centers[p, i, 1] = 0.1 + row * 0.18 + np.random.normal(0, 0.01)\n            if row % 2 == 1:\n                centers[p, i, 0] += 0.09\n    \n    centers = np.clip(centers, 0, 1)\n    velocities = (np.random.rand(n_particles, n_circles, 2) - 0.5) * 0.01\n    \n    def get_fitness_all(pos_all):\n        \"\"\"Calculates the sum of radii for a batch of particles.\"\"\"\n        n_p = pos_all.shape[0]\n        fits = np.zeros(n_p)\n        rs = np.zeros(n_p)\n        for i in range(n_p):\n            p = pos_all[i]\n            # Distance to boundary: radius must be <= distance to any wall\n            d_wall = min(np.min(p), 1.0 - np.max(p))\n            \n            # Distance between centers: radius1 + radius2 <= distance between centers\n            # For sum of radii maximization, we assume equal radii r = dist/2\n            diff = p[:, np.newaxis, :] - p[np.newaxis, :, :]\n            dist_sq = np.sum(diff**2, axis=-1)\n            np.fill_diagonal(dist_sq, np.inf)\n            d_centers = np.sqrt(np.min(dist_sq))\n            \n            #",
+  "timestamp": "2026-01-08T11:05:26.573820",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "MAX_TOKENS",
+      "usage_metadata": {
+        "prompt_token_count": 332,
+        "candidates_token_count": 656,
+        "thoughts_token_count": 15724
+      },
+      "response_text_len": 1886
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "trial_id": "trial_6_15",
+  "generation": 6,
+  "parent_id": null,
+  "code": "import numpy as np\nfrom scipy.optimize import minimize\nfrom scipy.spatial.distance import pdist\n\ndef construct_packing():\n    n = 26\n    # Strategy: Circular Arrangement (concentric rings)\n    # Ring structure: 1 center, 6 in Ring 1, 12 in Ring 2, 7 in Ring 3\n    c_list = [[0.5, 0.5]]\n    # Ring 1: 6 circles\n    for i in range(6):\n        angle = 2 * np.pi * i / 6\n        c_list.append([0.5 + 0.18 * np.cos(angle), 0.5 + 0.18 * np.sin(angle)])\n    # Ring 2: 12 circles\n    for i in range(12):\n        angle = 2 * np.pi * i / 12\n        c_list.append([0.5 + 0.34 * np.cos(angle), 0.5 + 0.34 * np.sin(angle)])\n    # Ring 3: 7 circles\n    for i in range(7):\n        angle = 2 * np.pi * i / 7\n        c_list.append([0.5 + 0.45 * np.cos(angle), 0.5 + 0.45 * np.sin(angle)])\n    \n    centers_init = np.array(c_list)\n    radii_init = np.full(n, 0.05)  # Start with a safe small radius\n    x0 = np.concatenate([centers_init.flatten(), radii_init])\n    \n    def objective(x):\n        # Maximize sum of radii = Minimize negative sum\n        return -np.sum(x[2*n:])\n    \n    def constraints_func(x):\n        c = x[:2*n].reshape((n, 2))\n        r = x[2*n:]\n        # Boundary constraints: c_i - r_i >= 0 and c_i + r_i <= 1\n        boundary_constraints = np.concatenate([c - r[:, np.newaxis], 1.0 - (c + r[:, np.newaxis])], axis=1).flatten()\n        # Non-overlap constraints: distance between centers >= sum of radii\n        dists = pdist(c)\n        i_idx, j_idx = np.triu_indices(n, k=1)\n        overlap_constraints = dists - (r[i_idx] + r[j_idx])\n        return np.concatenate([boundary_constraints, overlap_constraints])\n        \n    # SLSQP optimization\n    res = minimize(\n        objective, \n        x0, \n        method='SLSQP', \n        constraints={'type': 'ineq', 'fun': constraints_func},\n        bounds=[(0, 1)] * (2 * n) + [(0, 0.5)] * n,\n        options={'maxiter': 100, 'ftol': 1e-8}\n    )\n    \n    final_centers = res.x[:2*n].reshape((n, 2))\n    final_radii = res.x[2*n:]\n    sum_radii = np.sum(final_radii)\n    \n    return final_centers, final_radii, sum_radii\n\ndef run_packing():\n    return construct_packing()",
+  "metrics": {
+    "valid": true,
+    "score": 2.546880148780371,
+    "eval_time": 0.28756284713745117,
+    "error": null
+  },
+  "prompt": "Write a Python function `construct_packing` that packs 26 circles. \n\nStrategy: **Circular Arrangement**.\n- Place circles in concentric rings (e.g., 1 center, 6 ring 1, 12 ring 2, 7 ring 3).\n- Optimize from this polar coordinate seed.\n- Use SLSQP.\n\nCRITICAL: You must output ONLY a single Python code block (```python ... ```). \nDO NOT write any introduction. \nDO NOT write 'Here is the code'. \nDO NOT write any explanation after. \nJust the code block.",
+  "response": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\nfrom scipy.spatial.distance import pdist\n\ndef construct_packing():\n    n = 26\n    # Strategy: Circular Arrangement (concentric rings)\n    # Ring structure: 1 center, 6 in Ring 1, 12 in Ring 2, 7 in Ring 3\n    c_list = [[0.5, 0.5]]\n    # Ring 1: 6 circles\n    for i in range(6):\n        angle = 2 * np.pi * i / 6\n        c_list.append([0.5 + 0.18 * np.cos(angle), 0.5 + 0.18 * np.sin(angle)])\n    # Ring 2: 12 circles\n    for i in range(12):\n        angle = 2 * np.pi * i / 12\n        c_list.append([0.5 + 0.34 * np.cos(angle), 0.5 + 0.34 * np.sin(angle)])\n    # Ring 3: 7 circles\n    for i in range(7):\n        angle = 2 * np.pi * i / 7\n        c_list.append([0.5 + 0.45 * np.cos(angle), 0.5 + 0.45 * np.sin(angle)])\n    \n    centers_init = np.array(c_list)\n    radii_init = np.full(n, 0.05)  # Start with a safe small radius\n    x0 = np.concatenate([centers_init.flatten(), radii_init])\n    \n    def objective(x):\n        # Maximize sum of radii = Minimize negative sum\n        return -np.sum(x[2*n:])\n    \n    def constraints_func(x):\n        c = x[:2*n].reshape((n, 2))\n        r = x[2*n:]\n        # Boundary constraints: c_i - r_i >= 0 and c_i + r_i <= 1\n        boundary_constraints = np.concatenate([c - r[:, np.newaxis], 1.0 - (c + r[:, np.newaxis])], axis=1).flatten()\n        # Non-overlap constraints: distance between centers >= sum of radii\n        dists = pdist(c)\n        i_idx, j_idx = np.triu_indices(n, k=1)\n        overlap_constraints = dists - (r[i_idx] + r[j_idx])\n        return np.concatenate([boundary_constraints, overlap_constraints])\n        \n    # SLSQP optimization\n    res = minimize(\n        objective, \n        x0, \n        method='SLSQP', \n        constraints={'type': 'ineq', 'fun': constraints_func},\n        bounds=[(0, 1)] * (2 * n) + [(0, 0.5)] * n,\n        options={'maxiter': 100, 'ftol': 1e-8}\n    )\n    \n    final_centers = res.x[:2*n].reshape((n, 2))\n    final_radii = res.x[2*n:]\n    sum_radii = np.sum(final_radii)\n    \n    return final_centers, final_radii, sum_radii\n\ndef run_packing():\n    return construct_packing()\n```",
+  "reasoning": "",
+  "timestamp": "2026-01-08T10:38:29.737854",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "STOP",
+      "usage_metadata": {
+        "prompt_token_count": 350,
+        "candidates_token_count": 804,
+        "thoughts_token_count": 13174
+      },
+      "response_text_len": 2132
+    }
+  }
+}
