@@ -1,0 +1,41 @@
+{
+  "generation_num": 5,
+  "num_trials": 10,
+  "num_successful_trials": 9,
+  "best_trial_id": "trial_5_9",
+  "best_score": 2.6252017826694773,
+  "selected_trial_ids": [
+    "trial_5_9",
+    "trial_5_0",
+    "trial_5_3"
+  ],
+  "selection_reasoning": "Auto-selected top performing trials",
+  "trial_selections": [
+    {
+      "trial_id": "trial_5_9",
+      "reasoning": "Auto-selected for high score",
+      "category": "performance",
+      "source_generation": 5
+    },
+    {
+      "trial_id": "trial_5_0",
+      "reasoning": "Auto-selected for high score",
+      "category": "performance",
+      "source_generation": 5
+    },
+    {
+      "trial_id": "trial_5_3",
+      "reasoning": "Auto-selected for high score",
+      "category": "performance",
+      "source_generation": 5
+    }
+  ],
+  "parents_used": [
+    "trial_3_9"
+  ],
+  "parents_used_counts": {
+    "trial_3_9": 3
+  },
+  "parents_not_selected_prev_gen": [],
+  "timestamp": "2026-01-11T20:29:19.218265"
+}

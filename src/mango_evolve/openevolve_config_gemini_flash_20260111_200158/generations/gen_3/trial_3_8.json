@@ -1,0 +1,30 @@
+{
+  "trial_id": "trial_3_8",
+  "generation": 3,
+  "parent_id": null,
+  "code": "import numpy as np\nimport scipy.optimize as optimize\nimport random\n\ndef construct_packing():\n    \"\"\"Packs 26 circles into a unit square to maximize the sum of their radii.\"\"\"\n\n    def objective_function(x):\n        \"\"\"Objective function to minimize (negative sum of radii).\"\"\"\n        centers = x[:52].reshape(26, 2)\n        radii = x[52:]\n        return -np.sum(radii)\n\n    def constraint_circles_inside(x):\n        \"\"\"Constraint: Circles must be entirely inside the unit square.\"\"\"\n        centers = x[:52].reshape(26, 2)\n        radii = x[52:]\n        return np.concatenate([\n            centers[:, 0] - radii,  # x - r >= 0\n            1 - centers[:, 0] - radii,  # 1 - x - r >= 0\n            centers[:, 1] - radii,  # y - r >= 0\n            1 - centers[:, 1] - radii  # 1 - y - r >= 0\n        ])\n\n    def constraint_no_overlap(x):\n        \"\"\"Constraint: Circles must not overlap.\"\"\"\n        centers = x[:52].reshape(26, 2)\n        radii = x[52:]\n        constraints = []\n        for i in range(26):\n            for j in range(i + 1, 26):\n                dist = np.linalg.norm(centers[i] - centers[j])\n                constraints.append(dist - radii[i] - radii[j])\n        return np.array(constraints)\n\n    # Initial guess (random centers, equal radii)\n    initial_radii = np.full(26, 0.03)\n    initial_centers = np.random.rand(26, 2) * 0.8 + 0.1\n    initial_guess = np.concatenate([initial_centers.flatten(), initial_radii])\n    \n    # Bounds (centers within [0, 1], radii >= 0)\n    bounds = [(0, 1)] * 52 + [(0.001, 0.5)] * 26  # radii > 0.001 to avoid numerical issues\n\n    # Constraints\n    constraints = [\n        {'type': 'ineq', 'fun': constraint_circles_inside},\n        {'type': 'ineq', 'fun': constraint_no_overlap}\n    ]\n\n    # Optimization\n    result = optimize.minimize(\n        objective_function,\n        initial_guess,\n        method='SLSQP',\n        bounds=bounds,\n        constraints=constraints,\n        options={'maxiter': 500, 'ftol': 1e-6, 'disp': False}\n    )\n\n    # Extract results\n    centers = result.x[:52].reshape(26, 2)\n    radii = result.x[52:]\n    sum_radii = -result.fun\n\n    return centers, radii, sum_radii\n\ndef run_packing():\n    return construct_packing()",
+  "metrics": {
+    "valid": true,
+    "score": 2.557571024141609,
+    "eval_time": 0.6040151119232178,
+    "error": null
+  },
+  "prompt": "\nCreate a circle packing algorithm with adaptive, self-tuning parameters:\n\n1. Implement a meta-optimization layer that adjusts algorithm parameters based on progress\n2. Use an ensemble approach that combines multiple strategies and adapts their weights\n3. Implement dynamic allocation of computational budget to promising approaches\n4. Create a learning mechanism that improves from previous optimization attempts\n5. Use statistical analysis to identify and overcome barriers to improvement\n\nLearning from these successful solutions:\n- trial_1_0 (score=2.6102254358209356)\n- trial_2_4 (score=2.6089248865104153)\n- trial_2_1 (score=2.5540751089801947) with its adaptive learning rates\n\nReturn your solution in the required format.\n",
+  "response": "```python\nimport numpy as np\nimport scipy.optimize as optimize\nimport random\n\ndef construct_packing():\n    \"\"\"Packs 26 circles into a unit square to maximize the sum of their radii.\"\"\"\n\n    def objective_function(x):\n        \"\"\"Objective function to minimize (negative sum of radii).\"\"\"\n        centers = x[:52].reshape(26, 2)\n        radii = x[52:]\n        return -np.sum(radii)\n\n    def constraint_circles_inside(x):\n        \"\"\"Constraint: Circles must be entirely inside the unit square.\"\"\"\n        centers = x[:52].reshape(26, 2)\n        radii = x[52:]\n        return np.concatenate([\n            centers[:, 0] - radii,  # x - r >= 0\n            1 - centers[:, 0] - radii,  # 1 - x - r >= 0\n            centers[:, 1] - radii,  # y - r >= 0\n            1 - centers[:, 1] - radii  # 1 - y - r >= 0\n        ])\n\n    def constraint_no_overlap(x):\n        \"\"\"Constraint: Circles must not overlap.\"\"\"\n        centers = x[:52].reshape(26, 2)\n        radii = x[52:]\n        constraints = []\n        for i in range(26):\n            for j in range(i + 1, 26):\n                dist = np.linalg.norm(centers[i] - centers[j])\n                constraints.append(dist - radii[i] - radii[j])\n        return np.array(constraints)\n\n    # Initial guess (random centers, equal radii)\n    initial_radii = np.full(26, 0.03)\n    initial_centers = np.random.rand(26, 2) * 0.8 + 0.1\n    initial_guess = np.concatenate([initial_centers.flatten(), initial_radii])\n    \n    # Bounds (centers within [0, 1], radii >= 0)\n    bounds = [(0, 1)] * 52 + [(0.001, 0.5)] * 26  # radii > 0.001 to avoid numerical issues\n\n    # Constraints\n    constraints = [\n        {'type': 'ineq', 'fun': constraint_circles_inside},\n        {'type': 'ineq', 'fun': constraint_no_overlap}\n    ]\n\n    # Optimization\n    result = optimize.minimize(\n        objective_function,\n        initial_guess,\n        method='SLSQP',\n        bounds=bounds,\n        constraints=constraints,\n        options={'maxiter': 500, 'ftol': 1e-6, 'disp': False}\n    )\n\n    # Extract results\n    centers = result.x[:52].reshape(26, 2)\n    radii = result.x[52:]\n    sum_radii = -result.fun\n\n    return centers, radii, sum_radii\n\ndef run_packing():\n    return construct_packing()\n```",
+  "reasoning": "",
+  "timestamp": "2026-01-11T20:18:12.078909",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-2.0-flash-001",
+    "temperature": 0.6,
+    "provider_debug": {
+      "finish_reason": "STOP",
+      "usage_metadata": {
+        "prompt_token_count": 412,
+        "candidates_token_count": 713,
+        "thoughts_token_count": 0
+      },
+      "response_text_len": 2209
+    }
+  }
+}
