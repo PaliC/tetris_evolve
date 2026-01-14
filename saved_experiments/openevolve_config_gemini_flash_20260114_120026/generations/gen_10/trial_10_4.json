@@ -1,0 +1,30 @@
+{
+  "trial_id": "trial_10_4",
+  "generation": 10,
+  "parent_id": null,
+  "code": "import numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    n_circles = 26\n    radii = np.array([0.15, 0.15, 0.14, 0.14, 0.13, 0.13, 0.12, 0.12, 0.11, 0.11, 0.10, 0.10,\n                      0.09, 0.09, 0.08, 0.08, 0.07, 0.07, 0.06, 0.06, 0.05, 0.05, 0.04, 0.04, 0.03, 0.03])\n    centers = np.zeros((n_circles, 2))\n\n    def objective(x):\n        centers_temp = x.reshape(n_circles, 2)\n        sum_radii = -np.sum(radii)\n        return sum_radii\n\n    def constraint_overlap(x):\n        centers_temp = x.reshape(n_circles, 2)\n        distances = np.sqrt(np.sum((centers_temp[:, None, :] - centers_temp[None, :, :]) ** 2, axis=2))\n        radii_sum = radii[:, None] + radii[None, :]\n        return (distances >= radii_sum).flatten()\n\n    def constraint_containment(x):\n        centers_temp = x.reshape(n_circles, 2)\n        return np.concatenate([centers_temp[:, 0] - radii,\n                               radii - (centers_temp[:, 0] - 1),\n                               centers_temp[:, 1] - radii,\n                               radii - (centers_temp[:, 1] - 1)])\n\n    # Initial placement\n    grid_size = int(np.ceil(np.sqrt(n_circles)))\n    for i in range(n_circles):\n        row = i // grid_size\n        col = i % grid_size\n        centers[i, 0] = (col + 0.5) / grid_size\n        centers[i, 1] = (row + 0.5) / grid_size\n\n    # Optimization\n    x0 = centers.flatten()\n    constraints = ({'type': 'ineq', 'fun': constraint_overlap},\n                   {'type': 'ineq', 'fun': constraint_containment})\n\n    bounds = [(0, 1)] * (2 * n_circles)\n\n    res = minimize(objective, x0, method='SLSQP', constraints=constraints, bounds=bounds, options={'maxiter': 1000})\n\n    centers = res.x.reshape(n_circles, 2)\n    sum_radii = np.sum(radii)\n\n    return centers, radii, sum_radii\n\ndef run_packing():\n    return construct_packing()",
+  "metrics": {
+    "valid": false,
+    "score": 0.0,
+    "eval_time": 0.21802401542663574,
+    "error": "TypeError: numpy boolean subtract, the `-` operator, is not supported, use the bitwise_xor, the `^` operator, or the logical_xor function instead."
+  },
+  "prompt": "\n        Develop a circle packing algorithm using an incremental placement approach:\n\n        1. Start by placing larger circles first, then progressively add smaller ones\n        2. After each placement, run local optimization to adjust positions\n        3. Use a sophisticated selection strategy for the next circle to place\n        4. Implement efficient constraint handling\n\n        Your task is to pack 26 circles into a unit square [0,1] x [0,1] to maximize the sum of their radii.\n        All circles must be entirely inside the unit square, no two circles may overlap, and all radii must be non-negative.\n\n        The best known solution is about 2.636. Try to achieve as high of a score as possible.\n        \n        Return a solution in the required format:\n        ```python\n        import numpy as np\n\n        def construct_packing():\n            '''Returns (centers, radii, sum_radii) where:\n            - centers: np.array shape (26, 2)\n            - radii: np.array shape (26,)\n            - sum_radii: float\n            '''\n            ...\n\n        def run_packing():\n            return construct_packing()\n        ```\n        ",
+  "response": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    n_circles = 26\n    radii = np.array([0.15, 0.15, 0.14, 0.14, 0.13, 0.13, 0.12, 0.12, 0.11, 0.11, 0.10, 0.10,\n                      0.09, 0.09, 0.08, 0.08, 0.07, 0.07, 0.06, 0.06, 0.05, 0.05, 0.04, 0.04, 0.03, 0.03])\n    centers = np.zeros((n_circles, 2))\n\n    def objective(x):\n        centers_temp = x.reshape(n_circles, 2)\n        sum_radii = -np.sum(radii)\n        return sum_radii\n\n    def constraint_overlap(x):\n        centers_temp = x.reshape(n_circles, 2)\n        distances = np.sqrt(np.sum((centers_temp[:, None, :] - centers_temp[None, :, :]) ** 2, axis=2))\n        radii_sum = radii[:, None] + radii[None, :]\n        return (distances >= radii_sum).flatten()\n\n    def constraint_containment(x):\n        centers_temp = x.reshape(n_circles, 2)\n        return np.concatenate([centers_temp[:, 0] - radii,\n                               radii - (centers_temp[:, 0] - 1),\n                               centers_temp[:, 1] - radii,\n                               radii - (centers_temp[:, 1] - 1)])\n\n    # Initial placement\n    grid_size = int(np.ceil(np.sqrt(n_circles)))\n    for i in range(n_circles):\n        row = i // grid_size\n        col = i % grid_size\n        centers[i, 0] = (col + 0.5) / grid_size\n        centers[i, 1] = (row + 0.5) / grid_size\n\n    # Optimization\n    x0 = centers.flatten()\n    constraints = ({'type': 'ineq', 'fun': constraint_overlap},\n                   {'type': 'ineq', 'fun': constraint_containment})\n\n    bounds = [(0, 1)] * (2 * n_circles)\n\n    res = minimize(objective, x0, method='SLSQP', constraints=constraints, bounds=bounds, options={'maxiter': 1000})\n\n    centers = res.x.reshape(n_circles, 2)\n    sum_radii = np.sum(radii)\n\n    return centers, radii, sum_radii\n\ndef run_packing():\n    return construct_packing()\n```",
+  "reasoning": "",
+  "timestamp": "2026-01-14T12:59:57.290427",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-2.0-flash-001",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "STOP",
+      "usage_metadata": {
+        "prompt_token_count": 481,
+        "candidates_token_count": 695,
+        "thoughts_token_count": 0
+      },
+      "response_text_len": 1858
+    }
+  }
+}

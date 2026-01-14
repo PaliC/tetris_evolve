@@ -301,3 +301,42 @@ class REPLEnvironment:
                 except Exception:
                     state[name] = "<unable to repr>"
         return state
+
+    def get_user_defined_names(self) -> dict[str, str]:
+        """
+        Get names and types of user-defined functions and variables.
+
+        This excludes API-injected items (spawn_children, trials, etc.) and
+        internal Python names. Useful for showing the Root LLM what persists
+        across generations in the REPL environment.
+
+        Returns:
+            Dictionary mapping name to type string (e.g., {"my_helper": "function",
+            "best_scores": "list"})
+        """
+        user_defined = {}
+        api_names = set(self._namespace.keys())
+        internal_names = {"__builtins__", "__name__", "__doc__"}
+
+        # Check both globals and locals for user-defined items
+        all_names = set(self.globals.keys()) | set(self.locals.keys())
+
+        for name in all_names:
+            # Skip private names, API-injected names, and internal Python names
+            if name.startswith("_") or name in api_names or name in internal_names:
+                continue
+
+            # Get the value (locals take precedence over globals)
+            value = self.locals.get(name) or self.globals.get(name)
+            if value is None:
+                continue
+
+            # Determine the type
+            if callable(value):
+                kind = "function"
+            else:
+                kind = type(value).__name__
+
+            user_defined[name] = kind
+
+        return user_defined

@@ -160,10 +160,9 @@ class ExperimentLogger:
         lineage_map: str | None = None,
     ) -> Path | None:
         """
-        Save scratchpad content to the generation folder.
+        Save scratchpad content and lineage map to the generation folder.
 
-        This is called immediately when the scratchpad is updated, and also
-        when a generation is finalized (with updated lineage map).
+        Scratchpad is saved to scratchpad.txt, lineage map to lineage_map.txt.
 
         Args:
             generation: Generation number
@@ -178,23 +177,23 @@ class ExperimentLogger:
 
         self._ensure_initialized()
         gen_dir = self._get_generation_dir(generation)
-        scratchpad_path = gen_dir / "scratchpad.txt"
 
+        # Save scratchpad to its own file
+        scratchpad_path = gen_dir / "scratchpad.txt"
         with open(scratchpad_path, "w") as f:
             f.write("=" * 60 + "\n")
-            f.write(f"SCRATCHPAD OUTPUT FOR GENERATION {generation}\n")
+            f.write(f"SCRATCHPAD FOR GENERATION {generation}\n")
             f.write("=" * 60 + "\n\n")
-            f.write("This is the scratchpad content that was available to the\n")
-            f.write("Root LLM when producing this generation.\n\n")
-            f.write("-" * 60 + "\n")
-            f.write("LINEAGE MAP\n")
-            f.write("-" * 60 + "\n\n")
-            f.write(lineage_map if lineage_map else "(No lineage yet)\n")
-            f.write("\n")
-            f.write("-" * 60 + "\n")
-            f.write("SCRATCHPAD\n")
-            f.write("-" * 60 + "\n\n")
             f.write(scratchpad if scratchpad else "(Empty)\n")
+
+        # Save lineage map to separate file
+        if lineage_map:
+            lineage_path = gen_dir / "lineage_map.txt"
+            with open(lineage_path, "w") as f:
+                f.write("=" * 60 + "\n")
+                f.write(f"LINEAGE MAP FOR GENERATION {generation}\n")
+                f.write("=" * 60 + "\n\n")
+                f.write(lineage_map)
 
         return scratchpad_path
 

@@ -1,0 +1,23 @@
+# MangoEvolve Calibration Notes
+# The root LLM only sees the 'notes' section during evolution.
+# Metadata is stored for validation purposes.
+
+notes: "\n# Model Calibration Observations\n\n## Claude 3.7 Sonnet\n- Reasoning: \n\
+  - Mathematical ability:\n- Code quality:\n- Temperature effects:\n- Strengths:\n\
+  - Limitations:\n\n## Gemini 2.0 Flash\n- Reasoning:\n- Mathematical ability:\n-\
+  \ Code quality:\n- Temperature effects:\n- Strengths:\n- Limitations:\n\n## Strategic\
+  \ Usage\n- When to use Sonnet:\n- When to use Gemini:\n- Optimal temperature settings:\n"
+metadata:
+  child_llms:
+  - alias: sonnet
+    model: anthropic/claude-3.7-sonnet
+    provider: openrouter
+    cost_per_million_input_tokens: 3.0
+    cost_per_million_output_tokens: 15.0
+  - alias: gemini
+    model: gemini-2.0-flash-001
+    provider: google
+    cost_per_million_input_tokens: 0.1
+    cost_per_million_output_tokens: 0.4
+  created_at: '2026-01-14T17:02:04.727226+00:00'
+  experiment_name: openevolve_config_gemini_flash

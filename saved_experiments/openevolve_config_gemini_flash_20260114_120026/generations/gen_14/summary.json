@@ -1,0 +1,48 @@
+{
+  "generation_num": 14,
+  "num_trials": 10,
+  "num_successful_trials": 4,
+  "best_trial_id": "trial_14_4",
+  "best_score": 2.6359830849177386,
+  "selected_trial_ids": [
+    "trial_14_4",
+    "trial_14_8",
+    "trial_14_5",
+    "trial_8_2"
+  ],
+  "selection_reasoning": "Selected the best performing trial from Generation 14 which slightly improves on our previous best score, along with two diverse approaches from the current generation that use different initialization and optimization techniques. Also retained our previously best solution as a reference point and to maintain stability in our evolution. This selection balances exploitation of our best-performing approaches while maintaining diversity for future exploration.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_14_4",
+      "reasoning": "Best score in this generation with a score of 2.635983, representing a modest improvement over the previous best. Uses a sophisticated multi-stage basin-hopping approach with adaptive parameters.",
+      "category": "performance",
+      "source_generation": 14
+    },
+    {
+      "trial_id": "trial_14_8",
+      "reasoning": "Second best score in this generation (2.603108) with a simpler optimization approach that still performs well. Provides algorithmic diversity compared to the top performer.",
+      "category": "diversity",
+      "source_generation": 14
+    },
+    {
+      "trial_id": "trial_14_5",
+      "reasoning": "Uses a hexagonal grid initialization with perturbations and multi-start optimization. Lower score but offers a different initialization strategy that could potentially be improved.",
+      "category": "diversity",
+      "source_generation": 14
+    },
+    {
+      "trial_id": "trial_8_2",
+      "reasoning": "Previous best performer (2.634292) that remains competitive. Worth keeping as a reference point and for potential hybridization.",
+      "category": "performance",
+      "source_generation": 8
+    }
+  ],
+  "parents_used": [
+    "trial_8_2"
+  ],
+  "parents_used_counts": {
+    "trial_8_2": 4
+  },
+  "parents_not_selected_prev_gen": [],
+  "timestamp": "2026-01-14T13:25:09.356962"
+}

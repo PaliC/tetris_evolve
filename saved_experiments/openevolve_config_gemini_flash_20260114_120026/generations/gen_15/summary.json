@@ -1,0 +1,55 @@
+{
+  "generation_num": 15,
+  "num_trials": 10,
+  "num_successful_trials": 3,
+  "best_trial_id": "trial_15_9",
+  "best_score": 2.580508259158779,
+  "selected_trial_ids": [
+    "trial_14_4",
+    "trial_8_2",
+    "trial_15_9",
+    "trial_15_4",
+    "trial_10_5"
+  ],
+  "selection_reasoning": "This selection combines our absolute best performers with promising new approaches from Generation 15. We're maintaining the top basin-hopping implementations that have consistently delivered the highest scores while also including diverse approaches from the current generation that bring fresh perspectives and might lead to breakthroughs when refined. This balanced selection provides both exploitation of proven methods and exploration of new techniques.",
+  "trial_selections": [
+    {
+      "trial_id": "trial_14_4",
+      "reasoning": "Our best performing trial overall with score 2.635983. Its sophisticated multi-stage optimization approach with adaptive basin-hopping has proven most effective.",
+      "category": "performance",
+      "source_generation": 14
+    },
+    {
+      "trial_id": "trial_8_2",
+      "reasoning": "Second best overall with score 2.634292. It uses a different implementation of basin-hopping that provides high performance and algorithmic diversity.",
+      "category": "performance",
+      "source_generation": 8
+    },
+    {
+      "trial_id": "trial_15_9",
+      "reasoning": "Best trial from Generation 15 with score 2.580508. While not exceeding our best overall, it represents a new approach worth exploring further.",
+      "category": "diversity",
+      "source_generation": 15
+    },
+    {
+      "trial_id": "trial_15_4",
+      "reasoning": "Second best trial from Generation 15 with score 2.543162. It uses a novel geometric approach with hexagonal grid initialization and force-directed optimization.",
+      "category": "diversity",
+      "source_generation": 15
+    },
+    {
+      "trial_id": "trial_10_5",
+      "reasoning": "One of our top performers with score 2.634292. It represents a different implementation in the high-performance basin-hopping family, providing additional diversity at the top performance level.",
+      "category": "performance",
+      "source_generation": 10
+    }
+  ],
+  "parents_used": [
+    "trial_14_4"
+  ],
+  "parents_used_counts": {
+    "trial_14_4": 5
+  },
+  "parents_not_selected_prev_gen": [],
+  "timestamp": "2026-01-14T13:28:56.615060"
+}

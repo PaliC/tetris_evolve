@@ -1,0 +1,30 @@
+{
+  "trial_id": "trial_11_4",
+  "generation": 11,
+  "parent_id": null,
+  "code": "import numpy as np\nimport cma\n\ndef construct_packing():\n    \"\"\"\n    Constructs a circle packing within a unit square using CMA-ES.\n    \"\"\"\n\n    def fitness(x):\n        \"\"\"\n        Fitness function to be minimized.  Returns the negative sum of radii,\n        penalized for overlaps and out-of-bounds circles.\n        \"\"\"\n        centers = x[:52].reshape(26, 2)\n        radii = x[52:]\n\n        # Penalty for radii outside [0, 0.5]\n        radii_penalty = np.sum(np.maximum(0, -radii)) + np.sum(np.maximum(0, radii - 0.5))\n\n        # Penalty for centers outside [0, 1]\n        centers_penalty = np.sum(np.maximum(0, -centers)) + np.sum(np.maximum(0, centers - 1))\n\n        # Overlap penalty\n        overlap_penalty = 0.0\n        for i in range(26):\n            for j in range(i + 1, 26):\n                dist = np.linalg.norm(centers[i] - centers[j])\n                overlap = radii[i] + radii[j] - dist\n                overlap_penalty += np.maximum(0, overlap)\n\n        # Total penalty\n        penalty = 1000 * (radii_penalty + centers_penalty + overlap_penalty)\n\n        # Return negative sum of radii plus penalty\n        return -np.sum(radii) + penalty\n\n    # Initial guess (random)\n    x0 = np.concatenate([np.random.rand(52), np.random.rand(26) * 0.25])  # Centers, radii\n\n    # Define bounds\n    bounds = [[0.0] * 52 + [0.0] * 26, [1.0] * 52 + [0.5] * 26] # Radius max is 0.5\n    opts = cma.CMAOptions()\n    opts.set(\"bounds\", bounds)\n    opts.set(\"popsize\", 30)  # Population size\n    opts.set(\"tolfun\", 1e-6) # Function tolerance\n    opts.set(\"maxfevals\", 10000) # Maximum function evaluations\n\n    # Run CMA-ES\n    es = cma.CMAEvolutionStrategy(x0, 0.2, opts) # Initial std is 0.2\n    es.optimize(fitness)\n\n    # Extract results\n    best_x = es.result.xbest\n    centers = best_x[:52].reshape(26, 2)\n    radii = best_x[52:]\n    sum_radii = np.sum(radii)\n\n    return centers, radii, sum_radii\n\ndef run_packing():\n    return construct_packing()",
+  "metrics": {
+    "valid": false,
+    "score": 0.0,
+    "eval_time": 0.05520200729370117,
+    "error": "ModuleNotFoundError: No module named 'cma'"
+  },
+  "prompt": "Create an evolutionary algorithm for circle packing:\n1. Implement a population-based approach (CMA-ES or similar)\n2. Define custom mutation and recombination operators specific to circle packing\n3. Use a staged cooling schedule to balance exploration and exploitation\n\nThe goal is to exceed our current best score of 2.634292402075199 using a completely different approach from basin-hopping.\n",
+  "response": "```python\nimport numpy as np\nimport cma\n\ndef construct_packing():\n    \"\"\"\n    Constructs a circle packing within a unit square using CMA-ES.\n    \"\"\"\n\n    def fitness(x):\n        \"\"\"\n        Fitness function to be minimized.  Returns the negative sum of radii,\n        penalized for overlaps and out-of-bounds circles.\n        \"\"\"\n        centers = x[:52].reshape(26, 2)\n        radii = x[52:]\n\n        # Penalty for radii outside [0, 0.5]\n        radii_penalty = np.sum(np.maximum(0, -radii)) + np.sum(np.maximum(0, radii - 0.5))\n\n        # Penalty for centers outside [0, 1]\n        centers_penalty = np.sum(np.maximum(0, -centers)) + np.sum(np.maximum(0, centers - 1))\n\n        # Overlap penalty\n        overlap_penalty = 0.0\n        for i in range(26):\n            for j in range(i + 1, 26):\n                dist = np.linalg.norm(centers[i] - centers[j])\n                overlap = radii[i] + radii[j] - dist\n                overlap_penalty += np.maximum(0, overlap)\n\n        # Total penalty\n        penalty = 1000 * (radii_penalty + centers_penalty + overlap_penalty)\n\n        # Return negative sum of radii plus penalty\n        return -np.sum(radii) + penalty\n\n    # Initial guess (random)\n    x0 = np.concatenate([np.random.rand(52), np.random.rand(26) * 0.25])  # Centers, radii\n\n    # Define bounds\n    bounds = [[0.0] * 52 + [0.0] * 26, [1.0] * 52 + [0.5] * 26] # Radius max is 0.5\n    opts = cma.CMAOptions()\n    opts.set(\"bounds\", bounds)\n    opts.set(\"popsize\", 30)  # Population size\n    opts.set(\"tolfun\", 1e-6) # Function tolerance\n    opts.set(\"maxfevals\", 10000) # Maximum function evaluations\n\n    # Run CMA-ES\n    es = cma.CMAEvolutionStrategy(x0, 0.2, opts) # Initial std is 0.2\n    es.optimize(fitness)\n\n    # Extract results\n    best_x = es.result.xbest\n    centers = best_x[:52].reshape(26, 2)\n    radii = best_x[52:]\n    sum_radii = np.sum(radii)\n\n    return centers, radii, sum_radii\n\ndef run_packing():\n    return construct_packing()\n```",
+  "reasoning": "",
+  "timestamp": "2026-01-14T13:07:18.529095",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-2.0-flash-001",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "STOP",
+      "usage_metadata": {
+        "prompt_token_count": 311,
+        "candidates_token_count": 669,
+        "thoughts_token_count": 0
+      },
+      "response_text_len": 1962
+    }
+  }
+}

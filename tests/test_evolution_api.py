@@ -417,13 +417,14 @@ class TestScratchpad:
 
         assert evolution_api.scratchpad == "Second notes"
 
-    def test_update_scratchpad_truncates_long_content(self, evolution_api):
-        """Test that very long content is truncated."""
-        long_content = "x" * 10000  # Exceeds 8000 limit
+    def test_update_scratchpad_accepts_long_content(self, evolution_api):
+        """Test that long content is accepted without truncation."""
+        long_content = "x" * 10000
         result = evolution_api.update_scratchpad(long_content)
 
-        assert result["length"] == 8000
-        assert len(evolution_api.scratchpad) == 8000
+        # Content is not truncated - scratchpad accepts any length
+        assert result["length"] == 10000
+        assert len(evolution_api.scratchpad) == 10000
 
 
 class TestLineageMap:

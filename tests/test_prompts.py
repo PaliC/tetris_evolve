@@ -88,9 +88,10 @@ class TestRootSystemPrompt:
         assert "diversity" in prompt.lower() or "diverse" in prompt.lower()
 
     def test_prompt_documents_code_references(self):
-        """Test that CODE_TRIAL token syntax is documented."""
+        """Test that trial code access syntax is documented."""
         prompt = get_root_system_prompt()
-        assert "CODE_TRIAL" in prompt
+        # The prompt documents how to access code from trials
+        assert 'trials["trial_' in prompt or ".code" in prompt
 
     def test_prompt_documents_selection_format(self):
         """Test that selection format is documented."""

@@ -56,18 +56,18 @@ class TestOrchestratorInitialization:
         assert len(orchestrator.messages) == 0
 
 
-class TestBuildInitialMessages:
-    """Tests for building initial messages."""
+class TestBuildGenerationStartMessage:
+    """Tests for building generation start messages."""
 
-    def test_build_initial_messages(self, mock_config):
-        """Test that initial messages are constructed correctly."""
+    def test_build_generation_start_message(self, mock_config):
+        """Test that generation start message is constructed correctly."""
         orchestrator = RootLLMOrchestrator(mock_config)
-        messages = orchestrator.build_initial_messages()
+        message = orchestrator._build_generation_start_message()
 
-        assert len(messages) == 1
-        assert messages[0]["role"] == "user"
-        assert "generation 0" in messages[0]["content"].lower()
-        assert "spawn" in messages[0]["content"].lower()
+        assert "generation 0" in message.lower()
+        assert "spawn" in message.lower()
+        assert "scratchpad" in message.lower()
+        assert "repl" in message.lower()
 
 
 class TestCodeBlockExtraction:
@@ -234,18 +234,16 @@ class TestBudgetExceededStop:
 
 
 class TestConversationHistory:
-    """Tests for conversation history maintenance."""
+    """Tests for conversation history management within a generation."""
 
-    def test_conversation_history(self, mock_config, temp_dir):
-        """Test that conversation history is maintained correctly."""
+    def test_conversation_history_within_generation(self, mock_config, temp_dir):
+        """Test that conversation history is maintained within a generation."""
         orchestrator = RootLLMOrchestrator(mock_config)
 
-        # Build initial messages
-        orchestrator.build_initial_messages()
-        assert len(orchestrator.messages) == 1
-        assert orchestrator.messages[0]["role"] == "user"
+        # Messages start empty
+        assert len(orchestrator.messages) == 0
 
-        # Simulate one iteration with mock LLM
+        # Simulate one iteration with mock LLM that terminates immediately
         cost_tracker = orchestrator.cost_tracker
         mock_root = MockLLMClient(
             model=mock_config.root_llm.model,
@@ -254,18 +252,18 @@ class TestConversationHistory:
         )
         mock_root.set_responses(
             [
-                "I'll start.\n\n```python\nx = 1\nprint(x)\n```",
-                "Done.\n\n```python\nterminate_evolution('test complete')\n```",
+                "I'll terminate.\n\n```python\nterminate_evolution('test complete')\n```",
             ]
         )
         orchestrator.root_llm = mock_root
 
         _result = orchestrator.run()
 
-        # Check that messages were accumulated
-        # Initial user + assistant response + user (execution results) + assistant + terminate
-        assert len(orchestrator.messages) >= 3
+        # After run, messages contain the current generation's history
+        # (user message with generation context + assistant response)
+        assert len(orchestrator.messages) >= 2
         assert orchestrator.messages[0]["role"] == "user"
+        assert "generation 0" in orchestrator.messages[0]["content"].lower()
         assert orchestrator.messages[1]["role"] == "assistant"
 
 

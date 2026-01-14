@@ -1,0 +1,30 @@
+{
+  "trial_id": "trial_14_8",
+  "generation": 14,
+  "parent_id": null,
+  "code": "import numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    n_circles = 26\n    centers = np.random.rand(n_circles, 2)  # Initialize centers randomly\n    radii = np.random.rand(n_circles) * 0.05  # Initialize radii small\n\n    def objective(x):\n        centers = x[:2 * n_circles].reshape(n_circles, 2)\n        radii = x[2 * n_circles:]\n        return -np.sum(radii)\n\n    def constraint_overlap(x):\n        centers = x[:2 * n_circles].reshape(n_circles, 2)\n        radii = x[2 * n_circles:]\n        overlap = 0\n        for i in range(n_circles):\n            for j in range(i + 1, n_circles):\n                dist = np.linalg.norm(centers[i] - centers[j])\n                overlap += np.maximum(0, radii[i] + radii[j] - dist)\n        return -overlap  # Minimize overlap (should be negative)\n\n    def constraint_inside(x):\n        centers = x[:2 * n_circles].reshape(n_circles, 2)\n        radii = x[2 * n_circles:]\n        min_dist = np.min(centers - radii.reshape(-1, 1), axis=0)\n        max_dist = np.max(centers + radii.reshape(-1, 1), axis=0)\n        return np.min(np.concatenate([min_dist, 1 - max_dist]))\n\n    # Initial optimization parameters\n    x0 = np.concatenate([centers.flatten(), radii])\n    bounds = [(0, 1) for _ in range(2 * n_circles)] + [(0, 0.5) for _ in range(n_circles)]\n\n    constraints = [\n        {'type': 'ineq', 'fun': constraint_overlap},\n        {'type': 'ineq', 'fun': constraint_inside}\n    ]\n\n    result = minimize(objective, x0, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': 500})\n\n    centers = result.x[:2 * n_circles].reshape(n_circles, 2)\n    radii = result.x[2 * n_circles:]\n\n    # Refinement stage\n    for _ in range(2): # Repeat refinement to escape local minima\n        x0 = np.concatenate([centers.flatten(), radii])\n        result = minimize(objective, x0, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': 500})\n\n        centers = result.x[:2 * n_circles].reshape(n_circles, 2)\n        radii = result.x[2 * n_circles:]\n\n    sum_radii = np.sum(radii)\n    return centers, radii, sum_radii\n\ndef run_packing():\n    return construct_packing()",
+  "metrics": {
+    "valid": true,
+    "score": 2.603108111405434,
+    "eval_time": 46.61759376525879,
+    "error": null
+  },
+  "prompt": "Implement a circle packing solution using an incremental growth strategy.\n\nGoal: Pack 26 circles in a unit square [0,1] x [0,1] to maximize sum of radii.\n- All circles must stay inside the unit square\n- No two circles can overlap\n- All radii must be non-negative\n\nImplementation approach:\n1. Start with a small number of circles with optimized positions and radii\n2. Incrementally add new circles while optimizing the entire configuration\n3. Use a multi-stage process that grows the solution gradually\n4. Apply local and global optimization at each stage\n5. Ensure robust constraint handling throughout\n\nReturn complete, executable code implementing this incremental approach.",
+  "response": "```python\nimport numpy as np\nfrom scipy.optimize import minimize\n\ndef construct_packing():\n    n_circles = 26\n    centers = np.random.rand(n_circles, 2)  # Initialize centers randomly\n    radii = np.random.rand(n_circles) * 0.05  # Initialize radii small\n\n    def objective(x):\n        centers = x[:2 * n_circles].reshape(n_circles, 2)\n        radii = x[2 * n_circles:]\n        return -np.sum(radii)\n\n    def constraint_overlap(x):\n        centers = x[:2 * n_circles].reshape(n_circles, 2)\n        radii = x[2 * n_circles:]\n        overlap = 0\n        for i in range(n_circles):\n            for j in range(i + 1, n_circles):\n                dist = np.linalg.norm(centers[i] - centers[j])\n                overlap += np.maximum(0, radii[i] + radii[j] - dist)\n        return -overlap  # Minimize overlap (should be negative)\n\n    def constraint_inside(x):\n        centers = x[:2 * n_circles].reshape(n_circles, 2)\n        radii = x[2 * n_circles:]\n        min_dist = np.min(centers - radii.reshape(-1, 1), axis=0)\n        max_dist = np.max(centers + radii.reshape(-1, 1), axis=0)\n        return np.min(np.concatenate([min_dist, 1 - max_dist]))\n\n    # Initial optimization parameters\n    x0 = np.concatenate([centers.flatten(), radii])\n    bounds = [(0, 1) for _ in range(2 * n_circles)] + [(0, 0.5) for _ in range(n_circles)]\n\n    constraints = [\n        {'type': 'ineq', 'fun': constraint_overlap},\n        {'type': 'ineq', 'fun': constraint_inside}\n    ]\n\n    result = minimize(objective, x0, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': 500})\n\n    centers = result.x[:2 * n_circles].reshape(n_circles, 2)\n    radii = result.x[2 * n_circles:]\n\n    # Refinement stage\n    for _ in range(2): # Repeat refinement to escape local minima\n        x0 = np.concatenate([centers.flatten(), radii])\n        result = minimize(objective, x0, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': 500})\n\n        centers = result.x[:2 * n_circles].reshape(n_circles, 2)\n        radii = result.x[2 * n_circles:]\n\n    sum_radii = np.sum(radii)\n    return centers, radii, sum_radii\n\ndef run_packing():\n    return construct_packing()\n```",
+  "reasoning": "",
+  "timestamp": "2026-01-14T13:21:56.028264",
+  "cost_data": null,
+  "model_config": {
+    "model": "gemini-2.0-flash-001",
+    "temperature": 0.7,
+    "provider_debug": {
+      "finish_reason": "STOP",
+      "usage_metadata": {
+        "prompt_token_count": 362,
+        "candidates_token_count": 698,
+        "thoughts_token_count": 0
+      },
+      "response_text_len": 2171
+    }
+  }
+}

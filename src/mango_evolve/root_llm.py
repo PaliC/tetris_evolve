@@ -20,7 +20,7 @@ from .config import (
 )
 from .cost_tracker import CostTracker
 from .evolution_api import EvolutionAPI
-from .exceptions import BudgetExceededError, ContextOverflowError, GenerationLimitError
+from .exceptions import BudgetExceededError, GenerationLimitError
 from .llm.client import LLMClient, MockLLMClient, create_llm_client
 from .llm.prompts import (
     get_calibration_system_prompt_parts,
@@ -357,121 +357,6 @@ class RootLLMOrchestrator:
             timeout_seconds=timeout_seconds,
         )
 
-    def build_initial_messages(self) -> list[dict[str, str]]:
-        """
-        Build the initial messages for the conversation.
-
-        Returns:
-            List of message dicts to start the conversation
-        """
-        # Build evolution memory (empty for generation 0, but shows the structure)
-        evolution_memory = self._build_evolution_memory()
-
-        # Start with a user message prompting the LLM to begin
-        self.messages = [
-            {
-                "role": "user",
-                "content": (
-                    f"Begin generation 0. Spawn up to {self.evolution_api.max_children_per_generation} children "
-                    "exploring different circle packing strategies.\n\n"
-                    f"{evolution_memory}"
-                ),
-            }
-        ]
-        return self.messages
-
-    def _prepare_messages_with_caching(self, messages: list[dict[str, str]]) -> list[dict]:
-        """
-        Prepare messages with cache_control for optimal prompt caching.
-
-        Strategy: Cache at the END of a stable prefix that won't change.
-        We cache the first user message (stable "Begin generation 0..." prompt)
-        since it remains constant throughout the conversation.
-
-        Args:
-            messages: List of message dicts with "role" and "content"
-
-        Returns:
-            List of message dicts with cache_control added where appropriate.
-            Content may be converted to list format for messages with cache_control.
-        """
-        if len(messages) < 1:
-            return messages
-
-        result = []
-        for i, msg in enumerate(messages):
-            if i == 0:
-                # Cache the first user message (stable "Begin generation 0..." prompt)
-                result.append(
-                    {
-                        "role": msg["role"],
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": msg["content"],
-                                "cache_control": {"type": "ephemeral"},
-                            }
-                        ],
-                    }
-                )
-            else:
-                result.append(msg)
-
-        return result
-
-    def _get_context_size_estimate(self) -> dict:
-        """
-        Estimate current context size.
-
-        Returns:
-            Dictionary with context statistics and health indicators.
-        """
-        total_chars = sum(
-            len(m.get("content", ""))
-            if isinstance(m.get("content"), str)
-            else sum(len(c.get("text", "")) for c in m.get("content", []) if isinstance(c, dict))
-            for m in self.messages
-        )
-        estimated_tokens = total_chars // 4
-
-        return {
-            "total_chars": total_chars,
-            "estimated_tokens": estimated_tokens,
-            "message_count": len(self.messages),
-            "warning": estimated_tokens > 150_000,
-            "critical": estimated_tokens > 250_000,
-        }
-
-    def _check_context_health(self, max_context_tokens: int = 180_000) -> None:
-        """Check context size and stop if it exceeds safe limits.
-
-        Args:
-            max_context_tokens: Maximum allowed context size in tokens.
-                Defaults to 180,000 (safe for most models with 200K context).
-
-        Raises:
-            ContextOverflowError: If context exceeds max_context_tokens.
-        """
-        stats = self._get_context_size_estimate()
-
-        if stats["estimated_tokens"] > max_context_tokens:
-            raise ContextOverflowError(
-                f"Context size ({stats['estimated_tokens']:,} tokens) exceeds "
-                f"maximum allowed ({max_context_tokens:,} tokens). "
-                f"Messages: {stats['message_count']}. "
-                "The experiment must stop to prevent API failures."
-            )
-        elif stats["critical"]:
-            tqdm.write(
-                f"  ⚠️  CRITICAL: Context size ~{stats['estimated_tokens']:,} tokens. "
-                f"Limit: {max_context_tokens:,}. Risk of overflow soon."
-            )
-        elif stats["warning"]:
-            tqdm.write(
-                f"  ⚠️  WARNING: Context size ~{stats['estimated_tokens']:,} tokens. "
-                "Approaching limits."
-            )
-
     def extract_code_blocks(self, response: str) -> list[str]:
         """
         Extract Python code blocks from the LLM response.
@@ -558,29 +443,48 @@ class RootLLMOrchestrator:
         """
         return self.evolution_api.is_terminated
 
-    def _build_evolution_memory(self) -> str:
+    def _build_generation_start_message(self) -> str:
         """
-        Build the evolution memory block containing the scratchpad.
+        Build the initial user message for starting a new generation.
 
-        This is shown to the Root LLM at the start of each generation to provide
-        context about persistent notes.
+        This provides fresh context at each generation boundary, including:
+        - Current generation number
+        - Scratchpad content (persisted from previous generations)
+        - REPL state (user-defined functions/variables)
+        - Task instructions
 
         Returns:
-            Formatted evolution memory string.
+            Formatted user message string.
         """
+        gen = self.evolution_api.current_generation
         scratchpad = self.evolution_api.scratchpad
 
+        # Get REPL state (user-defined functions/variables)
+        repl_state = self.repl.get_user_defined_names()
+        if repl_state:
+            repl_state_str = ", ".join(
+                f"`{name}` ({kind})" for name, kind in sorted(repl_state.items())
+            )
+        else:
+            repl_state_str = "(none yet - define helper functions as needed)"
+
         lines = [
-            "─" * 60,
-            "## Evolution Memory",
+            f"# Generation {gen}",
             "",
-            "### Scratchpad (update with `update_scratchpad(content)`)",
+            "## Your Scratchpad (persists across generations)",
             "",
-            scratchpad
-            if scratchpad
-            else "(Empty - use update_scratchpad() to add persistent notes)",
+            scratchpad if scratchpad else "(empty - use scratchpad.append() to add notes for future generations)",
             "",
-            "─" * 60,
+            "## Persisted REPL State",
+            "",
+            repl_state_str,
+            "",
+            "## Your Task",
+            "",
+            f"Spawn up to {self.evolution_api.max_children_per_generation} children "
+            "exploring circle packing strategies.",
+            "",
+            "Remember: Your conversation resets each generation. Save important insights to your scratchpad!",
         ]
         return "\n".join(lines)
 
@@ -735,9 +639,8 @@ class RootLLMOrchestrator:
         while True:
             # Get selection response from Root LLM
             tqdm.write("  └─ Requesting trial selection from Root LLM...")
-            cached_messages = self._prepare_messages_with_caching(self.messages)
             selection_response = self.root_llm.generate(
-                messages=cached_messages,
+                messages=self.messages,
                 system=system_prompt,
                 max_tokens=2048,
                 temperature=0.5,  # Lower temp for more deterministic selection
@@ -934,8 +837,8 @@ class RootLLMOrchestrator:
         Execute one generation of the evolution loop.
 
         This handles:
-        1. Resetting progress bars
-        2. Checking context health and budget
+        1. Resetting context (messages) at generation boundary
+        2. Resetting progress bars
         3. Calling the Root LLM
         4. Executing code blocks from response
         5. Handling trial selection or no-children case
@@ -951,13 +854,16 @@ class RootLLMOrchestrator:
         """
         current_gen = self.evolution_api.current_generation
 
+        # Reset messages at generation boundary - each generation starts fresh
+        # The scratchpad and REPL state persist; conversation history does not
+        self.messages = [
+            {"role": "user", "content": self._build_generation_start_message()}
+        ]
+
         # Reset children progress bar for this generation
         children_pbar.reset()
         children_pbar.set_description(f"  Gen {current_gen} children")
         update_pbar_postfix()
-
-        # Check context health at the start of each generation
-        self._check_context_health()
 
         # Check budget before LLM call
         self.cost_tracker.raise_if_over_budget()
@@ -965,10 +871,9 @@ class RootLLMOrchestrator:
         # Get system prompt with current generation info
         system_prompt = self._get_system_prompt()
 
-        # Call Root LLM with cached messages
-        cached_messages = self._prepare_messages_with_caching(self.messages)
+        # Call Root LLM
         response = self.root_llm.generate(
-            messages=cached_messages,
+            messages=self.messages,
             system=system_prompt,
             max_tokens=8192,
             temperature=0.7,
@@ -1120,8 +1025,8 @@ class RootLLMOrchestrator:
             # No calibration budget configured, skip calibration
             self.evolution_api.end_calibration_phase()
 
-        # Build initial messages for evolution
-        self.build_initial_messages()
+        # Note: Messages are reset at the start of each generation in _execute_single_generation()
+        # Each generation starts fresh with only scratchpad and REPL state persisting
 
         termination_reason = "max_generations_reached"
         generations_completed = 0
@@ -1202,7 +1107,7 @@ class RootLLMOrchestrator:
                     if gen_result.errors:
                         generation_errors.extend(gen_result.errors)
 
-                except (BudgetExceededError, ContextOverflowError):
+                except BudgetExceededError:
                     # Re-raise to break the loop
                     raise
                 except Exception as e:
@@ -1214,8 +1119,6 @@ class RootLLMOrchestrator:
 
         except BudgetExceededError as e:
             termination_reason = f"budget_exceeded: {str(e)}"
-        except ContextOverflowError as e:
-            termination_reason = f"context_overflow: {str(e)}"
         finally:
             children_pbar.close()
             gen_pbar.close()
